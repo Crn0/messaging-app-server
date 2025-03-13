@@ -2,7 +2,7 @@ import "dotenv/config";
 
 const { NODE_ENV } = process.env;
 
-const PORT = process.env || 3000;
+const PORT = process.env.PORT || 3000;
 
 const CORS_ORIGINS = process.env?.CORS_ORIGINS;
 const CORS_METHODS = process.env.CORS_METHODS || "GET,HEAD,PUT,POST,DELETE";
