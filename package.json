@@ -14,7 +14,7 @@
     "start": "node ./src/bin/www.js",
     "dev": "dotenv -e .env.dev -- node --watch ./src/bin/www.js",
     "prod": "dotenv -e .env.prod -- node --watch ./src/bin/www.js",
-    "server": "DEBUG=<project-name>:* npm run dev",
+    "server": "DEBUG=app:* npm run dev",
     "prisma": "npx prisma init",
     "seedDev": "dotenv -e .env.dev -- npx prisma db seed",
     "seedProd": "dotenv -e .env.prod -- npx prisma db seed",
