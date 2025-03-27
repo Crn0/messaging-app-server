@@ -1,10 +1,28 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import * as crypto from "node:crypto";
-import { fileExtension } from "../helpers/index.js";
 import FieldError from "../errors/field-error.js";
 
 const MAX_FILE_SIZE = 10_000_000; // 10mb
+
+const fileExtension = (mimeType) => {
+  switch (mimeType) {
+    case "image/png":
+      return ".png";
+    case "image/jpeg":
+      return ".jpeg";
+    case "image/jpg":
+      return ".jpeg";
+    case "image/webp":
+      return ".webp";
+    case "application/pdf":
+      return ".pdf";
+    case "application/epub+zip":
+      return ".epub";
+    default:
+      return "";
+  }
+};
 
 function fileFilter(req, file, cb) {
   // Allowed ext
