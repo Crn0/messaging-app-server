@@ -4,12 +4,13 @@ const { NODE_ENV } = process.env;
 
 const PORT = process.env.PORT || 3000;
 
-const CORS_ORIGINS = process.env?.CORS_ORIGINS;
+const CORS_ORIGINS = process.env?.CORS_ORIGINS?.split(",");
 const CORS_METHODS = process.env.CORS_METHODS || "GET,HEAD,PUT,POST,DELETE";
 
 const DATABASE_URL = process.env?.DATABASE_URL;
 const TEST_DATABASE_URL = process.env?.TEST_DATABASE_URL;
 
+const CLOUDINARY_ROOT_NAME = process.env?.CLOUDINARY_ROOT_NAME || "dev";
 const CLOUDINARY_NAME = process.env?.CLOUDINARY_NAME;
 const CLOUDINARY_API_KEY = process.env?.CLOUDINARY_API_KEY;
 const CLOUDINARY_SECRET = process.env?.CLOUDINARY_SECRET;
@@ -24,6 +25,7 @@ export default {
   CORS_METHODS,
   DATABASE_URL,
   TEST_DATABASE_URL,
+  CLOUDINARY_ROOT_NAME,
   CLOUDINARY_NAME,
   CLOUDINARY_API_KEY,
   CLOUDINARY_SECRET,
