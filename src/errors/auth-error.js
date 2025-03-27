@@ -5,9 +5,10 @@ class AuthError extends BaseError {
     message,
     httpCode,
     name = "Authentication Error",
+    errors = null,
     isOperational = true
   ) {
-    super(message, httpCode, name, isOperational);
+    super(message, httpCode, name, errors, isOperational);
   }
 }
 
