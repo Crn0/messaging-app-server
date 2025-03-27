@@ -8,6 +8,7 @@ const BAD_GATEWAY = 502;
 const NO_CONTENT = 204;
 const CREATED = 201;
 const FORBIDDEN = 403;
+const CONFLICT = 409;
 
 export default {
   OK,
@@ -20,4 +21,5 @@ export default {
   NO_CONTENT,
   CREATED,
   FORBIDDEN,
+  CONFLICT,
 };
