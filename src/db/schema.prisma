@@ -13,17 +13,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Image {
+  pk     Int    @id @default(autoincrement())
+  url    String @db.Text
+  format String @db.VarChar(10)
+  size   Int?   @db.Integer
+
+  attachment   Attachment @relation(fields: [attachmentPk], references: [pk], onDelete: Cascade)
+  attachmentPk Int
+
+  @@unique([attachmentPk, pk])
+  @@map("Images")
+}
+
+enum ImageFormat {
+  webp
+  jpeg
+  jpg
+  png
+}
+
+model File {
+  pk  Int    @id @default(autoincrement())
+  url String @db.Text
+
+  attachment   Attachment @relation(fields: [attachmentPk], references: [pk], onDelete: Cascade)
+  attachmentPk Int
+
+  @@unique([attachmentPk, pk])
+  @@map("Files")
+}
+
 model Attachment {
   pk        Int       @id @default(autoincrement())
-  id        String    @unique @default(uuid(7)) @db.Uuid
-  publicId  String    @map("public_id") @db.VarChar(255)
+  id        String    @unique @db.Text
   name      String?   @db.VarChar(255)
-  url       String    @db.Text
-  lazyUrl   String?   @map("lazy_url") @db.Text
+  url String @db.Text
   size      Int?      @db.Integer
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime? @map("updated_at") @db.Timestamptz
 
+  images                    Image[]
+  files                     File[]
   type                      AttachmentType
   chat                      Chat?          @relation("ChatAttachment", fields: [chatPk], references: [pk], onDelete: Cascade)
   chatAvatar                Chat?          @relation("ChatAvatar", fields: [chatAvatarPk], references: [pk], onDelete: Cascade)
@@ -243,7 +274,7 @@ model FriendRequest {
 
 model OpenID {
   pk        Int       @id @default(autoincrement())
-  sub        String    @db.VarChar(255)
+  sub       String    @db.VarChar(255)
   token     String    @db.Text
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime? @map("updated_at") @db.Timestamptz()
