@@ -2,10 +2,10 @@ import "dotenv/config";
 import http from "http";
 import Debug from "debug";
 import app from "../app.js";
-import constants from "../constants/index.js";
+import { env } from "../constants/index.js";
 
-const port = constants.env.PORT;
-const debug = constants.env.NODE_ENV === "dev" ? Debug("app:server") : () => {};
+const port = env.PORT;
+const debug = env.NODE_ENV === "dev" ? Debug("app:server") : () => {};
 
 const onError = (error) => {
   if (error.syscall !== "listen") {
