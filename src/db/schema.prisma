@@ -266,7 +266,7 @@ model FriendRequest {
   requester   User @relation(name: "FriendRequestSent", fields: [requesterPk], references: [pk])
   receiver    User @relation(name: "FriendRequestRecieved", fields: [receiverPk], references: [pk])
   requesterPk Int  @map("requester_pk") @db.Integer
-  receiverPk  Int  @map("reciever_pk") @db.Integer
+  receiverPk  Int  @map("receiver_pk") @db.Integer
 
   @@unique([requesterPk, receiverPk])
   @@map("FriendRequests")
