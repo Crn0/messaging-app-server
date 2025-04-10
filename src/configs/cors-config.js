@@ -1,8 +1,8 @@
-import constants from "../constants/index.js";
+import { env } from "../constants/index.js";
 
 const corsOptions = {
-  origin: constants.env.CORS_ORIGINS,
-  methods: constants.env.CORS_METHODS,
+  origin: env.CORS_ORIGINS,
+  methods: env.CORS_METHODS,
   optionsSuccessStatus: 200,
 };
 
