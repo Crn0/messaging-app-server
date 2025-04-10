@@ -3,8 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["src/test/**/*.test.js"],
-    setupFiles: "./test/setup-db.js",
+    include: ["src/**/*.test.js"],
     clearMocks: true,
     threads: false,
   },
