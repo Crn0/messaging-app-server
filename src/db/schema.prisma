@@ -263,8 +263,8 @@ model FriendRequest {
   pk Int    @id @default(autoincrement())
   id String @unique @default(uuid(7)) @db.Uuid
 
-  requester   User @relation(name: "FriendRequestSent", fields: [requesterPk], references: [pk])
-  receiver    User @relation(name: "FriendRequestRecieved", fields: [receiverPk], references: [pk])
+  requester   User @relation(name: "FriendRequestSent", fields: [requesterPk], references: [pk], onDelete: Cascade)
+  receiver    User @relation(name: "FriendRequestRecieved", fields: [receiverPk], references: [pk], onDelete: Cascade)
   requesterPk Int  @map("requester_pk") @db.Integer
   receiverPk  Int  @map("receiver_pk") @db.Integer
 
