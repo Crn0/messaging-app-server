@@ -57,10 +57,12 @@ const destroyFolder = async (path) => {
 };
 
 const destroyFile = async (publicId, resourceType) => {
+  const type = resourceType.toLowerCase();
+
   try {
     const res = await cloudinary.uploader.destroy(publicId, {
       invalidate: true,
-      resource_type: resourceType,
+      resource_type: type,
     });
 
     return res;
