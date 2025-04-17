@@ -1,5 +1,6 @@
 import initCloudinary from "../lib/cloudinary.js";
 import StorageError from "../../errors/storage-error.js";
+import { env } from "../../constants/index.js";
 
 const cloudinary = initCloudinary();
 
@@ -49,6 +50,12 @@ const update = async (path, publicId, eagerOptions) => {
   }
 };
 
+const destroyFolder = async (path) => {
+  await cloudinary.api.delete_resources_by_prefix(path);
+
+  return cloudinary.api.delete_folder(path);
+};
+
 const destroyFile = async (publicId, resourceType) => {
   try {
     const res = await cloudinary.uploader.destroy(publicId, {
@@ -62,4 +69,4 @@ const destroyFile = async (publicId, resourceType) => {
   }
 };
 
-export default { url, upload, update, destroyFile };
+export default { url, upload, update, destroyFile, destroyFolder };
