@@ -1,10 +1,10 @@
 import BaseError from "./base-error.js";
-import constants from "../constants/index.js";
+import { env } from "../constants/index.js";
 import sendErrorResponce from "../response/error-response.js";
 
 class ErrorHandler {
   static handleError(error, res) {
-    if (constants.env.NODE_ENV !== "prod") {
+    if (env.NODE_ENV === "dev") {
       console.log(error);
     }
 
