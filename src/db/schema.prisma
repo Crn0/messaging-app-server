@@ -16,7 +16,7 @@ datasource db {
 model Image {
   pk     Int    @id @default(autoincrement())
   url    String @db.Text
-  format String @db.VarChar(10)
+  format ImageFormat
   size   Int?   @db.Integer
 
   attachment   Attachment @relation(fields: [attachmentPk], references: [pk], onDelete: Cascade)
