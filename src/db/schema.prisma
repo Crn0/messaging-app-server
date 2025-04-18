@@ -56,7 +56,6 @@ model Attachment {
 
   messageId Int? @map("message_id") @db.Integer
 
-  @@unique([chatPk, messageId])
   @@map("Attachments")
 }
 
