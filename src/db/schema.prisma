@@ -48,7 +48,7 @@ model Attachment {
   pk        Int       @id @default(autoincrement())
   id        String    @unique @db.Text
   name      String?   @db.VarChar(255)
-  url String @db.Text
+  url       String    @db.Text
   size      Int?      @db.Integer
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime? @map("updated_at") @db.Timestamptz
@@ -230,7 +230,7 @@ model UserOnChat {
   pk         Int      @id @default(autoincrement())
   id         String   @unique @default(uuid(7)) @db.Uuid
   joinedAt   DateTime @default(now()) @map("joined_at") @db.Timestamptz
-  mutedUntil DateTime @default(now()) @map("muted_until") @db.Timestamptz
+  mutedUntil DateTime? @map("muted_until") @db.Timestamptz
 
   user   User   @relation(fields: [userPk], references: [pk], onDelete: Cascade)
   chat   Chat   @relation(fields: [chatPk], references: [pk], onDelete: Cascade)
