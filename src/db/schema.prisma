@@ -299,6 +299,6 @@ model Message {
   replyToPk   Int?         @map("reply_to_pk") @db.Integer
 
   @@unique([pk, userPk], name: "messageUser")
-  @@index([id, createdAt(sort: Desc)], name: "messageIdIndex")
+  @@index(fields: [id], name: "messageIdIndex")
   @@map("Messages")
 }
