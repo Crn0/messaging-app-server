@@ -48,13 +48,12 @@ model Attachment {
   chatAvatar                Chat?          @relation("ChatAvatar", fields: [chatAvatarPk], references: [pk], onDelete: Cascade)
   profileAvatar             Profile?       @relation("ProfileAvatar", fields: [profileAvatarPk], references: [pk], onDelete: Cascade)
   backgroundAvatar          Profile?       @relation("BackgroundAvatar", fields: [profileBackgroundAvatarPk], references: [pk], onDelete: Cascade)
-  message                   Message?       @relation(fields: [messageId], references: [pk], onDelete: Cascade)
+  message                   Message?       @relation(fields: [messagePk], references: [pk], onDelete: Cascade)
   chatPk                    Int?           @map("chat_pk") @db.Integer
   chatAvatarPk              Int?           @unique @map("group_chat_pk") @db.Integer
   profileAvatarPk           Int?           @unique @map("profile_avatar_pk") @db.Integer
   profileBackgroundAvatarPk Int?           @unique @map("profile_background_avatar_pk") @db.Integer
-
-  messageId Int? @map("message_id") @db.Integer
+  messagePk Int? @map("message_pk") @db.Integer
 
   @@map("Attachments")
 }
