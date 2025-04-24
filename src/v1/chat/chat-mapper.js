@@ -16,6 +16,7 @@ const DIRECT_CHAT_ACTIONS = {
 
 const GROUP_CHAT_ACTIONS = {
   INSERT: "insert",
+  UPDATE_NAME: "update:name",
   UPSERT_AVATAR: "upsert:avatar",
   UPDATE_MEMBER: "update:member",
   DELETE_MEMBER: "delete:member",
@@ -105,6 +106,12 @@ const groupChatData = (action, DTO) => {
         },
       };
       ca;
+    case GROUP_CHAT_ACTIONS.UPDATE_NAME: {
+      return {
+        name: DTO.name,
+        updatedAt: new Date(),
+      };
+    }
     case GROUP_CHAT_ACTIONS.UPSERT_AVATAR: {
       const { id, name, url, size, images } = DTO.attachment;
 

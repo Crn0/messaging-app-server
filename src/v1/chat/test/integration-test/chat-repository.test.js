@@ -172,6 +172,46 @@ describe("Chat detail", () => {
 });
 
 describe("Chat update", () => {
+  const chatToUpdateId = idGenerator();
+
+  beforeAll(async () => {
+    const { username } = user1Data;
+
+    const data = {
+      chatId: chatToUpdateId,
+      name: `${username}'s group chat`,
+      ownerId: user1Id,
+      isPrivate: false,
+    };
+
+    await chatRepository.insertGroupChat(data);
+
+    return async () => {
+      await client.chat.delete({
+        where: { id: chatToUpdateId },
+      });
+    };
+  });
+
+  it("updates the chat name and returns the chat object", async () => {
+    const data = {
+      chatId: chatToUpdateId,
+      name: "updated_name",
+      type: "GroupChat",
+    };
+
+    const chat = await chatRepository.updateChatNameById(data);
+
+    const toMatchObject = {
+      id: expect.any(String),
+      name: "updated_name",
+      avatar: null,
+      type: "GroupChat",
+    };
+    console.log(chat);
+    expect(chat).toMatchObject(toMatchObject);
+  });
+
   it("updates the chat avatar and returns the chat object", async () => {
     const {
       eager,
