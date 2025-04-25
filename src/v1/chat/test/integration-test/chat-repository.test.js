@@ -21,6 +21,7 @@ const { id: user2Id } = user2Data;
 
 const directChatId = idGenerator();
 const groupChatId = idGenerator();
+const deletedUserId = idGenerator();
 
 beforeAll(async () => {
   await client.$transaction([
@@ -37,11 +38,17 @@ beforeAll(async () => {
   ]);
 
   return async () => {
-    await client.message.deleteMany({});
+    await client.message.deleteMany({
+      where: {
+        chat: {
+          id: { in: [directChatId, groupChatId] },
+        },
+      },
+    });
 
     await client.$transaction([
       client.user.deleteMany({
-        where: { id: { in: [user1Id, user2Id] } },
+        where: { id: { in: [user1Id, user2Id, deletedUserId] } },
       }),
       client.chat.deleteMany({
         where: { id: { in: [directChatId, groupChatId] } },
@@ -208,7 +215,7 @@ describe("Chat update", () => {
       avatar: null,
       type: "GroupChat",
     };
-    console.log(chat);
+
     expect(chat).toMatchObject(toMatchObject);
   });
 
@@ -604,6 +611,40 @@ describe("Message detail", () => {
 });
 
 describe("Message deletion", () => {
+  let deletedUserMessageId;
+
+  beforeAll(async () => {
+    const deletedUser = await client.user.create({
+      data: {
+        id: deletedUserId,
+        username: "DELETED USER",
+      },
+    });
+
+    const message = await client.message.create({
+      data: {
+        userPk: deletedUser.pk,
+        content: "Original comment was deleted",
+        deletedAt: new Date(),
+      },
+    });
+
+    await chatRepository.insertReply({
+      chatId: directChatId,
+      senderId: user1Id,
+      messageId: replyId,
+      content: "hello world",
+    });
+
+    deletedUserMessageId = message.id;
+
+    return async () => {
+      await client.message.deleteMany({
+        where: { id: { in: [deletedUserMessageId] } },
+      });
+    };
+  });
+
   it("flag the message as deleted, replace the content with 'Original comment was deleted' and delete the attachements", async () => {
     const data = {
       messageId,
@@ -623,7 +664,7 @@ describe("Message deletion", () => {
     expect(message).toMatchObject(toMatchObject);
   });
 
-  it("deletes the message and the repliedTo relation when the 'deletedAt' field is not null", async () => {
+  it("deletes the message and update the replyTo relation of the replies to the global message", async () => {
     const message = await chatRepository.deleteMessageById(
       directChatId,
       replyId
@@ -636,20 +677,17 @@ describe("Message deletion", () => {
 
     expect(message).toMatchObject(toMatchObject);
 
-    const parentMessage = await chatRepository.findChatMessageById(
-      directChatId,
-      messageId
-    );
-
-    const childMessage = await chatRepository.findChatMessageById(
+    const deletedMessage = await chatRepository.findChatMessageById(
       directChatId,
       replyId
     );
 
     const messages = await chatRepository.findChatMessagesById(directChatId);
 
-    expect(parentMessage).toBeNull();
-    expect(childMessage).toBeNull();
-    expect(messages).toHaveLength(1);
+    expect(deletedMessage).toBeNull();
+    expect(messages).toHaveLength(3);
+    expect(
+      messages.some((m) => m.replyTo?.id === deletedUserMessageId)
+    ).toBeTruthy();
   });
 });

@@ -372,15 +372,25 @@ const deleteMessageById = async (chatId, messageId) => {
     include: field.message,
   });
 
-  await client.message.deleteMany({
+  const replyIds = message.replies.map((reply) => reply.id);
+
+  const globalMessage = await client.message.findFirst({
     where: {
-      id: { in: [message.replyTo.id] },
-      chat: {
-        id: chatId,
+      user: {
+        username: "DELETED USER",
       },
-      deletedAt: {
-        not: null,
-      },
+    },
+    select: {
+      pk: true,
+    },
+  });
+
+  await client.message.updateMany({
+    where: {
+      id: { in: replyIds },
+    },
+    data: {
+      replyToPk: globalMessage.pk,
     },
   });
 

@@ -346,7 +346,7 @@ const toMessage = (entity) => {
     deletedAt,
     replies: replies?.map?.(toMessage) ?? [],
     replyTo: toMessage(replyTo),
-    chatId: chat.id,
+    chatId: chat?.id,
     attachments: attachments?.map?.(toAttachment) ?? [],
   };
 };
