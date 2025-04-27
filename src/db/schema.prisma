@@ -112,53 +112,9 @@ model Permission {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime? @map("updated_at") @db.Timestamptz
 
-  permissionResource PermissionResource    @relation(fields: [resource], references: [name], onUpdate: Cascade)
-  permissionAction   PermissionAction      @relation(fields: [action], references: [name], onUpdate: Cascade) // 'view', 'create', 'update', 'delete'
   roles              Role[]                @relation("RolePermissions")
-  conditions         PermissionCondition[]
-  resource           String
-  action             String
 
   @@map("Permissions")
-}
-
-model PermissionResource {
-  pk        Int       @id @default(autoincrement())
-  id        String    @unique @default(uuid(7)) @db.Uuid
-  name      String    @unique @db.VarChar(255)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime? @map("updated_at") @db.Timestamptz
-
-  permissions Permission[]
-
-  @@map("PermissionResources")
-}
-
-model PermissionAction {
-  pk        Int       @id @default(autoincrement())
-  id        String    @unique @default(uuid(7)) @db.Uuid
-  name      String    @unique @db.VarChar(255)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime? @map("updated_at") @db.Timestamptz
-
-  permissions Permission[]
-
-  @@map("PermissionActions")
-}
-
-model PermissionCondition {
-  pk           Int       @id @default(autoincrement())
-  id           String    @unique @default(uuid(7)) @db.Uuid
-  permissionPk Int       @map("permsission_id") @db.Integer
-  field        String    @db.VarChar(255) // E.g., 'authorId' or 'mutedAt'
-  operator     String    @db.VarChar(100) // E.g., 'eq', 'gt', 'lt', not
-  value        String    @db.VarChar(255) // E.g., 'user102' or "mutedAt not null"
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime? @map("updated_at") @db.Timestamptz
-
-  permission Permission @relation(fields: [permissionPk], references: [pk], onDelete: Cascade)
-
-  @@map("PermissionConditions")
 }
 
 model User {
