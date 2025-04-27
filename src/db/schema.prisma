@@ -100,7 +100,7 @@ model Role {
   updatedAt DateTime? @map("updated_at") @db.Timestamptz
 
   chat        Chat         @relation(fields: [chatPk], references: [pk], onDelete: Cascade)
-  users       UserOnChat[] @relation("RoleToUserOnChat")
+  members     UserOnChat[] @relation("RoleToUserOnChat")
   permissions Permission[] @relation("RolePermissions")
   chatPk      Int          @map("chat_pk")
 
