@@ -95,6 +95,7 @@ model Role {
   id        String    @unique @default(uuid(7)) @db.Uuid
   name      String    @db.VarChar(255)
   roleLevel Int       @unique @map("role_level") @db.Integer
+  isDefaultRole Boolean @map("is_default_role")
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime? @map("updated_at") @db.Timestamptz
 
