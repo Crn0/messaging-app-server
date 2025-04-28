@@ -52,6 +52,16 @@ const createGetChatRoleById =
     return role;
   };
 
+const createGetChatDefaultRolesById =
+  ({ roleRepository, chatService }) =>
+  async (chatId) => {
+    await chatService.getChatById(chatId);
+
+    const roles = await roleRepository.findChatDefaultRolesById(chatId);
+
+    return roles;
+  };
+
 const createGetChatRolesById =
   ({ roleRepository, chatService }) =>
   async (chatId) => {
@@ -164,6 +174,7 @@ export default (dependencies) => {
   const createDefaultRole = createInsertDefaultRole(dependencies);
 
   const getChatRoleById = createGetChatRoleById(dependencies);
+  const getChatDefaultRolesById = createGetChatDefaultRolesById(dependencies);
   const getChatRolesById = createGetChatRolesById(dependencies);
 
   const updateChatRoleDisplay = createUpdateChatRoleDisplay(dependencies);
@@ -178,6 +189,7 @@ export default (dependencies) => {
     createRole,
     createDefaultRole,
     getChatRoleById,
+    getChatDefaultRolesById,
     getChatRolesById,
     updateChatRoleDisplay,
     updateChatRolePermissions,

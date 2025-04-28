@@ -190,6 +190,34 @@ describe("Role detail", () => {
     expect(roles[0]).not.toHaveProperty("pk");
     expect(roles).toEqual(toEqual);
   });
+
+  it("returns a list of default roles by chat ID", async () => {
+    const data = {
+      chatId,
+      permissionIds,
+      name: "default_role_with_permissions",
+      isDefaultRole: true,
+    };
+
+    const createdRole = await roleRepository.insert(data);
+
+    const roles = await roleRepository.findChatDefaultRolesById(chatId);
+
+    const toMatchObject = {
+      chatId,
+      name: "default_role_with_permissions",
+      roleLevel: null,
+      isDefaultRole: true,
+      createdAt: expect.any(Date),
+      updatedAt: null,
+      permissions: expect.any(Array),
+    };
+
+    expect(roles[0]).toMatchObject(toMatchObject);
+    expect(roles.every((role) => role.isDefaultRole === true)).toBeTruthy();
+
+    await client.role.delete({ where: { id: createdRole.id } });
+  });
 });
 
 describe("Role update", () => {

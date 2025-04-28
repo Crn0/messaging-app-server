@@ -30,6 +30,15 @@ const findChatRoleById = async (roleId, chatId) => {
   return toEntity(role);
 };
 
+const findChatDefaultRolesById = async (chatId) => {
+  const roles = await client.role.findMany({
+    where: { isDefaultRole: true, chat: { id: chatId } },
+    include: field.default,
+  });
+
+  return roles.map(toEntity);
+};
+
 const findChatRolesById = async (chatId) => {
   const roles = await client.role.findMany({
     orderBy: {
@@ -150,6 +159,7 @@ const deleteChatRoleById = async (roleId, chatId) => {
 export default {
   insert,
   findChatRoleById,
+  findChatDefaultRolesById,
   findChatRolesById,
   updateChatRoleDisplay,
   updateChatRolePermissions,
