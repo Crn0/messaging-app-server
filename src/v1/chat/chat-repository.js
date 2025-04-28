@@ -193,13 +193,13 @@ const findChatMemberById = async (chatId, userId) => {
   return members?.map?.((member) => toEntity("Member", member))[0] ?? null;
 };
 
-const findChats = async (type, filter) => {
+const findChats = async (filter) => {
   const chats = await client.chat.findMany({
     take: filter?.take,
     skip: filter?.skip,
     cursor: filter?.cursor,
     orderBy: filter?.orderBy,
-    where: { type, ...filter?.where },
+    where: { ...filter?.where },
     include: {
       ...field.default,
     },

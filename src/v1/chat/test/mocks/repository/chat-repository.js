@@ -152,9 +152,9 @@ const findChatMessageById = async (chatId, messageId) => {
   return message;
 };
 
-const findChats = async (type, filter) => {
+const findChats = async (filter) => {
   const chats = Array.from(db, ([_, value]) => ({ ...value }))
-    .filter((chat) => chat.type === type)
+    .filter((chat) => chat.type === filter.where.type)
     .sort((a, b) => {
       if (filter?.take > 0) return b - a;
 

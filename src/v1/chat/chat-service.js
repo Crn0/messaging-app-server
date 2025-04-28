@@ -381,9 +381,12 @@ const createGetPublicGroupChats =
       take,
       skip,
       cursor,
+      where: {
+        type: "GroupChat",
+      },
     };
 
-    const res = await chatRepository.findChats("GroupChat", filter);
+    const res = await chatRepository.findChats(filter);
 
     const chats =
       direction === "backward" ? res.slice(-pageSize) : res.slice(0, pageSize);
@@ -504,7 +507,7 @@ const createUpdateGroupChatNameById =
   };
 
 const createUpdateGroupChatAvatarById =
-  ({ chatRepository, roleService, storage }) =>
+  ({ chatRepository, storage }) =>
   async (DTO) => {
     const chatExist = await chatRepository.findChatById(DTO.chatId);
 
@@ -720,4 +723,13 @@ export default (dependencies) => {
     deleteGroupChatById,
     deleteMessageById,
   });
+};
+
+export {
+  createGetChatById,
+  createGetChatMemberById,
+  createGetChatMessageById,
+  createGetPublicGroupChats,
+  createGetChatMembersById,
+  createGetChatMessagesById,
 };

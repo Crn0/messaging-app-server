@@ -140,7 +140,7 @@ describe("Chat detail", () => {
       },
     };
 
-    const chats = await chatRepository.findChats(undefined, filter);
+    const chats = await chatRepository.findChats(filter);
 
     const toEqual = expect.arrayContaining([
       expect.objectContaining({
