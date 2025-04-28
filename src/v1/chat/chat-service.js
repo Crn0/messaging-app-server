@@ -406,6 +406,26 @@ const createGetPublicGroupChats =
     return { chats, nextHref, prevHref };
   };
 
+const createGetChatsByMemberId =
+  ({ chatRepository, userService }) =>
+  async (memberId) => {
+    await userService.getUserById(memberId);
+
+    const filter = {
+      where: {
+        members: {
+          user: {
+            id: memberId,
+          },
+        },
+      },
+    };
+
+    const chats = await chatRepository.findChats(filter);
+
+    return chats;
+  };
+
 const createGetChatMembersById =
   ({ chatRepository }) =>
   async (chatId, { before, after }) => {
@@ -692,6 +712,7 @@ export default (dependencies) => {
   const getMessageById = createGetChatMessageById(dependencies);
 
   const getPublicGroupChats = createGetPublicGroupChats(dependencies);
+  const getChatsByMemberId = createGetChatsByMemberId(dependencies);
   const getMembersById = createGetChatMembersById(dependencies);
   const getMessagesById = createGetChatMessagesById(dependencies);
 
@@ -715,6 +736,7 @@ export default (dependencies) => {
     getMemberById,
     getMessageById,
     getPublicGroupChats,
+    getChatsByMemberId,
     getMembersById,
     getMessagesById,
     updateGroupChatNameById,
