@@ -30,6 +30,12 @@ const userService = {
   },
 };
 
+const roleService = {
+  createDefaultRole: async () => {},
+  getChatDefaultRolesById: async () => {},
+  updateChatRoleMember: async () => {},
+};
+
 const storage = {
   upload: async () => avatar,
   destroyFolder: async () => {},
@@ -39,6 +45,7 @@ const storage = {
 const chatService = initChatService({
   chatRepository,
   userService,
+  roleService,
   storage,
   utils: { idGenerator },
 });

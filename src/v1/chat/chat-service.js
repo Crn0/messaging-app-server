@@ -26,7 +26,7 @@ const pagination = ({ before, after, pageSize }) => {
 };
 
 const createInsertDirectChat =
-  ({ chatRepository, userService }) =>
+  ({ chatRepository, userService, roleService }) =>
   async (DTO) => {
     await Promise.all([
       DTO.membersId.map(async (id) => userService.getUserById(id)),
@@ -37,11 +37,13 @@ const createInsertDirectChat =
       membersId: DTO.membersId,
     };
 
+    await roleService.createDefaultRole({ chatId: DTO?.chatId });
+
     return chatRepository.insertDirectChat(data);
   };
 
 const createInsertGroupChat =
-  ({ chatRepository, userService, utils, storage }) =>
+  ({ chatRepository, userService, roleService, utils, storage }) =>
   async (DTO) => {
     await userService.getUserById(DTO.ownerId);
 
@@ -106,11 +108,15 @@ const createInsertGroupChat =
       isPrivate: false,
     };
 
-    return chatRepository.insertGroupChat(data);
+    const chat = await chatRepository.insertGroupChat(data);
+
+    await roleService.createDefaultRole({ chatId });
+
+    return chat;
   };
 
 const createInsertMember =
-  ({ chatRepository, userService }) =>
+  ({ chatRepository, userService, roleService }) =>
   async (DTO) => {
     await userService.getUserById(DTO.memberId);
 
@@ -133,7 +139,34 @@ const createInsertMember =
       type: DTO.chatType,
     };
 
-    return chatRepository.insertMember(data);
+    const chat = await chatRepository.insertMember(data);
+
+    const defaultRoles = await roleService.getChatDefaultRolesById(DTO.chatId);
+
+    const defaultRolesId = defaultRoles?.map?.(({ id }) => id);
+
+    try {
+      if (defaultRolesId?.length > 0) {
+        await Promise.all(
+          defaultRolesId.map(async (roleId) =>
+            roleService.updateChatRoleMember({
+              roleId,
+              chatId: DTO.chatId,
+              memberId: DTO.memberId,
+            })
+          )
+        );
+      }
+    } catch (e) {
+      await chatRepository.revokeMembership({
+        chatId: chat.id,
+        memberId: DTO.memberId,
+      });
+
+      throw new APIError("Role assignment failed", httpStatus.INTERNAL_SERVER);
+    }
+
+    return chat;
   };
 
 const createInsertMessage =
@@ -471,7 +504,7 @@ const createUpdateGroupChatNameById =
   };
 
 const createUpdateGroupChatAvatarById =
-  ({ chatRepository, storage }) =>
+  ({ chatRepository, roleService, storage }) =>
   async (DTO) => {
     const chatExist = await chatRepository.findChatById(DTO.chatId);
 
