@@ -68,6 +68,37 @@ const updateChatRoleDisplay = async ({ roleId, chatId, name }) => {
   return toEntity(role);
 };
 
+const updateChatRoleMember = async ({ roleId, chatId, memberId }) => {
+  const userOnChat = await client.userOnChat.findFirst({
+    where: {
+      chat: {
+        id: chatId,
+      },
+      user: {
+        id: memberId,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const userOnChatId = userOnChat.id;
+
+  const data = toData("update:member", { memberId: userOnChatId });
+
+  const role = await client.role.update({
+    data,
+    where: {
+      id: roleId,
+      chat: { id: chatId },
+    },
+    include: field.default,
+  });
+
+  return toEntity(role);
+};
+
 const updateChatRolePermissions = async ({ roleId, chatId, permissionIds }) => {
   const data = toData("update:permissions", { permissionIds });
 
@@ -162,6 +193,7 @@ export default {
   findChatDefaultRolesById,
   findChatRolesById,
   updateChatRoleDisplay,
+  updateChatRoleMember,
   updateChatRolePermissions,
   updateChatRoleMembers,
   updateChatRolesRoleLevel,

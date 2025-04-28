@@ -291,6 +291,54 @@ describe("Role update", () => {
     await client.role.delete({ where: { id: updatedRole.id } });
   });
 
+  it("insert a member to role and return the updated object", async () => {
+    const role = await client.role.create({
+      data: {
+        name: "default_role",
+        roleLevel: null,
+        isDefaultRole: true,
+        chat: {
+          connect: {
+            id: chatId,
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const data = {
+      chatId,
+      roleId: role.id,
+      memberId: userId,
+    };
+
+    const updatedRole = await roleRepository.updateChatRoleMember(data);
+
+    const { members } = await client.role.findUnique({
+      where: { id: role.id },
+      select: { members: { select: { user: { select: { id: true } } } } },
+    });
+
+    const toMatchObject = {
+      chatId,
+      id: expect.any(String),
+      name: "default_role",
+      roleLevel: null,
+      isDefaultRole: true,
+      createdAt: expect.any(Date),
+      updatedAt: null,
+      permissions: expect.any(Array),
+    };
+
+    expect(updatedRole).not.toHaveProperty("pk");
+    expect(updatedRole).toMatchObject(toMatchObject);
+    expect(members[0].user.id).toBe(userId);
+
+    await client.role.delete({ where: { id: updatedRole.id } });
+  });
+
   it("updates the role's permissions and return the updated object", async () => {
     const role = await client.role.create({
       data: {

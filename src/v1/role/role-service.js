@@ -88,6 +88,25 @@ const createUpdateChatRoleDisplay =
     return role;
   };
 
+const createUpdateChatRoleMember =
+  ({ roleRepository, chatService, userService }) =>
+  async (DTO) => {
+    await Promise.all([
+      chatService.getChatById(DTO.chatId),
+      userService.getUserById(DTO.memberId),
+    ]);
+
+    const data = {
+      roleId: DTO.roleId,
+      chatId: DTO.chatId,
+      memberId: DTO.memberId,
+    };
+
+    const role = await roleRepository.updateChatRolePermissions(data);
+
+    return role;
+  };
+
 const createUpdateChatRolePermissions =
   ({ roleRepository, chatService }) =>
   async (DTO) => {
@@ -178,6 +197,7 @@ export default (dependencies) => {
   const getChatRolesById = createGetChatRolesById(dependencies);
 
   const updateChatRoleDisplay = createUpdateChatRoleDisplay(dependencies);
+  const updateChatRoleMember = createUpdateChatRoleMember(dependencies);
   const updateChatRolePermissions =
     createUpdateChatRolePermissions(dependencies);
   const updateChatRoleMembers = createUpdateChatRoleMembers(dependencies);
@@ -192,6 +212,7 @@ export default (dependencies) => {
     getChatDefaultRolesById,
     getChatRolesById,
     updateChatRoleDisplay,
+    updateChatRoleMember,
     updateChatRolePermissions,
     updateChatRoleMembers,
     updateChatRolesRoleLevel,

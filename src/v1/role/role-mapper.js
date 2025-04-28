@@ -2,6 +2,7 @@ const DATA_ACTIONS = {
   INSERT: "insert",
   UPDATE_DISPLAY: "update:display",
   UPDATE_PERMISSION: "update:permissions",
+  UPDATE_MEMBER: "update:member",
   UPDATE_MEMBERS: "update:members",
   UPDATE_ROLE_LEVEL: "update:roleLevel",
 };
@@ -33,6 +34,15 @@ const toData = (action, DTO) => {
         permissions: {
           set: [],
           connect: DTO.permissionIds.map((id) => ({ id })),
+        },
+      };
+    }
+    case DATA_ACTIONS.UPDATE_MEMBER: {
+      return {
+        members: {
+          connect: {
+            id: DTO.memberId,
+          },
         },
       };
     }
