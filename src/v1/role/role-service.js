@@ -137,7 +137,7 @@ const createUpdateChatRoleMembers =
       membersId: DTO.membersId,
     };
 
-    const role = await roleRepository.updateChatRolePermissions(data);
+    const role = await roleRepository.updateChatRoleMembers(data);
 
     return role;
   };
