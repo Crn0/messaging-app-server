@@ -462,8 +462,10 @@ const createGetChatsByMemberId =
     const filter = {
       where: {
         members: {
-          user: {
-            id: memberId,
+          every: {
+            user: {
+              id: memberId,
+            },
           },
         },
       },
