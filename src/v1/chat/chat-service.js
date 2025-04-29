@@ -28,9 +28,9 @@ const pagination = ({ before, after, pageSize }) => {
 const createInsertDirectChat =
   ({ chatRepository, userService, roleService }) =>
   async (DTO) => {
-    await Promise.all([
-      DTO.membersId.map(async (id) => userService.getUserById(id)),
-    ]);
+    await Promise.all(
+      DTO.membersId.map(async (id) => userService.getUserById(id))
+    );
 
     const data = {
       chatId: DTO?.chatId,
