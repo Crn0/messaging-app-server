@@ -338,6 +338,44 @@ const createGetChatById =
     return chat;
   };
 
+const createGetDirectChatByMembersId =
+  ({ chatRepository, userService }) =>
+  async (membersId) => {
+    await Promise.all(
+      membersId.map((memberId) => userService.getUserById(memberId))
+    );
+
+    const filter = {
+      where: {
+        type: "DirectChat",
+        members: {
+          every: {
+            user: {
+              id: {
+                in: membersId,
+              },
+            },
+          },
+        },
+      },
+      include: {
+        members: {
+          select: {
+            user: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const chats = await chatRepository.findChat(filter);
+
+    return chats;
+  };
+
 const createGetChatMemberById =
   ({ chatRepository, userService }) =>
   async (chatId, userId) => {
@@ -718,6 +756,7 @@ export default (dependencies) => {
   const sendReply = createInsertReply(dependencies);
 
   const getChatById = createGetChatById(dependencies);
+  const getDirectChatByMembersId = createGetDirectChatByMembersId(dependencies);
   const getMemberById = createGetChatMemberById(dependencies);
   const getMessageById = createGetChatMessageById(dependencies);
 
@@ -743,6 +782,7 @@ export default (dependencies) => {
     sendMessage,
     sendReply,
     getChatById,
+    getDirectChatByMembersId,
     getMemberById,
     getMessageById,
     getPublicGroupChats,
