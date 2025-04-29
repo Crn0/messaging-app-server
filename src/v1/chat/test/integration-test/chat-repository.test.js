@@ -114,6 +114,49 @@ describe("Chat creation", () => {
 });
 
 describe("Chat detail", () => {
+  it("returns chat based on the filter", async () => {
+    const filter = {
+      where: {
+        type: "DirectChat",
+        members: {
+          every: {
+            user: {
+              id: {
+                in: [user1Id, user2Id],
+              },
+            },
+          },
+        },
+      },
+      include: {
+        members: {
+          select: {
+            user: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const chat = await chatRepository.findChat(filter);
+
+    const toMatchObject = {
+      id: expect.any(String),
+      name: null,
+      avatar: null,
+      isPrivate: true,
+      createdAt: expect.any(Date),
+      updatedAt: null,
+      type: "DirectChat",
+      members: [user1Id, user2Id],
+    };
+
+    expect(chat).toMatchObject(toMatchObject);
+  });
+
   it("returns a list of chat", async () => {
     const chats = await chatRepository.findChats();
 

@@ -150,6 +150,19 @@ const insertReply = async ({
   return toEntity("Message", message);
 };
 
+const findChat = async (filter) => {
+  const chat = await client.chat.findFirst({
+    take: filter?.take,
+    skip: filter?.skip,
+    cursor: filter?.cursor,
+    orderBy: filter?.orderBy,
+    where: { ...filter?.where },
+    include: { ...field.default, ...filter.include },
+  });
+
+  return toEntity("Chat", chat);
+};
+
 const findChatById = async (id) => {
   const chat = await client.chat.findUnique({
     where: { id },
@@ -403,6 +416,7 @@ export default {
   insertMember,
   insertMessage,
   insertReply,
+  findChat,
   findChatById,
   findChatMessageById,
   findChatMemberById,
