@@ -37,9 +37,11 @@ const createInsertDirectChat =
       membersId: DTO.membersId,
     };
 
+    const chat = await chatRepository.insertDirectChat(data);
+
     await roleService.createDefaultRole({ chatId: DTO?.chatId });
 
-    return chatRepository.insertDirectChat(data);
+    return chat;
   };
 
 const createInsertGroupChat =
