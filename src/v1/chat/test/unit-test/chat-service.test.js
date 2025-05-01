@@ -34,6 +34,7 @@ const roleService = {
   createDefaultRole: async () => {},
   getChatDefaultRolesById: async () => {},
   updateChatRoleMember: async () => {},
+  updateChatRoleMembers: async () => {},
 };
 
 const storage = {
