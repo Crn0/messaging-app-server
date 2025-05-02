@@ -121,12 +121,12 @@ const createInsertGroupChat =
     const chat = await chatRepository.insertGroupChat(data);
 
     const defaultRole = await roleService.createDefaultRole({
-      chatId: DTO?.chatId,
+      chatId: chat.id,
     });
 
     await roleService.updateChatRoleMembers({
       roleId: defaultRole?.id,
-      chatId: DTO.chatId,
+      chatId: chat.id,
       membersId: [DTO.ownerId],
     });
 
