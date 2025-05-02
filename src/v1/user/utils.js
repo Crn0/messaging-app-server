@@ -1,11 +1,8 @@
-import { join } from "path";
 import { readdir, unlink } from "fs/promises";
 import { v7 as uuidv7 } from "uuid";
 import { faker } from "@faker-js/faker";
 
-const removeTempImages = async (dirname) => {
-  const path = join(dirname, "..", "temp", "images");
-
+const removeTempImages = async (path) => {
   const dir = await readdir(path);
 
   await Promise.all(

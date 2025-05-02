@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Router } from "express";
-import Debug from "./debug.js";
+import { join } from "path";
 import Storage from "../storage/index.js";
 import initMulter from "../lib/multer.js";
 import userRepository from "./user-repository.js";
@@ -36,7 +36,6 @@ import {
 } from "../middleware/index.js";
 import { obtuseEmail, verifyPassword, hashPassword } from "../helpers/index.js";
 import {
-  removeTempImages,
   idGenerator,
   buildIncludeQuery,
   normalizeInclude,
@@ -45,7 +44,7 @@ import {
 
 const dirname = import.meta?.dirname;
 
-const debug = Debug.extend("route");
+const uploadTempPath = join(dirname, "..", "..", "temp", "upload");
 
 const router = Router();
 
@@ -54,6 +53,7 @@ const router = Router();
  */
 
 const { multer, MulterError } = initMulter({
+  path: uploadTempPath,
   limits: {
     files: 2,
   },
@@ -297,21 +297,6 @@ router.delete(
   ZodparamValidator(schema.userIdParamSchema),
   userMiddleware.canUpdateProfile,
   userController.deleteBackgroundAvatar
-);
-
-process.stdin.resume();
-
-[`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `uncaughtException`, `SIGTERM`].map(
-  (eventType) =>
-    process.on(eventType, async () => {
-      try {
-        await removeTempImages(dirname);
-        return process.exit(0);
-      } catch (error) {
-        debug(error);
-        return process.exit(1);
-      }
-    })
 );
 
 export default router;
