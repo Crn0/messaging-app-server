@@ -376,6 +376,7 @@ const toChat = (entity) => {
     type,
     owner,
     members,
+    roles,
   } = entity;
 
   if (avatar) {
@@ -403,6 +404,10 @@ const toChat = (entity) => {
 
   if (members?.length) {
     data.members = members.map(({ user }) => user.id);
+  }
+
+  if (roles?.length) {
+    data.roles = roles;
   }
 
   return data;
