@@ -12,6 +12,21 @@ export default {
         images: { select: { url: true, format: true, size: true } },
       },
     },
+    roles: {
+      where: {
+        isDefaultRole: true,
+      },
+      select: {
+        name: true,
+        roleLevel: true,
+        isDefaultRole: true,
+        permissions: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    },
   },
 
   avatar: {
