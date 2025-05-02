@@ -1,6 +1,5 @@
 import multer, { MulterError } from "multer";
-import path from "path";
-import { fileURLToPath } from "url";
+import { extname } from "path";
 import * as crypto from "node:crypto";
 import ValidationError from "../../errors/validation-error.js";
 
@@ -27,11 +26,11 @@ const fileFilter = (fileTypes) => (req, file, cb) => {
   if (typeof fileTypes === "undefined") return cb(null, true);
 
   // Check ext
-  const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+  const ext = fileTypes.test(extname(file.originalname).toLowerCase());
   // Check mime
   const mimetype = fileTypes.test(file.mimetype);
 
-  if (mimetype && extname) {
+  if (mimetype && ext) {
     return cb(null, true);
   }
 
@@ -51,16 +50,8 @@ const fileFilter = (fileTypes) => (req, file, cb) => {
 };
 
 const storage = {
-  destination: (req, file, cb) => {
-    cb(
-      null,
-      path.join(
-        import.meta.dirname || path.dirname(fileURLToPath(import.meta.url)),
-        "..",
-        "temp",
-        "images"
-      )
-    );
+  destination: (path) => (req, file, cb) => {
+    cb(null, path);
   },
   filename: (req, file, cb) => {
     const name = `${file.fieldname}-${crypto.randomBytes(10).toString("hex")}${fileExtension(file.mimetype)}`;
@@ -68,10 +59,13 @@ const storage = {
   },
 };
 
-export default ({ limits, fileTypes }) => ({
+export default ({ path, limits, fileTypes }) => ({
   multer: multer({
     limits,
-    storage: multer.diskStorage(storage),
+    storage: multer.diskStorage({
+      ...storage,
+      destination: storage.destination(path),
+    }),
     fileFilter: fileFilter(fileTypes),
   }),
   MulterError,
