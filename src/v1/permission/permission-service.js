@@ -121,3 +121,10 @@ export default (dependencies) => {
     deletePermissionByName,
   });
 };
+
+export {
+  createGetPermissionById,
+  createGetPermissionByName,
+  createGetPermissions,
+  createGetDefaultPermissions,
+};
