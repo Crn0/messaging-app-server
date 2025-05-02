@@ -157,6 +157,23 @@ describe("Chat detail", () => {
     expect(chat).toMatchObject(toMatchObject);
   });
 
+  it("returns a list of chat by member ID", async () => {
+    const chats = await chatRepository.findChatsByMemberId(user1Id);
+
+    const toEqual = expect.arrayContaining([
+      expect.objectContaining({
+        id: directChatId,
+        type: "DirectChat",
+      }),
+      expect.objectContaining({
+        id: groupChatId,
+        type: "GroupChat",
+      }),
+    ]);
+
+    expect(chats).toEqual(toEqual);
+  });
+
   it("returns a list of chat", async () => {
     const chats = await chatRepository.findChats();
 
