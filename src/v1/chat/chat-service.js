@@ -467,19 +467,7 @@ const createGetChatsByMemberId =
   async (memberId) => {
     await userService.getUserById(memberId);
 
-    const filter = {
-      where: {
-        members: {
-          every: {
-            user: {
-              id: memberId,
-            },
-          },
-        },
-      },
-    };
-
-    const chats = await chatRepository.findChats(filter);
+    const chats = await chatRepository.findChatsByMemberId(memberId);
 
     return chats;
   };

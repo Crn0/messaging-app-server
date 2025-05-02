@@ -221,7 +221,28 @@ const findChats = async (filter) => {
   return chats?.map?.((chat) => toEntity("Chat", chat));
 };
 
+const findChatsByMemberId = async (memberId) => {
+  const userOnChats = await client.userOnChat.findMany({
+    where: {
+      user: {
+        id: memberId,
+      },
+    },
+    select: {
+      chat: {
+        include: field.default,
+      },
+    },
+  });
+
+  return userOnChats?.map?.(({ chat }) => toEntity("Chat", chat));
+};
+
 const findChatMembersById = async (id, filter) => {
+  /**
+   * TODO: update this and findChatMembersById
+   * to get the members of chat in the include field instead of the userOnChat
+   */
   const filterRef = filter;
 
   const userOnChats = await client.userOnChat.findMany({
@@ -421,6 +442,7 @@ export default {
   findChatMessageById,
   findChatMemberById,
   findChats,
+  findChatsByMemberId,
   findChatMembersById,
   findChatMessagesById,
   updateChatNameById,
