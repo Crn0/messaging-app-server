@@ -304,13 +304,8 @@ describe("Chat update", () => {
     const chat = await chatRepository.updateChatAvatar(data);
 
     const toMatchObject = {
-      id,
-      name,
       url,
-      size,
       images,
-      type: "Image",
-      updatedAt: expect.any(Date),
     };
 
     expect(chat.updatedAt).toBeInstanceOf(Date);

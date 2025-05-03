@@ -323,9 +323,7 @@ const updateChatAvatar = async ({ chatId, attachment, type }) => {
     where: {
       id: chatId,
     },
-    include: {
-      avatar: field.avatar,
-    },
+    include: field.default,
   });
 
   return toEntity("Chat", chat);
