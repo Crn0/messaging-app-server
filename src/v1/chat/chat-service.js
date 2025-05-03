@@ -565,6 +565,7 @@ const createUpdateGroupChatNameById =
     const data = {
       chatId: DTO.chatId,
       name: DTO.name,
+      type: "GroupChat",
     };
 
     const chat = await chatRepository.updateChatNameById(data);
