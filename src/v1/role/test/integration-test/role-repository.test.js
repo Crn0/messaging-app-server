@@ -124,6 +124,20 @@ describe("Role detail", () => {
   let roleId;
 
   beforeAll(async () => {
+    const userOnChat = await client.userOnChat.findFirst({
+      where: {
+        chat: {
+          id: chatId,
+        },
+        user: {
+          id: userId,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
     const roles = await Promise.all(
       Array.from({ length: 10 }, (_, i) => i).map(async (val) =>
         client.role.create({
@@ -134,6 +148,11 @@ describe("Role detail", () => {
             chat: {
               connect: {
                 id: chatId,
+              },
+            },
+            members: {
+              connect: {
+                id: userOnChat.id,
               },
             },
           },
@@ -217,6 +236,20 @@ describe("Role detail", () => {
     expect(roles.every((role) => role.isDefaultRole === true)).toBeTruthy();
 
     await client.role.delete({ where: { id: createdRole.id } });
+  });
+
+  it("returns a list of roles by chat and user ID", async () => {
+    const roles = await roleRepository.findUserRolesById(chatId, userId);
+
+    const toEqual = expect.arrayContaining(
+      Array.from({ length: 10 }, (_, i) => i).map((val) =>
+        expect.objectContaining({
+          name: `test_role_${val + 1}`,
+        })
+      )
+    );
+
+    expect(roles).toEqual(toEqual);
   });
 });
 
