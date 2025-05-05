@@ -675,7 +675,7 @@ const createDeleteGroupChatById =
     }
 
     const chatAvatarPath = `${env.CLOUDINARY_ROOT_NAME}/avatars/${id}`;
-    const messageAssetPath = `${env.CLOUDINARY_ROOT_NAME}/avatars/${id}`;
+    const messageAssetPath = `${env.CLOUDINARY_ROOT_NAME}/messages/${id}`;
 
     await Promise.all([
       storage.destroyFolder(chatAvatarPath),
