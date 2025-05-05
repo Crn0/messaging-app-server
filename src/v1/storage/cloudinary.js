@@ -57,9 +57,9 @@ const update = async (path, publicId, eagerOptions) => {
 };
 
 const destroyFolder = async (path) => {
-  await cloudinary.api.delete_resources_by_prefix(path);
-
   try {
+    await cloudinary.api.delete_resources_by_prefix(path);
+
     const res = await cloudinary.api.delete_folder(path);
     return res;
   } catch (e) {
