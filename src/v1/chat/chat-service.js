@@ -1,6 +1,7 @@
 import Debug from "./debug.js";
 import { env, httpStatus } from "../../constants/index.js";
 import APIError from "../../errors/api-error.js";
+import StorageError from "../../errors/storage-error.js";
 
 const debug = Debug.extend("service");
 
@@ -676,6 +677,19 @@ const createDeleteGroupChatById =
 
     const chatAvatarPath = `${env.CLOUDINARY_ROOT_NAME}/avatars/${id}`;
     const messageAssetPath = `${env.CLOUDINARY_ROOT_NAME}/messages/${id}`;
+
+    try {
+      const res = await Promise.all([
+        storage.destroyFolder(chatAvatarPath),
+        storage.destroyFolder(messageAssetPath),
+      ]);
+
+      debug("Successfully deleted assets", res);
+    } catch (e) {
+      if (e instanceof StorageError && e.httpCode !== 404) throw e;
+
+      debug("Error deleting assets", e);
+    }
 
     await Promise.all([
       storage.destroyFolder(chatAvatarPath),
