@@ -33,7 +33,10 @@ const upload = async (
       invalidate: true,
     });
   } catch (e) {
-    throw new StorageError(e.message, e.http_code);
+    throw new StorageError(
+      e.message ?? e.error.message,
+      e.http_code ?? e.error.http_code
+    );
   }
 };
 
@@ -46,14 +49,25 @@ const update = async (path, publicId, eagerOptions) => {
       invalidate: true,
     });
   } catch (e) {
-    throw new StorageError(e.message, e.http_code);
+    throw new StorageError(
+      e.message ?? e.error.message,
+      e.http_code ?? e.error.http_code
+    );
   }
 };
 
 const destroyFolder = async (path) => {
   await cloudinary.api.delete_resources_by_prefix(path);
 
-  return cloudinary.api.delete_folder(path);
+  try {
+    const res = await cloudinary.api.delete_folder(path);
+    return res;
+  } catch (e) {
+    throw new StorageError(
+      e.message ?? e.error.message,
+      e.http_code ?? e.error.http_code
+    );
+  }
 };
 
 const destroyFile = async (publicId, resourceType) => {
@@ -67,7 +81,10 @@ const destroyFile = async (publicId, resourceType) => {
 
     return res;
   } catch (e) {
-    throw new StorageError(e.message, e.http_code);
+    throw new StorageError(
+      e.message ?? e.error.message,
+      e.http_code ?? e.error.http_code
+    );
   }
 };
 
