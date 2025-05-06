@@ -71,6 +71,7 @@ describe("Chat creation", () => {
     };
 
     expect(chat).toMatchObject(toMatchObject);
+    expect(chat.isPrivate).toBeTruthy();
   });
 
   it("create a group-chat", async () => {
