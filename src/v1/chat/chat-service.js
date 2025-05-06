@@ -155,7 +155,7 @@ const createInsertMember =
     const data = {
       chatId: DTO.chatId,
       memberId: DTO.memberId,
-      type: DTO.chatType,
+      type: "GroupChat",
     };
 
     const chat = await chatRepository.insertMember(data);
