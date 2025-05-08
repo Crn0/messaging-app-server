@@ -5,9 +5,9 @@ import StorageError from "../../errors/storage-error.js";
 
 const debug = Debug.extend("service");
 
-const CHATS_PAGE_SIZE = 10;
-const MESSAGES_PAGE_SIZE = 25;
-const MEMBERS_PAGE_SIZE = 1000;
+const CHATS_PAGE_SIZE = env.NODE_ENV === "test" ? 2 : 10;
+const MESSAGES_PAGE_SIZE = env.NODE_ENV === "test" ? 1 : 25;
+const MEMBERS_PAGE_SIZE = env.NODE_ENV === "test" ? 1 : 100;
 
 const pagination = ({ before, after, pageSize }) => {
   const cursor = before ?? after;
@@ -426,7 +426,7 @@ const createGetChatMessageById =
 const createGetPublicGroupChats =
   ({ chatRepository }) =>
   async ({ before, after }) => {
-    const pageSize = env.NODE_ENV === "test" ? 2 : CHATS_PAGE_SIZE;
+    const pageSize = CHATS_PAGE_SIZE;
 
     const { cursor, take, skip, direction } = pagination({
       before,
@@ -476,7 +476,7 @@ const createGetChatsByMemberId =
 const createGetChatMembersById =
   ({ chatRepository }) =>
   async (chatId, { before, after }) => {
-    const pageSize = env.NODE_ENV === "test" ? 1 : MEMBERS_PAGE_SIZE;
+    const pageSize = MEMBERS_PAGE_SIZE;
 
     const { cursor, take, skip, direction } = pagination({
       before,
@@ -513,7 +513,7 @@ const createGetChatMembersById =
 const createGetChatMessagesById =
   ({ chatRepository }) =>
   async (chatId, { before, after }) => {
-    const pageSize = env.NODE_ENV === "test" ? 1 : MESSAGES_PAGE_SIZE;
+    const pageSize = MESSAGES_PAGE_SIZE;
 
     const { cursor, take, skip, direction } = pagination({
       before,
