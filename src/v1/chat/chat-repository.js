@@ -239,10 +239,6 @@ const findChatsByMemberId = async (memberId) => {
 };
 
 const findChatMembersById = async (id, filter) => {
-  /**
-   * TODO: update this and findChatMembersById
-   * to get the members of chat in the include field instead of the userOnChat
-   */
   const filterRef = filter;
 
   const userOnChats = await client.userOnChat.findMany({
