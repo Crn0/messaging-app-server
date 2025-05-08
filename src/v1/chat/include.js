@@ -138,5 +138,10 @@ export default {
         },
       },
     },
+    roles: {
+      select: {
+        id: true,
+      },
+    },
   },
 };

@@ -352,13 +352,14 @@ const toMessage = (entity) => {
 };
 
 const toMember = (entity) => {
-  const { user, mutedUntil, joinedAt } = entity;
+  const { user, mutedUntil, joinedAt, roles } = entity;
 
   return {
     ...user,
     serverProfile: {
       mutedUntil,
       joinedAt,
+      roles,
     },
   };
 };
