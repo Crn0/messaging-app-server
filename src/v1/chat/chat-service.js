@@ -386,10 +386,8 @@ const createGetDirectChatByMembersId =
   };
 
 const createGetChatMemberById =
-  ({ chatRepository, userService }) =>
+  ({ chatRepository }) =>
   async (chatId, userId) => {
-    await userService.getUserById(userId);
-
     const chatExist = await chatRepository.findChatById(chatId);
 
     if (!chatExist) {
@@ -706,9 +704,13 @@ const createDeleteGroupChatById =
   };
 
 const createRevokeGroupChatMembership =
-  ({ chatRepository, userService }) =>
+  ({ chatRepository }) =>
   async (chatId, memberId) => {
-    await userService.getUserById(memberId);
+    const member = await chatRepository.findChatMemberById(chatId, memberId);
+
+    if (!member) {
+      throw new APIError("Member not found", httpStatus.NOT_FOUND);
+    }
 
     const chatExist = await chatRepository.findChatById(chatId);
 
