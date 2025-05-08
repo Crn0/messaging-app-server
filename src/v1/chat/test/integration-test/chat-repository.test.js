@@ -393,6 +393,7 @@ describe("Member detail", () => {
         serverProfile: {
           joinedAt: expect.any(Date),
           mutedUntil: null,
+          roles: [],
         },
       }),
       expect.objectContaining({
@@ -400,6 +401,7 @@ describe("Member detail", () => {
         serverProfile: {
           joinedAt: expect.any(Date),
           mutedUntil: null,
+          roles: [],
         },
       }),
     ]);
