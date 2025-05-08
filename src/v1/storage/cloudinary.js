@@ -9,6 +9,8 @@ const url = (publicId, transformation) =>
     transformation,
   });
 
+const usage = async () => cloudinary.api.usage();
+
 const upload = async (
   folder,
   path,
@@ -88,4 +90,4 @@ const destroyFile = async (publicId, resourceType) => {
   }
 };
 
-export default { url, upload, update, destroyFile, destroyFolder };
+export default { url, usage, upload, update, destroyFile, destroyFolder };
