@@ -259,21 +259,12 @@ const findChatMembersById = async (id, filter) => {
     },
   });
 
-  const cursorId = userOnChats?.reduce?.((prev, next, i, arr) => {
-    const { user } = prev;
+  const cursorItem = userOnChats?.find?.(
+    ({ user }) => user.id === filter?.cursor?.id
+  );
 
-    if (user.id === filter?.cursor?.id) {
-      return prev.id;
-    }
-    if (user.id !== filter?.cursor?.id && i === arr.length - 1) {
-      return undefined;
-    }
-
-    return next;
-  });
-
-  if (cursorId) {
-    filterRef.cursor.id = cursorId;
+  if (cursorItem) {
+    filterRef.cursor.id = cursorItem.id;
   }
 
   const members = await client.userOnChat.findMany({
