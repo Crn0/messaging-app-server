@@ -344,7 +344,7 @@ describe("Chat deletion", () => {
   });
 });
 
-describe("Membership creation", () => {
+describe("Member creation", () => {
   it("creates a relation between the chat and user", async () => {
     const data = { chatId: groupChatId, memberId: user2Id, type: "GroupChat" };
 
@@ -362,7 +362,7 @@ describe("Membership creation", () => {
   });
 });
 
-describe("Membership detail", () => {
+describe("Member detail", () => {
   it("returns a member by user and chat ID", async () => {
     const member = await chatRepository.findChatMemberById(
       groupChatId,
@@ -460,7 +460,7 @@ describe("Membership detail", () => {
   });
 });
 
-describe("Revoke membership", () => {
+describe("Member deletion", () => {
   it("returns the updated chat object", async () => {
     const data = { chatId: groupChatId, memberId: user2Id, type: "GroupChat" };
 
