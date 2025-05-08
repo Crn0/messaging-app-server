@@ -335,6 +335,37 @@ const updateMessageDeletedAt = async ({ chatId, messageId, content }) => {
   return toEntity("Message", message);
 };
 
+const updateMembermutedUntil = async (
+  chatId,
+  { memberId, mutedUntil, chatType }
+) => {
+  const userOnChat = await client.userOnChat.findFirst({
+    where: {
+      chat: { id: chatId },
+      user: { id: memberId },
+    },
+    select: { id: true },
+  });
+
+  const userOnChatId = userOnChat.id;
+
+  const data = toData("update:member:mutedUntil", {
+    userOnChatId,
+    mutedUntil,
+    type: chatType,
+  });
+
+  const member = await client.userOnChat.update({
+    data,
+    where: {
+      id: userOnChatId,
+    },
+    include: field.userOnChat,
+  });
+
+  return toEntity("Member", member);
+};
+
 const deleteChatById = async (id) => {
   const chat = await client.chat.delete({
     where: { id },
@@ -433,6 +464,7 @@ export default {
   updateChatNameById,
   updateChatAvatar,
   updateMessageDeletedAt,
+  updateMembermutedUntil,
   deleteChatById,
   revokeMembership,
   deleteMessageById,

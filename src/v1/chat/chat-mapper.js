@@ -12,6 +12,7 @@ const ENTITY_TYPES = {
 const DIRECT_CHAT_ACTIONS = {
   INSERT: "insert",
   UPDATE_MEMBER: "update:member",
+  UPDATE_MEMBER_MUTED_UNTIL: "update:member:mutedUntil",
 };
 
 const GROUP_CHAT_ACTIONS = {
@@ -19,6 +20,7 @@ const GROUP_CHAT_ACTIONS = {
   UPDATE_NAME: "update:name",
   UPSERT_AVATAR: "upsert:avatar",
   UPDATE_MEMBER: "update:member",
+  UPDATE_MEMBER_MUTED_UNTIL: "update:member:mutedUntil",
   DELETE_MEMBER: "delete:member",
 };
 
@@ -50,6 +52,12 @@ const directChatData = (action, DTO) => {
             user: { connect: { id: DTO.memberId } },
           },
         },
+      };
+    }
+    case DIRECT_CHAT_ACTIONS.UPDATE_MEMBER_MUTED_UNTIL: {
+      return {
+        id: DTO.userOnChatId,
+        mutedUntil: DTO.mutedUntil,
       };
     }
     default: {
@@ -145,6 +153,12 @@ const groupChatData = (action, DTO) => {
             },
           },
         },
+      };
+    }
+    case GROUP_CHAT_ACTIONS.UPDATE_MEMBER_MUTED_UNTIL: {
+      return {
+        id: DTO.userOnChatId,
+        mutedUntil: DTO.mutedUntil,
       };
     }
     case GROUP_CHAT_ACTIONS.DELETE_MEMBER:

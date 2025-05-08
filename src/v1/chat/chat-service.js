@@ -3,6 +3,21 @@ import { env, httpStatus } from "../../constants/index.js";
 import APIError from "../../errors/api-error.js";
 import StorageError from "../../errors/storage-error.js";
 
+/**
+ * TODO:
+ * Validate the pagination cursor before using it in queries.
+ *
+ * Example:
+ * const { cursor, take, skip, direction } = pagination({ before, after, pageSize });
+ *
+ * if (cursor) {
+ *   const cursorItem = await client.chat.findUnique({ where: { id: cursor.id } });
+ *   if (!cursorItem) throw BadRequestError;
+ * }
+ *
+ * Ensures that invalid or stale cursors don't break pagination behavior.
+ */
+
 const debug = Debug.extend("service");
 
 const CHATS_PAGE_SIZE = env.NODE_ENV === "test" ? 2 : 10;
@@ -657,6 +672,33 @@ const createUpdateGroupChatAvatarById =
     return chatRepository.updateChatAvatar(data);
   };
 
+const createUpdateMemberMutedUntil =
+  ({ chatRepository }) =>
+  async (chatId, DTO) => {
+    const chatExist = await chatRepository.findChatById(chatId);
+
+    if (!chatExist) {
+      throw new APIError("Chat not found", httpStatus.NOT_FOUND);
+    }
+
+    const member = await chatRepository.findChatMemberById(
+      chatId,
+      DTO.memberId
+    );
+
+    if (!member) {
+      throw new APIError("Member not found", httpStatus.NOT_FOUND);
+    }
+
+    const data = {
+      memberId: DTO.memberId,
+      mutedUntil: DTO.mutedUntil,
+      chatType: chatExist.type,
+    };
+
+    return chatRepository.updateMembermutedUntil(chatId, data);
+  };
+
 const createDeleteGroupChatById =
   ({ chatRepository, storage }) =>
   async (id) => {
@@ -784,6 +826,8 @@ export default (dependencies) => {
   const updateGroupChatAvatarById =
     createUpdateGroupChatAvatarById(dependencies);
 
+  const updateMemberMutedUntil = createUpdateMemberMutedUntil(dependencies);
+
   const revokeGroupChatMembership =
     createRevokeGroupChatMembership(dependencies);
 
@@ -806,6 +850,7 @@ export default (dependencies) => {
     getMessagesById,
     updateGroupChatNameById,
     updateGroupChatAvatarById,
+    updateMemberMutedUntil,
     revokeGroupChatMembership,
     deleteGroupChatById,
     deleteMessageById,

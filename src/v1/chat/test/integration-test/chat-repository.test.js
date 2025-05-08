@@ -462,6 +462,38 @@ describe("Member detail", () => {
   });
 });
 
+describe("Member update", () => {
+  it("updates the member's mutedUntil field and returns the member object", async () => {
+    const form = {
+      memberId: user1Id,
+      mutedUntil: new Date(),
+      chatType: "GroupChat",
+    };
+
+    const member = await chatRepository.updateMembermutedUntil(
+      groupChatId,
+      form
+    );
+
+    const toMatchObject = {
+      id: user1Id,
+      username: user1Data.username,
+      accountLevel: user1Data.accountLevel,
+      createdAt: user1Data.createdAt,
+      profile: {
+        displayName: user1Data.displayName,
+        avatar: null,
+      },
+      serverProfile: {
+        mutedUntil: form.mutedUntil,
+        joinedAt: expect.any(Date),
+      },
+    };
+
+    expect(member).toMatchObject(toMatchObject);
+  });
+});
+
 describe("Member deletion", () => {
   it("returns the updated chat object", async () => {
     const data = { chatId: groupChatId, memberId: user2Id, type: "GroupChat" };
