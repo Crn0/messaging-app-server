@@ -2,6 +2,14 @@ import { ZodError } from "zod";
 import ValidationError from "../../errors/validation-error.js";
 
 const ZodbodyValidator = (schema) => (req, res, next) => {
+  if (req.file) {
+    req.body.avatar = req.file;
+  }
+
+  if (req.files) {
+    req.body.attachments = req.files;
+  }
+
   try {
     req.body = schema.parse(req.body);
 
