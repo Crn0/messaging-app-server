@@ -52,23 +52,21 @@ const findChatRolesById = async (chatId) => {
 };
 
 const findUserRolesById = async (chatId, userId) => {
-  const roles = await client.role.findMany({
+  const user = await client.userOnChat.findFirst({
     where: {
       chat: {
         id: chatId,
       },
-      members: {
-        every: {
-          user: {
-            id: userId,
-          },
-        },
+      user: {
+        id: userId,
       },
     },
-    include: field.default,
+    select: {
+      roles: field.roles,
+    },
   });
 
-  return roles.map(toEntity);
+  return user?.roles?.map?.(toEntity) ?? [];
 };
 
 const updateChatRoleDisplay = async ({ roleId, chatId, name }) => {
