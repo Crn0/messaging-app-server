@@ -748,16 +748,16 @@ const createDeleteGroupChatById =
 const createRevokeGroupChatMembership =
   ({ chatRepository }) =>
   async (chatId, memberId) => {
-    const member = await chatRepository.findChatMemberById(chatId, memberId);
-
-    if (!member) {
-      throw new APIError("Member not found", httpStatus.NOT_FOUND);
-    }
-
     const chatExist = await chatRepository.findChatById(chatId);
 
     if (!chatExist) {
       throw new APIError("Chat not found", httpStatus.NOT_FOUND);
+    }
+
+    const member = await chatRepository.findChatMemberById(chatId, memberId);
+
+    if (!member) {
+      throw new APIError("Member not found", httpStatus.NOT_FOUND);
     }
 
     if (chatExist.type === "DirectChat") {
