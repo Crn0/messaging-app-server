@@ -56,7 +56,6 @@ const directChatData = (action, DTO) => {
     }
     case DIRECT_CHAT_ACTIONS.UPDATE_MEMBER_MUTED_UNTIL: {
       return {
-        id: DTO.userOnChatId,
         mutedUntil: DTO.mutedUntil,
       };
     }
@@ -157,7 +156,6 @@ const groupChatData = (action, DTO) => {
     }
     case GROUP_CHAT_ACTIONS.UPDATE_MEMBER_MUTED_UNTIL: {
       return {
-        id: DTO.userOnChatId,
         mutedUntil: DTO.mutedUntil,
       };
     }

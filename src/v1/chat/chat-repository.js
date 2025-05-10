@@ -350,7 +350,6 @@ const updateMembermutedUntil = async (
   const userOnChatId = userOnChat.id;
 
   const data = toData("update:member:mutedUntil", {
-    userOnChatId,
     mutedUntil,
     type: chatType,
   });
