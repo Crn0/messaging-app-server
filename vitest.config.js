@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.js"],
     clearMocks: true,
-    threads: false,
+    threads: true,
+    testTimeout: 10_000,
   },
 });
