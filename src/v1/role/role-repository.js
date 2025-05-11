@@ -83,7 +83,7 @@ const updateChatRoleMetaData = async (roleId, { name, permissionIds }) => {
   return toEntity(role);
 };
 
-const updateChatRoleMember = async ({ roleId, chatId, memberId }) => {
+const updateChatRoleMember = async (roleId, chatId, { memberId }) => {
   const userOnChat = await client.userOnChat.findFirst({
     where: {
       chat: {
@@ -113,7 +113,7 @@ const updateChatRoleMember = async ({ roleId, chatId, memberId }) => {
   return toEntity(role);
 };
 
-const updateChatRoleMembers = async ({ roleId, chatId, membersId }) => {
+const updateChatRoleMembers = async (roleId, chatId, { membersId }) => {
   const userOnChats = await client.userOnChat.findMany({
     where: {
       chat: {
@@ -143,7 +143,7 @@ const updateChatRoleMembers = async ({ roleId, chatId, membersId }) => {
   return toEntity(role);
 };
 
-const updateChatRolesRoleLevel = async ({ chatId, rolesId }) => {
+const updateChatRolesRoleLevel = async (chatId, { rolesId }) => {
   await client.role.updateMany({
     where: {
       chat: { id: chatId },
