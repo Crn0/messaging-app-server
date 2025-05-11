@@ -91,7 +91,7 @@ const createGetUserRolesById =
     return roles;
   };
 
-const createUpdateRoleMetaData =
+const createUpdateChatRoleMetaData =
   ({ roleRepository, chatService }) =>
   async (roleId, chatId, DTO) => {
     await chatService.getChatById(chatId);
@@ -111,51 +111,55 @@ const createUpdateRoleMetaData =
   };
 
 const createUpdateChatRoleMember =
-  ({ roleRepository, chatService, userService }) =>
-  async (DTO) => {
-    await Promise.all([
-      chatService.getChatById(DTO.chatId),
-      userService.getUserById(DTO.memberId),
-    ]);
+  ({ roleRepository, chatService }) =>
+  async (roleId, chatId, DTO) => {
+    await chatService.getMemberById(chatId, DTO.memberId);
+
+    const roleExist = await roleRepository.findChatRoleById(roleId, chatId);
+
+    if (!roleExist) throw new APIError("Role not found", httpStatus.NOT_FOUND);
 
     const data = {
-      roleId: DTO.roleId,
-      chatId: DTO.chatId,
       memberId: DTO.memberId,
     };
 
-    const role = await roleRepository.updateChatRoleMember(data);
+    const role = await roleRepository.updateChatRoleMember(
+      roleId,
+      chatId,
+      data
+    );
 
     return role;
   };
 
 const createUpdateChatRoleMembers =
-  ({ roleRepository, chatService, userService }) =>
-  async (DTO) => {
-    await Promise.all([
-      chatService.getChatById(DTO.chatId),
-      Promise.all(DTO.membersId.map((id) => userService.getUserById(id))),
-    ]);
+  ({ roleRepository, chatService }) =>
+  async (roleId, chatId, DTO) => {
+    await Promise.all(
+      DTO.membersId.map((id) => chatService.getMemberById(chatId, id))
+    );
 
     const data = {
-      roleId: DTO.roleId,
-      chatId: DTO.chatId,
       membersId: DTO.membersId,
     };
 
-    const role = await roleRepository.updateChatRoleMembers(data);
+    const role = await roleRepository.updateChatRoleMembers(
+      roleId,
+      chatId,
+      data
+    );
 
     return role;
   };
 
 const createUpdateChatRolesRoleLevel =
   ({ roleRepository, chatService }) =>
-  async (DTO) => {
+  async (chatId, DTO) => {
     const [_, roleList] = await Promise.all([
-      chatService.getChatById(DTO.chatId),
+      chatService.getChatById(chatId),
       Promise.all(
         DTO.rolesId.map((roleId) =>
-          roleRepository.findChatRoleById(roleId, DTO.chatId)
+          roleRepository.findChatRoleById(roleId, chatId)
         )
       ),
     ]);
@@ -169,12 +173,10 @@ const createUpdateChatRolesRoleLevel =
       );
     }
     const data = {
-      roleId: DTO.roleId,
-      chatId: DTO.chatId,
-      membersId: DTO.membersId,
+      rolesId: DTO.rolesId,
     };
 
-    const role = await roleRepository.updateChatRolePermissions(data);
+    const role = await roleRepository.updateChatRolesRoleLevel(chatId, data);
 
     return role;
   };
@@ -203,7 +205,7 @@ export default (dependencies) => {
   const getChatRolesById = createGetChatRolesById(dependencies);
   const getUserRolesById = createGetUserRolesById(dependencies);
 
-  const updateRoleMetaData = createUpdateRoleMetaData(dependencies);
+  const updateChatRoleMetaData = createUpdateChatRoleMetaData(dependencies);
   const updateChatRoleMember = createUpdateChatRoleMember(dependencies);
   const updateChatRoleMembers = createUpdateChatRoleMembers(dependencies);
   const updateChatRolesRoleLevel = createUpdateChatRolesRoleLevel(dependencies);
@@ -217,7 +219,7 @@ export default (dependencies) => {
     getChatDefaultRolesById,
     getChatRolesById,
     getUserRolesById,
-    updateRoleMetaData,
+    updateChatRoleMetaData,
     updateChatRoleMember,
     updateChatRoleMembers,
     updateChatRolesRoleLevel,
