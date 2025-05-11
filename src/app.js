@@ -9,6 +9,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { httpStatus } from "./constants/index.js";
 import configs from "./configs/index.js";
+import routes from "./routes/index.js";
 import ErrorHandler from "./errors/error-handler.js";
 
 const app = express();
@@ -27,6 +28,7 @@ app.use(compression());
 app.use(express.static(join(__dirname, "..", "public")));
 
 // ROUTES
+app.use(routes.V1);
 
 // error handler
 app.use((err, req, res, _) => {
