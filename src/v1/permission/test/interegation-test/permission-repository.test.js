@@ -59,7 +59,7 @@ describe("Permission detail", () => {
 
     const toMatchObject = {
       id: expect.any(String),
-      name: "manage_roles",
+      name: "test_manage_role",
       createdAt: expect.any(Date),
       updatedAt: null,
     };
@@ -70,11 +70,11 @@ describe("Permission detail", () => {
 
   it("returns the permission object by name", async () => {
     const permission =
-      await permissionRepository.findPermissionByName("manage_chat");
+      await permissionRepository.findPermissionByName("test_manage_chat");
 
     const toMatchObject = {
       id: expect.any(String),
-      name: "manage_chat",
+      name: "test_manage_chat",
       createdAt: expect.any(Date),
       updatedAt: null,
     };
@@ -84,8 +84,9 @@ describe("Permission detail", () => {
   });
 
   it("returns a list of permission object", async () => {
-    const permissions =
-      await permissionRepository.findPermissions("manage_roles");
+    const permissions = (
+      await permissionRepository.findPermissions("test_manage_role")
+    ).filter((permission) => permission.name.includes("test"));
 
     const toEqual = expect.arrayContaining(
       permissionsData.map((name) =>

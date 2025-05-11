@@ -1,15 +1,15 @@
 export default [
   // GENERAL CHAT PERMISSIONS
-  "manage_roles",
-  "manage_chat",
-  "view_chat",
+  "test_role_manage_role",
+  "test_role_manage_chat",
+  "test_role_view_chat",
   // MEMBERSHIP PERMISSIONS
-  "create_invites",
-  "kick_members",
-  "mute_members",
+  "test_role_create_invite",
+  "test_role_kick_member",
+  "test_role_mute_member",
   // TEXT PERMISSIONS
-  "send_messages",
-  "manage_messages",
+  "test_role_send_message",
+  "test_role_manage_message",
   // ADVANCED PERMISSIONS
-  "admin",
+  "test_role_admin",
 ];
