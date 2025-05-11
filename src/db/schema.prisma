@@ -104,6 +104,7 @@ model Role {
   permissions Permission[] @relation("RolePermissions")
   chatPk      Int          @map("chat_pk")
 
+  @@unique([chatPk, roleLevel])
   @@map("Roles")
 }
 
