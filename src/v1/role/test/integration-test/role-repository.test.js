@@ -338,12 +338,14 @@ describe("Role update", () => {
     });
 
     const data = {
-      chatId,
-      roleId: role.id,
       memberId: userId,
     };
 
-    const updatedRole = await roleRepository.updateChatRoleMember(data);
+    const updatedRole = await roleRepository.updateChatRoleMember(
+      role.id,
+      chatId,
+      data
+    );
 
     const { members } = await client.role.findUnique({
       where: { id: role.id },
@@ -429,12 +431,14 @@ describe("Role update", () => {
     });
 
     const data = {
-      chatId,
-      roleId: role.id,
       membersId: [userId],
     };
 
-    const updatedRole = await roleRepository.updateChatRoleMembers(data);
+    const updatedRole = await roleRepository.updateChatRoleMembers(
+      role.id,
+      chatId,
+      data
+    );
 
     const { members } = await client.role.findUnique({
       where: { id: role.id },
@@ -477,11 +481,13 @@ describe("Role update", () => {
     const rolesId = roles.sort().map(({ id }) => id);
 
     const data = {
-      chatId,
       rolesId,
     };
 
-    const updatedRoles = await roleRepository.updateChatRolesRoleLevel(data);
+    const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+      chatId,
+      data
+    );
 
     const toEqual = expect.arrayContaining([
       expect.objectContaining({
