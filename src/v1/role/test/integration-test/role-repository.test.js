@@ -299,13 +299,9 @@ describe("Role update", () => {
       },
     });
 
-    const data = {
-      chatId,
-      roleId: role.id,
+    const updatedRole = await roleRepository.updateChatRoleMetaData(role.id, {
       name: "updated_role_1",
-    };
-
-    const updatedRole = await roleRepository.updateChatRoleDisplay(data);
+    });
 
     const toMatchObject = {
       chatId,
@@ -389,13 +385,9 @@ describe("Role update", () => {
       },
     });
 
-    const data = {
-      chatId,
+    const updatedRole = await roleRepository.updateChatRoleMetaData(role.id, {
       permissionIds,
-      roleId: role.id,
-    };
-
-    const updatedRole = await roleRepository.updateChatRolePermissions(data);
+    });
 
     const toMatchObject = {
       chatId,

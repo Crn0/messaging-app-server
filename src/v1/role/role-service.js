@@ -1,6 +1,12 @@
 import { httpStatus } from "../../constants/index.js";
 import APIError from "../../errors/api-error.js";
 
+// TODO: Implement updateRoleMetaData(chatId: string, roleId: string, data: Partial<Role>)
+// - Update role fields such as name, permissions, etc. (exclude level)
+// - Ensure chatId and roleId are valid and authorized
+// - Validate incoming `data` object (disallow level)
+// - Return the updated role or throw an error on failure
+
 const createInsertRole =
   ({ roleRepository, chatService }) =>
   async (DTO) => {
@@ -85,15 +91,18 @@ const createGetUserRolesById =
     return roles;
   };
 
-const createUpdateChatRoleDisplay =
+const createUpdateRoleMetaData =
   ({ roleRepository, chatService }) =>
-  async (DTO) => {
-    await chatService.getChatById(DTO.chatId);
+  async (roleId, chatId, DTO) => {
+    await chatService.getChatById(chatId);
+
+    const roleExist = await roleRepository.findChatRoleById(roleId, chatId);
+
+    if (!roleExist) throw new APIError("Role not found", httpStatus.NOT_FOUND);
 
     const data = {
-      roleId: DTO.roleId,
-      chatId: DTO.chatId,
       name: DTO.name,
+      permissionIds: DTO.permissionIds,
     };
 
     const role = await roleRepository.updateChatRoleDisplay(data);
@@ -116,22 +125,6 @@ const createUpdateChatRoleMember =
     };
 
     const role = await roleRepository.updateChatRoleMember(data);
-
-    return role;
-  };
-
-const createUpdateChatRolePermissions =
-  ({ roleRepository, chatService }) =>
-  async (DTO) => {
-    await chatService.getChatById(DTO.chatId);
-
-    const data = {
-      roleId: DTO.roleId,
-      chatId: DTO.chatId,
-      permissionIds: DTO.permissionIds,
-    };
-
-    const role = await roleRepository.updateChatRolePermissions(data);
 
     return role;
   };
@@ -210,10 +203,8 @@ export default (dependencies) => {
   const getChatRolesById = createGetChatRolesById(dependencies);
   const getUserRolesById = createGetUserRolesById(dependencies);
 
-  const updateChatRoleDisplay = createUpdateChatRoleDisplay(dependencies);
+  const updateRoleMetaData = createUpdateRoleMetaData(dependencies);
   const updateChatRoleMember = createUpdateChatRoleMember(dependencies);
-  const updateChatRolePermissions =
-    createUpdateChatRolePermissions(dependencies);
   const updateChatRoleMembers = createUpdateChatRoleMembers(dependencies);
   const updateChatRolesRoleLevel = createUpdateChatRolesRoleLevel(dependencies);
 
@@ -226,9 +217,8 @@ export default (dependencies) => {
     getChatDefaultRolesById,
     getChatRolesById,
     getUserRolesById,
-    updateChatRoleDisplay,
+    updateRoleMetaData,
     updateChatRoleMember,
-    updateChatRolePermissions,
     updateChatRoleMembers,
     updateChatRolesRoleLevel,
     deleteChatRoleById,

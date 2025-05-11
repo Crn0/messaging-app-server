@@ -1,5 +1,6 @@
 const DATA_ACTIONS = {
   INSERT: "insert",
+  UPDATE_META_DATA: "update:metaData",
   UPDATE_DISPLAY: "update:display",
   UPDATE_PERMISSION: "update:permissions",
   UPDATE_MEMBER: "update:member",
@@ -23,6 +24,22 @@ const toData = (action, DTO) => {
           connect: DTO.permissionIds?.map?.((id) => ({ id })),
         },
       };
+    }
+    case DATA_ACTIONS.UPDATE_META_DATA: {
+      const data = {};
+
+      if (DTO.name) {
+        data.name = DTO.name;
+      }
+
+      if (Array.isArray(DTO.permissionIds) && DTO.permissionIds.length > 0) {
+        data.permissions = {
+          set: [],
+          connect: DTO.permissionIds.map((id) => ({ id })),
+        };
+      }
+
+      return data;
     }
     case DATA_ACTIONS.UPDATE_DISPLAY: {
       return {
