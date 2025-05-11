@@ -1,25 +1,18 @@
 import BaseError from "./base-error.js";
-import FieldError from "./field-error.js";
-import constants from "../constants/index.js";
+import { env } from "../constants/index.js";
+import sendErrorResponce from "../response/error-response.js";
 
 class ErrorHandler {
   static handleError(error, res) {
-    if (constants.env.NODE_ENV !== "prod") {
+    if (env.NODE_ENV === "dev") {
       console.log(error);
     }
 
-    if (error instanceof FieldError) {
-      return res.status(error.httpCode).json({
-        code: error.httpCode,
-        errors: error.errors || null,
-        message: error.message,
-      });
-    }
+    const { httpCode, message, errors } = error;
 
-    return res.status(error.httpCode).json({
-      code: error.httpCode,
-      message: error.message,
-    });
+    const errorResponse = sendErrorResponce(res);
+
+    return errorResponse(httpCode, message, errors);
   }
 
   static isTrustedError(error) {

@@ -12,3 +12,251 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Image {
+  pk     Int    @id @default(autoincrement())
+  url    String @db.Text
+  format ImageFormat
+  size   Int?   @db.Integer
+
+  attachment   Attachment @relation(fields: [attachmentPk], references: [pk], onDelete: Cascade)
+  attachmentPk Int
+
+  @@unique([attachmentPk, pk])
+  @@map("Images")
+}
+
+enum ImageFormat {
+  webp
+  jpeg
+  jpg
+  png
+}
+
+model Attachment {
+  pk        Int       @id @default(autoincrement())
+  id        String    @unique @db.Text
+  name      String?   @db.VarChar(255)
+  url       String    @db.Text
+  size      Int?      @db.Integer
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz
+
+  images                    Image[]
+  type                      AttachmentType
+  chat                      Chat?          @relation("ChatAttachment", fields: [chatPk], references: [pk], onDelete: Cascade)
+  chatAvatar                Chat?          @relation("ChatAvatar", fields: [chatAvatarPk], references: [pk], onDelete: Cascade)
+  profileAvatar             Profile?       @relation("ProfileAvatar", fields: [profileAvatarPk], references: [pk], onDelete: Cascade)
+  backgroundAvatar          Profile?       @relation("BackgroundAvatar", fields: [profileBackgroundAvatarPk], references: [pk], onDelete: Cascade)
+  message                   Message?       @relation(fields: [messagePk], references: [pk], onDelete: Cascade)
+  chatPk                    Int?           @map("chat_pk") @db.Integer
+  chatAvatarPk              Int?           @unique @map("group_chat_pk") @db.Integer
+  profileAvatarPk           Int?           @unique @map("profile_avatar_pk") @db.Integer
+  profileBackgroundAvatarPk Int?           @unique @map("profile_background_avatar_pk") @db.Integer
+  messagePk Int? @map("message_pk") @db.Integer
+
+  @@map("Attachments")
+}
+
+enum AttachmentType {
+  Image
+  Epub
+  Pdf
+}
+
+model Chat {
+  pk        Int       @id @default(autoincrement())
+  id        String    @unique @default(uuid(7)) @db.Uuid
+  name      String?   @db.VarChar(255)
+  isPrivate Boolean   @default(false) @map("is_private")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz
+
+  type        ChatType
+  owner       User?        @relation(fields: [ownerPk], references: [pk])
+  avatar      Attachment?  @relation("ChatAvatar")
+  roles       Role[]
+  members     UserOnChat[]
+  messages    Message[]
+  attachments Attachment[] @relation("ChatAttachment")
+  ownerPk     Int?         @map("owner_pk") @db.Integer
+
+  @@unique([pk, id])
+  @@map("Chats")
+}
+
+enum ChatType {
+  GroupChat
+  DirectChat
+}
+
+model Role {
+  pk        Int       @id @default(autoincrement())
+  id        String    @unique @default(uuid(7)) @db.Uuid
+  name      String    @db.VarChar(255)
+  roleLevel Int?       @unique @map("role_level") @db.Integer
+  isDefaultRole Boolean @map("is_default_role")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz
+
+  chat        Chat         @relation(fields: [chatPk], references: [pk], onDelete: Cascade)
+  members     UserOnChat[] @relation("RoleToUserOnChat")
+  permissions Permission[] @relation("RolePermissions")
+  chatPk      Int          @map("chat_pk")
+
+  @@unique([chatPk, roleLevel])
+  @@map("Roles")
+}
+
+model Permission {
+  pk        Int       @id @default(autoincrement())
+  id        String    @unique @default(uuid(7)) @db.Uuid
+  name      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz
+
+  roles              Role[]                @relation("RolePermissions")
+
+  @@map("Permissions")
+}
+
+model User {
+  pk           Int       @id @default(autoincrement())
+  id           String    @unique @default(uuid(7)) @db.Uuid
+  username     String    @unique @db.VarChar(255)
+  email        String?   @unique @db.VarChar(255)
+  password     String?   @db.Text
+  accountLevel Int       @default(1) @map("account_level") @db.Integer
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime? @map("updated_at") @db.Timestamptz
+  lastSeenAt   DateTime? @map("last_seen_at") @db.Timestamptz
+
+  openIds               OpenID[]
+  profile               Profile?
+  status                UserStatus      @default(value: Online)
+  friends               User[]          @relation("Friends")
+  friendsOf             User[]          @relation("Friends")
+  blockedUsers          User[]          @relation("BlockedUsers")
+  blockedBy             User[]          @relation("BlockedUsers")
+  friendRequestSent     FriendRequest[] @relation("FriendRequestSent")
+  friendRequestRecieved FriendRequest[] @relation("FriendRequestRecieved")
+  tokens                Token[]
+  chats                 UserOnChat[]
+  messages              Message[]
+  ownedChats            Chat[]
+
+  @@index([username(sort: Desc)], name: "username_index")
+  @@map("Users")
+}
+
+enum UserStatus {
+  Online
+  Offline
+  Invisible
+}
+
+model Profile {
+  pk          Int       @id @default(autoincrement())
+  id          String    @unique @default(uuid(7)) @db.Uuid
+  displayName String?   @map("display_name") @db.VarChar(255)
+  aboutMe     String?   @map("about_me") @db.VarChar(1000)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime? @map("updated_at") @db.Timestamptz
+
+  user             User        @relation(fields: [userPk], references: [pk], onDelete: Cascade)
+  avatar           Attachment? @relation("ProfileAvatar")
+  backgroundAvatar Attachment? @relation("BackgroundAvatar")
+  userPk           Int         @unique @map("user_pk") @db.Integer
+
+  @@map("Profiles")
+}
+
+model UserOnChat {
+  pk         Int      @id @default(autoincrement())
+  id         String   @unique @default(uuid(7)) @db.Uuid
+  joinedAt   DateTime @default(now()) @map("joined_at") @db.Timestamptz
+  mutedUntil DateTime? @map("muted_until") @db.Timestamptz
+
+  user   User   @relation(fields: [userPk], references: [pk], onDelete: Cascade)
+  chat   Chat   @relation(fields: [chatPk], references: [pk], onDelete: Cascade)
+  roles  Role[] @relation("RoleToUserOnChat")
+  userPk Int    @map("user_pk") @db.Integer
+  chatPk Int    @map("chat_pk") @db.Integer
+
+  @@unique([userPk, chatPk])
+  @@map("UserOnChats")
+}
+
+model Token {
+  pk        Int      @id @default(autoincrement())
+  id        String   @unique() @db.VarChar(36)
+  expiresIn DateTime @map("expires_in")
+
+  type   TokenType
+  user   User      @relation(fields: [userPk], references: [pk], onDelete: Cascade)
+  userPk Int       @map("user_pk")
+
+  @@map("Tokens")
+}
+
+enum TokenType {
+  RefreshToken
+  ActionToken
+}
+
+model FriendRequest {
+  pk Int    @id @default(autoincrement())
+  id String @unique @default(uuid(7)) @db.Uuid
+
+  requester   User @relation(name: "FriendRequestSent", fields: [requesterPk], references: [pk], onDelete: Cascade)
+  receiver    User @relation(name: "FriendRequestRecieved", fields: [receiverPk], references: [pk], onDelete: Cascade)
+  requesterPk Int  @map("requester_pk") @db.Integer
+  receiverPk  Int  @map("receiver_pk") @db.Integer
+
+  @@unique([requesterPk, receiverPk])
+  @@map("FriendRequests")
+}
+
+model OpenID {
+  pk        Int       @id @default(autoincrement())
+  sub       String    @db.VarChar(255)
+  token     String    @db.Text
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz()
+
+  provider Provider
+  user     User     @relation(fields: [userPk], references: [pk], onDelete: Cascade)
+  userPk   Int      @map("user_pk")
+
+  @@unique([provider, userPk])
+  @@unique([provider, sub])
+  @@map("OpenIDs")
+}
+
+enum Provider {
+  google
+  github
+  facebook
+}
+
+model Message {
+  pk        Int       @id @default(autoincrement())
+  id        String    @unique @default(uuid(7)) @db.Uuid
+  content   String?   @db.Text
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  attachments Attachment[]
+  replyTo     Message?     @relation("MessageReply", fields: [replyToPk], references: [pk])
+  replies     Message[]    @relation("MessageReply")
+  chat        Chat?         @relation(fields: [chatPk], references: [pk], onDelete: Cascade)
+  user        User         @relation(fields: [userPk], references: [pk])
+  userPk      Int          @map("user_pk") @db.Integer
+  chatPk      Int?          @map("chat_pk") @db.Integer
+  replyToPk   Int?         @map("reply_to_pk") @db.Integer
+
+  @@unique([pk, userPk], name: "messageUser")
+  @@index(fields: [id], name: "messageIdIndex")
+  @@map("Messages")
+}

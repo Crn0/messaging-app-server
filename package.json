@@ -14,7 +14,7 @@
     "start": "node ./src/bin/www.js",
     "dev": "dotenv -e .env.dev -- node --watch ./src/bin/www.js",
     "prod": "dotenv -e .env.prod -- node --watch ./src/bin/www.js",
-    "server": "DEBUG=<project-name>:* npm run dev",
+    "server": "DEBUG=app:* npm run dev",
     "prisma": "npx prisma init",
     "seedDev": "dotenv -e .env.dev -- npx prisma db seed",
     "seedProd": "dotenv -e .env.prod -- npx prisma db seed",
@@ -30,7 +30,9 @@
     "format": "prettier --write \"**/*.{js,mjs}\""
   },
   "dependencies": {
+    "@faker-js/faker": "^9.6.0",
     "@prisma/client": "^5.21.1",
+    "argon2": "^0.41.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
     "compression": "^1.7.4",
@@ -43,11 +45,14 @@
     "express-rate-limit": "^7.4.1",
     "express-session": "^1.18.1",
     "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
