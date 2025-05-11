@@ -106,7 +106,6 @@ const updateChatRoleMember = async ({ roleId, chatId, memberId }) => {
     data,
     where: {
       id: roleId,
-      chat: { id: chatId },
     },
     include: field.default,
   });
@@ -137,7 +136,6 @@ const updateChatRoleMembers = async ({ roleId, chatId, membersId }) => {
     data,
     where: {
       id: roleId,
-      chat: { id: chatId },
     },
     include: field.default,
   });
@@ -163,7 +161,6 @@ const updateChatRolesRoleLevel = async ({ chatId, rolesId }) => {
         data,
         where: {
           id,
-          chat: { id: chatId },
         },
         include: field.default,
       });
