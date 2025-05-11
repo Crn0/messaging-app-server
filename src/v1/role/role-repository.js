@@ -69,16 +69,13 @@ const findUserRolesById = async (chatId, userId) => {
   return user?.roles?.map?.(toEntity) ?? [];
 };
 
-const updateChatRoleDisplay = async ({ roleId, chatId, name }) => {
-  const data = toData("update:display", { name });
+const updateChatRoleMetaData = async (roleId, { name, permissionIds }) => {
+  const data = toData("update:metaData", { name, permissionIds });
 
   const role = await client.role.update({
     data,
     where: {
       id: roleId,
-      chat: {
-        id: chatId,
-      },
     },
     include: field.default,
   });
@@ -104,21 +101,6 @@ const updateChatRoleMember = async ({ roleId, chatId, memberId }) => {
   const userOnChatId = userOnChat.id;
 
   const data = toData("update:member", { memberId: userOnChatId });
-
-  const role = await client.role.update({
-    data,
-    where: {
-      id: roleId,
-      chat: { id: chatId },
-    },
-    include: field.default,
-  });
-
-  return toEntity(role);
-};
-
-const updateChatRolePermissions = async ({ roleId, chatId, permissionIds }) => {
-  const data = toData("update:permissions", { permissionIds });
 
   const role = await client.role.update({
     data,
@@ -211,9 +193,8 @@ export default {
   findChatDefaultRolesById,
   findChatRolesById,
   findUserRolesById,
-  updateChatRoleDisplay,
+  updateChatRoleMetaData,
   updateChatRoleMember,
-  updateChatRolePermissions,
   updateChatRoleMembers,
   updateChatRolesRoleLevel,
   deleteChatRoleById,
