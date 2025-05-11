@@ -59,9 +59,7 @@ const createInsertDirectChat =
       chatId: DTO?.chatId,
     });
 
-    await roleService.updateChatRoleMembers({
-      roleId: defaultRole?.id,
-      chatId: DTO.chatId,
+    await roleService.updateChatRoleMembers(defaultRole?.id, DTO.chatId, {
       membersId: DTO.membersId,
     });
 
@@ -140,9 +138,7 @@ const createInsertGroupChat =
       chatId: chat.id,
     });
 
-    await roleService.updateChatRoleMembers({
-      roleId: defaultRole?.id,
-      chatId: chat.id,
+    await roleService.updateChatRoleMembers(defaultRole?.id, chat.id, {
       membersId: [DTO.ownerId],
     });
 
@@ -183,9 +179,7 @@ const createInsertMember =
       if (defaultRolesId?.length > 0) {
         await Promise.all(
           defaultRolesId.map(async (roleId) =>
-            roleService.updateChatRoleMember({
-              roleId,
-              chatId: DTO.chatId,
+            roleService.updateChatRoleMember(roleId, DTO.chatId, {
               memberId: DTO.memberId,
             })
           )
