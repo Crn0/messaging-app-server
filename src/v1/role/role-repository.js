@@ -22,7 +22,7 @@ const insert = async ({ chatId, name, isDefaultRole, permissionIds }) => {
 };
 
 const findChatRoleById = async (roleId, chatId) => {
-  const role = await client.role.findUnique({
+  const role = await client.role.findFirst({
     where: { id: roleId, chat: { id: chatId } },
     include: field.default,
   });
