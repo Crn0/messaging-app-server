@@ -8,7 +8,10 @@ import chatRepository from "./chat-repository.js";
 import permissionRepository from "../permission/permission-repository.js";
 import roleRepository from "../role/role-repository.js";
 import blockUserRepository from "../user/block-user/block-user-repository.js";
-import initChatService, { createGetChatById } from "./chat-service.js";
+import initChatService, {
+  createGetChatById,
+  createGetChatMemberById,
+} from "./chat-service.js";
 import initPermissionService from "../permission/permission-service.js";
 import initRoleService from "../role/role-service.js";
 import initBlockUserService from "../user/block-user/block-user-service.js";
@@ -72,7 +75,10 @@ const roleService = initRoleService({
   roleRepository,
   userService,
   permissionService,
-  chatService: { getChatById: createGetChatById({ chatRepository }) },
+  chatService: {
+    getChatById: createGetChatById({ chatRepository }),
+    getMemberById: createGetChatMemberById({ chatRepository }),
+  },
 });
 
 const blockUserService = initBlockUserService({
