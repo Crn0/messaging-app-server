@@ -52,7 +52,7 @@ const createGetChatRoleById =
     const role = await roleRepository.findChatRoleById(roleId, chatId);
 
     if (!role) {
-      throw APIError("Role not found", httpStatus.NOT_FOUND);
+      throw new APIError("Role not found", httpStatus.NOT_FOUND);
     }
 
     return role;
