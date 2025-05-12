@@ -398,6 +398,70 @@ const createCanKickMember =
 // ROLE MIDDLEWARE
 // =================
 
+const createCanCreateRole =
+  ({ chatService, roleService, chatPolicy }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+    const user = { id: req.user.id };
+
+    const [
+      { error: chatError, data: chat },
+      { error: chatRolesError, data: chatRoles },
+      { error: userRolesError, data: userRoles },
+    ] = await Promise.all([
+      tryCatchAsync(() => chatService.getChatById(chatId)),
+      tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+      tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+    ]);
+
+    if (chatError || chatRolesError || userRolesError) {
+      return next(chatError || chatRolesError || userRolesError);
+    }
+
+    chat.roles = chatRoles;
+    user.roles = userRoles;
+
+    const { success, code, message } = chatPolicy.role.checkCreate(user, chat);
+
+    if (!success) {
+      return next(new APIError(message, code));
+    }
+
+    return next();
+  };
+
+const createCanViewRole =
+  ({ chatService, roleService, chatPolicy }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+    const user = { id: req.user.id };
+
+    const [
+      { error: chatError, data: chat },
+      { error: chatRolesError, data: chatRoles },
+      { error: userRolesError, data: userRoles },
+    ] = await Promise.all([
+      tryCatchAsync(() => chatService.getChatById(chatId)),
+      tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+      tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+    ]);
+
+    if (chatError || chatRolesError || userRolesError) {
+      return next(chatError || chatRolesError || userRolesError);
+    }
+
+    chat.roles = chatRoles;
+    user.roles = userRoles;
+
+    const { success, code, message } = chatPolicy.role.checkView(user, chat);
+
+    if (!success) {
+      return next(new APIError(message, code));
+    }
+
+    return next();
+  };
+
 const createCanUpdateRoleName =
   ({ chatService, roleService, chatPolicy }) =>
   async (req, _, next) => {
@@ -461,6 +525,10 @@ export default (dependencies) => {
   const canLeaveChat = createCanLeaveChat(dependencies);
   const canKickMember = createCanKickMember(dependencies);
 
+  const canCreateRole = createCanCreateRole(dependencies);
+
+  const canViewRole = createCanViewRole(dependencies);
+
   return Object.freeze({
     uploader,
     canCreateChat,
@@ -473,5 +541,7 @@ export default (dependencies) => {
     canMuteMember,
     canLeaveChat,
     canKickMember,
+    canCreateRole,
+    canViewRole,
   });
 };

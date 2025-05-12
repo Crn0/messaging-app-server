@@ -223,6 +223,11 @@ const memberParamSchema = z.object({
   memberId: idSchema,
 });
 
+const roleParamSchema = z.object({
+  chatId: idSchema,
+  roleId: idSchema,
+});
+
 const publicChatQuerySchema = z.object({
   before: idSchema.optional(),
   after: idSchema.optional(),
@@ -243,6 +248,10 @@ const chatFormSchema = directChatCreationSchema
 
     return groupChatCreationCondition(data, ctx);
   });
+
+const roleFormSchema = z.object({
+  name: nameSchema,
+});
 
 const patchChatNameSchema = z.object({
   name: nameSchema,
@@ -284,9 +293,11 @@ const patchMemberMuteSchema = z.object({
 export {
   chatParamSchema,
   memberParamSchema,
+  roleParamSchema,
   publicChatQuerySchema,
   memberListParamSchema,
   chatFormSchema,
+  roleFormSchema,
   patchChatNameSchema,
   patchChatAvatarSchema,
   patchMemberMuteSchema,
