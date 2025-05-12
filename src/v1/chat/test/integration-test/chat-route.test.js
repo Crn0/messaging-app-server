@@ -1980,6 +1980,25 @@ describe("Member creation", () => {
       expect(res.status).toBe(204);
       expect(member).not.toBeNull();
       expect(member.user.id).toBe(user2Id);
+
+      const defaultRole = await client.role.findFirst({
+        where: { isDefaultRole: true, chat: { id: groupChatId } },
+        select: {
+          members: {
+            select: {
+              user: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      });
+
+      const toEqualRoleMembers = expect.arrayContaining([
+        expect.objectContaining({ user: { id: member.user.id } }),
+      ]);
+
+      expect(defaultRole.members).toEqual(toEqualRoleMembers);
     });
   });
 });
