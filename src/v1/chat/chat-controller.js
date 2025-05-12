@@ -230,6 +230,53 @@ const createDeleteMember =
     return res.sendStatus(httpStatus.NO_CONTENT);
   };
 
+// ===============
+// ROLE CONTROLLER
+// ===============
+
+const createCreateRole =
+  ({ roleService }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+    const { name } = req.body;
+
+    const { error, data: role } = await tryCatchAsync(() =>
+      roleService.createRole({ chatId, name })
+    );
+
+    if (error) return next(error);
+
+    return res.status(httpStatus.OK).json(role);
+  };
+
+const createGetRoles =
+  ({ roleService }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+
+    const { error, data: roles } = await tryCatchAsync(() =>
+      roleService.getChatRolesById(chatId)
+    );
+
+    if (error) return next(error);
+
+    return res.status(httpStatus.OK).json(roles);
+  };
+
+const createGetRole =
+  ({ roleService }) =>
+  async (req, res, next) => {
+    const { chatId, roleId } = req.params;
+
+    const { error, data: role } = await tryCatchAsync(() =>
+      roleService.getChatRoleById(roleId, chatId)
+    );
+
+    if (error) return next(error);
+
+    return res.status(httpStatus.OK).json(role);
+  };
+
 export default (dependencies) => {
   const createChat = createCreateChat(dependencies);
 
@@ -251,6 +298,11 @@ export default (dependencies) => {
 
   const deleteMember = createDeleteMember(dependencies);
 
+  const createRole = createCreateRole(dependencies);
+
+  const getRoles = createGetRoles(dependencies);
+  const getRole = createGetRole(dependencies);
+
   return Object.freeze({
     createChat,
     getChat,
@@ -265,5 +317,8 @@ export default (dependencies) => {
     muteMember,
     unMuteMember,
     deleteMember,
+    createRole,
+    getRoles,
+    getRole,
   });
 };

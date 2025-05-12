@@ -296,12 +296,80 @@ const MEMBER = ({ request, baseUrl }) => {
   });
 };
 
+const ROLE = ({ request, baseUrl }) => {
+  const path = `${baseUrl}/chats`;
+
+  const GET = () => {
+    const roleList = async (chatId, token, ops) => {
+      const options = { includeAuth: true, before: null, after: null, ...ops };
+
+      const url = `${path}/${chatId}/roles`;
+
+      const req = request.get(url).accept("json").type("json");
+
+      if (options.includeAuth) {
+        req.set("Authorization", `Bearer ${token}`);
+      }
+
+      return req;
+    };
+
+    const roleById = async (chatId, roleId, token, ops) => {
+      const options = { includeAuth: true, before: null, after: null, ...ops };
+
+      const url = `${path}/${chatId}/roles/${roleId}`;
+
+      const req = request.get(url).accept("json").type("json");
+
+      if (options.includeAuth) {
+        req.set("Authorization", `Bearer ${token}`);
+      }
+
+      return req;
+    };
+
+    return Object.freeze({ roleList, roleById });
+  };
+
+  const POST = () => {
+    const createRole = (chatId, payload, token, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/${chatId}/roles`;
+
+      if (!options.includeAuth) {
+        return request.post(url).send(payload).accept("json").type("json");
+      }
+
+      return request
+        .post(url)
+        .send(payload)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    return Object.freeze({ createRole });
+  };
+
+  const PATCH = () => Object.freeze({});
+
+  const DELETE = () => Object.freeze({});
+
+  return Object.freeze({
+    get: GET(),
+    post: POST(),
+    patch: PATCH(),
+    delete: DELETE(),
+  });
+};
+
 const baseRequest = ({ request, url }) => {
   const baseUrl = url || "/api/v1";
 
   return Object.freeze({
     chat: CHAT({ request, baseUrl }),
     member: MEMBER({ request, baseUrl }),
+    role: ROLE({ request, baseUrl }),
   });
 };
 

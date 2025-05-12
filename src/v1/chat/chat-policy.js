@@ -158,6 +158,30 @@ const checkKickMemberPermission = (user, chat, targetUser) => {
 // ROLES MANAGEMENT POLICIES
 // =========================
 
+const checkRoleCreatePermission = (user, chat) => {
+  const { allowed, code, reason } = executePolicyCheck(user, chat, {
+    resource: "role",
+    action: "create",
+  });
+
+  if (!allowed)
+    return code === "forbidden" ? forbidden(reason) : notFound(reason);
+
+  return success(reason);
+};
+
+const checkRoleViewPermission = (user, chat) => {
+  const { allowed, code, reason } = executePolicyCheck(user, chat, {
+    resource: "role",
+    action: "view",
+  });
+
+  if (!allowed)
+    return code === "forbidden" ? forbidden(reason) : notFound(reason);
+
+  return success(reason);
+};
+
 export default {
   chat: {
     checkCreate: checkChatCreation,
@@ -174,5 +198,8 @@ export default {
     checkKick: checkKickMemberPermission,
   },
   message: {},
-  role: {},
+  role: {
+    checkCreate: checkRoleCreatePermission,
+    checkView: checkRoleViewPermission,
+  },
 };
