@@ -3,7 +3,10 @@ import field from "./include.js";
 import { toData, toEntity } from "./role-mapper.js";
 
 const insert = async ({ chatId, name, isDefaultRole, permissionIds }) => {
-  const roleLevel = (await client.role.count()) + 1;
+  const roleLevel =
+    (await client.role.count({
+      where: { isDefaultRole: false, chat: { id: chatId } },
+    })) + 1;
 
   const data = toData("insert", {
     chatId,
