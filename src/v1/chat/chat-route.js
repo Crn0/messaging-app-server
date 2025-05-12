@@ -101,6 +101,7 @@ const chatService = initChatService({
 
 const chatController = initChatController({
   chatService,
+  roleService,
   utils: {
     removeFields,
   },
@@ -234,6 +235,36 @@ router.delete(
  * TODO
  * - implement route
  */
+
+router.get(
+  "/:chatId/roles",
+  ZodparamValidator(schema.chatParamSchema),
+  chatMiddleware.canViewRole,
+  chatController.getRoles
+);
+
+router.get(
+  "/:chatId/roles/:roleId",
+  ZodparamValidator(schema.roleParamSchema),
+  chatMiddleware.canViewRole,
+  chatController.getRole
+);
+
+router.post(
+  "/:chatId/roles",
+  ZodparamValidator(schema.chatParamSchema),
+  ZodbodyValidator(schema.roleFormSchema),
+  chatMiddleware.canCreateRole,
+  chatController.createRole
+);
+
+router.patch("/:chatId/roles/role-levels");
+
+router.patch("/:chatId/roles/:roleId");
+
+router.patch("/:chatId/roles/:roleId/members");
+
+router.delete("/:chatId/roles/:roleId");
 
 // =================
 // CHAT MESSAGE ROUTE

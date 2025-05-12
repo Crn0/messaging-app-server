@@ -19,6 +19,10 @@ const PERMISSIONS = {
     },
     destroy: ["admin", "kick_member"],
   },
+  role: {
+    create: ["admin", "manage_role"],
+    view: ["admin", "manage_role"],
+  },
 };
 
 const executePermissionCheck = (subject, data, requiredPermissions) =>
@@ -543,6 +547,97 @@ const PERMISSION_POLICIES = {
           reason: "Permission granted to kick member",
         };
       },
+    },
+  },
+  role: {
+    create: (user, chat) => {
+      const isUserOwner = chat.ownerId === user.id;
+
+      if (isUserOwner) {
+        return {
+          allowed: true,
+          code: "ok",
+          reason: "Chat owner can create roles",
+        };
+      }
+
+      const isUserMember = chat.members.includes(user.id);
+
+      if (!isUserMember) {
+        return {
+          allowed: false,
+          code: chat.isPrivate ? "not_found" : "forbidden",
+          reason: chat.isPrivate
+            ? "Chat not found"
+            : "You must be a chat member to create chat roles",
+        };
+      }
+
+      const requiredPermissions = PERMISSIONS.role.create;
+
+      const hasPermission = executePermissionCheck(
+        user,
+        chat,
+        requiredPermissions
+      );
+
+      if (!hasPermission) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+        };
+      }
+
+      return {
+        allowed: true,
+        code: "ok",
+        reason: "Create permission granted",
+      };
+    },
+    view: (user, chat) => {
+      const isUserOwner = chat.ownerId === user.id;
+
+      if (isUserOwner) {
+        return {
+          allowed: true,
+          code: "ok",
+          reason: "Chat owner can view roles",
+        };
+      }
+
+      const isUserMember = chat.members.includes(user.id);
+
+      if (!isUserMember) {
+        return {
+          allowed: false,
+          code: chat.isPrivate ? "not_found" : "forbidden",
+          reason: chat.isPrivate
+            ? "Chat not found"
+            : "You must be a chat member to view chat roles",
+        };
+      }
+
+      const requiredPermissions = PERMISSIONS.role.view;
+      const hasPermission = executePermissionCheck(
+        user,
+        chat,
+        requiredPermissions
+      );
+
+      if (!hasPermission) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+        };
+      }
+
+      return {
+        allowed: true,
+        code: "ok",
+        reason: "View permission granted",
+      };
     },
   },
 };

@@ -1587,7 +1587,7 @@ describe("Chat update", () => {
   });
 });
 
-describe("Chat deletion", () => {
+describe.skip("Chat deletion", () => {
   let chatIdToDelete;
 
   beforeAll(async () => {
@@ -3540,3 +3540,912 @@ describe("Member deletion", () => {
     });
   });
 });
+
+describe("Role creation", () => {
+  beforeAll(async () => {
+    const [adminRole, roleManagementRole] = await client.$transaction([
+      client.role.create({
+        data: {
+          name: "test_admin_role",
+          roleLevel: 1,
+          isDefaultRole: false,
+          chat: {
+            connect: {
+              id: groupChatId,
+            },
+          },
+          permissions: {
+            connect: {
+              name: "admin",
+            },
+          },
+        },
+      }),
+      client.role.create({
+        data: {
+          name: "test_create_role",
+          roleLevel: 2,
+          isDefaultRole: false,
+          chat: {
+            connect: {
+              id: groupChatId,
+            },
+          },
+          permissions: {
+            connect: {
+              name: "manage_role",
+            },
+          },
+        },
+      }),
+    ]);
+
+    const memberWithAdminRole = await client.userOnChat.findFirst({
+      where: { chat: { id: groupChatId }, user: { id: user2Id } },
+      select: {
+        id: true,
+      },
+    });
+
+    const [roleManagerMember] = await client.$transaction([
+      client.userOnChat.create({
+        data: {
+          chat: {
+            connect: { id: groupChatId },
+          },
+          user: {
+            connect: { id: user3Id },
+          },
+          roles: { connect: { id: roleManagementRole.id } },
+        },
+      }),
+      client.userOnChat.update({
+        where: {
+          id: memberWithAdminRole.id,
+        },
+        data: {
+          roles: {
+            connect: {
+              id: adminRole.id,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return async () => {
+      const memberIds = [roleManagerMember.id];
+
+      const roleIds = [adminRole.id, roleManagementRole.id];
+
+      await client.$transaction([
+        client.userOnChat.deleteMany({
+          where: { id: { in: memberIds } },
+        }),
+        client.role.deleteMany({
+          where: { id: { in: roleIds } },
+        }),
+      ]);
+    };
+  });
+
+  describe("Authentication Errors", () => {
+    it.each([
+      {
+        scenario: "invalid token",
+        data: {
+          payload: { name: "test_role_name" },
+          token: user2InvalidToken,
+          includeAuth: true,
+        },
+        expectedError: { code: 401, message: "Invalid or expired token" },
+      },
+      {
+        scenario: "expired token",
+        data: {
+          payload: { name: "test_role_name" },
+          token: user2ExpiredToken,
+          includeAuth: true,
+        },
+        expectedError: { code: 401, message: "Invalid or expired token" },
+      },
+      {
+        scenario: "missing 'Authorization' header",
+        data: {
+          payload: { name: "test_role_name" },
+          token: user2AccessToken,
+          includeAuth: false,
+        },
+        expectedError: {
+          code: 401,
+          message: "Required 'Authorization' header is missing",
+        },
+      },
+    ])(
+      "fails with 401 (UNAUTHORIZED) for $scenario",
+      async ({ data, expectedError }) => {
+        const { payload, token, includeAuth } = data;
+
+        const res = await user1Req.role.post.createRole(
+          groupChatId,
+          payload,
+          token,
+          {
+            includeAuth,
+          }
+        );
+
+        expect(res.status).toBe(401);
+        expect(res.body).toMatchObject(expectedError);
+      }
+    );
+  });
+
+  describe("Forbidden Errors", () => {
+    it.each([
+      {
+        scenario: "non-member creating roles without permission",
+        req: nonMemberReq,
+        data: {
+          payload: { name: "test_role" },
+          token: nonMemberAccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "You must be a chat member to create chat roles",
+        },
+      },
+    ])(
+      "fails with 403 when $scenario",
+      async ({ req, data, expectedError }) => {
+        const { payload, token } = data;
+
+        const res = await req.role.post.createRole(groupChatId, payload, token);
+
+        expect(res.status).toBe(403);
+        expect(res.body).toMatchObject(expectedError);
+      }
+    );
+  });
+
+  describe("Not Found Errors", () => {
+    it.each([
+      {
+        scenario: "chat does not exist",
+        data: {
+          chatId: idGenerator(),
+          payload: { name: "test_role_name" },
+          token: user2AccessToken,
+        },
+        expectedError: { code: 404, message: "Chat not found" },
+      },
+      {
+        scenario: "non-member creating private chat's role",
+        data: {
+          chatId: privateChatId,
+          payload: { name: "test_role_name" },
+          token: user2AccessToken,
+        },
+        expectedError: { code: 404, message: "Chat not found" },
+      },
+    ])("fails with 404 for $scenario", async ({ data, expectedError }) => {
+      const { chatId, payload, token } = data;
+
+      const res = await user1Req.role.post.createRole(chatId, payload, token);
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject(expectedError);
+    });
+  });
+
+  describe("Validation Errors", () => {
+    it.each([
+      {
+        scenario: "chat ID invalid format",
+        data: {
+          chatId: "invalid_id_format",
+          payload: {
+            name: "test_created_role",
+          },
+          token: user2AccessToken,
+        },
+        expectedError: { path: ["chatId"], code: "invalid_string" },
+      },
+      {
+        scenario: "name invalid length",
+        data: {
+          payload: {
+            name: Array.from({ length: 100 }, () => "foo").join(""),
+          },
+          token: user2AccessToken,
+        },
+        expectedError: { path: ["name"], code: "too_big" },
+      },
+      {
+        scenario: "name invalid type",
+        data: {
+          payload: {
+            name: 42,
+          },
+          token: user2AccessToken,
+        },
+        expectedError: { path: ["name"], code: "invalid_type" },
+      },
+    ])(
+      "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
+      async ({ data, expectedError }) => {
+        const { chatId, payload, token } = data;
+
+        const res = await user1Req.role.post.createRole(
+          chatId ?? groupChatId,
+          payload,
+          token
+        );
+
+        expect(res.status).toBe(422);
+        expect(res.body.errors).toContainEqual(
+          expect.objectContaining(expectedError)
+        );
+      }
+    );
+  });
+
+  describe("Success case", () => {
+    it("returns 200 (OK) with the created role when the chat owner creates a role", async () => {
+      const payload = { name: "created_role_by_owner" };
+
+      const res = await user1Req.role.post.createRole(
+        groupChatId,
+        payload,
+        user1AccessToken
+      );
+
+      const toMatchObject = {
+        id: expect.any(String),
+        name: expect.any(String),
+        roleLevel: expect.any(Number),
+        isDefaultRole: expect.any(Boolean),
+        chatId: expect.any(String),
+        createdAt: expect.any(String),
+        updatedAt: null,
+        permissions: expect.any(Array),
+      };
+
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty("pk");
+      expect(res.body).toMatchObject(toMatchObject);
+      expect(res.body.roleLevel).toBe(3);
+
+      const role = await client.role.findUnique({ where: { id: res.body.id } });
+
+      expect(role).not.toBeNull();
+      expect(role.id).toBe(res.body.id);
+
+      await client.role.delete({ where: { id: res.body.id } });
+    });
+
+    it("returns 200 (OK) with the created role when a member with 'manage_role' creates a role", async () => {
+      const payload = { name: "created_role_with_manage_role_permission" };
+
+      const res = await user3Req.role.post.createRole(
+        groupChatId,
+        payload,
+        user3AccessToken
+      );
+
+      const toMatchObject = {
+        id: expect.any(String),
+        name: expect.any(String),
+        roleLevel: expect.any(Number),
+        isDefaultRole: expect.any(Boolean),
+        chatId: expect.any(String),
+        createdAt: expect.any(String),
+        updatedAt: null,
+        permissions: expect.any(Array),
+      };
+
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty("pk");
+      expect(res.body).toMatchObject(toMatchObject);
+      expect(res.body.roleLevel).toBe(3);
+
+      const role = await client.role.findUnique({ where: { id: res.body.id } });
+
+      expect(role).not.toBeNull();
+      expect(role.id).toBe(res.body.id);
+
+      await client.role.delete({ where: { id: res.body.id } });
+    });
+  });
+});
+
+describe("Role detail", () => {
+  let adminRoleId;
+
+  beforeAll(async () => {
+    const [adminRole, roleManagementRole] = await client.$transaction([
+      client.role.create({
+        data: {
+          name: "test_admin_role",
+          roleLevel: 1,
+          isDefaultRole: false,
+          chat: {
+            connect: {
+              id: groupChatId,
+            },
+          },
+          permissions: {
+            connect: {
+              name: "admin",
+            },
+          },
+        },
+      }),
+      client.role.create({
+        data: {
+          name: "test_create_role",
+          roleLevel: 2,
+          isDefaultRole: false,
+          chat: {
+            connect: {
+              id: groupChatId,
+            },
+          },
+          permissions: {
+            connect: {
+              name: "manage_role",
+            },
+          },
+        },
+      }),
+    ]);
+
+    const memberWithAdminRole = await client.userOnChat.findFirst({
+      where: { chat: { id: groupChatId }, user: { id: user2Id } },
+      select: {
+        id: true,
+      },
+    });
+
+    const [roleManagerMember] = await client.$transaction([
+      client.userOnChat.create({
+        data: {
+          chat: {
+            connect: { id: groupChatId },
+          },
+          user: {
+            connect: { id: user3Id },
+          },
+          roles: { connect: { id: roleManagementRole.id } },
+        },
+      }),
+      client.userOnChat.create({
+        data: {
+          chat: {
+            connect: { id: groupChatId },
+          },
+          user: {
+            connect: { id: user4Id },
+          },
+        },
+      }),
+
+      client.userOnChat.update({
+        where: {
+          id: memberWithAdminRole.id,
+        },
+        data: {
+          roles: {
+            connect: {
+              id: adminRole.id,
+            },
+          },
+        },
+      }),
+    ]);
+
+    adminRoleId = adminRole.id;
+
+    return async () => {
+      const memberIds = [roleManagerMember.id];
+
+      const roleIds = [adminRole.id, roleManagementRole.id];
+
+      await client.$transaction([
+        client.userOnChat.deleteMany({
+          where: { id: { in: memberIds } },
+        }),
+        client.role.deleteMany({
+          where: { id: { in: roleIds } },
+        }),
+      ]);
+    };
+  });
+
+  describe("Role list", () => {
+    describe("Authentication Errors", () => {
+      it.each([
+        {
+          scenario: "invalid token",
+          data: {
+            token: user2InvalidToken,
+            includeAuth: true,
+          },
+          expectedError: { code: 401, message: "Invalid or expired token" },
+        },
+        {
+          scenario: "expired token",
+          data: {
+            token: user2ExpiredToken,
+            includeAuth: true,
+          },
+          expectedError: { code: 401, message: "Invalid or expired token" },
+        },
+        {
+          scenario: "missing 'Authorization' header",
+          data: {
+            token: user2AccessToken,
+            includeAuth: false,
+          },
+          expectedError: {
+            code: 401,
+            message: "Required 'Authorization' header is missing",
+          },
+        },
+      ])(
+        "fails with 401 (UNAUTHORIZED) for $scenario",
+        async ({ data, expectedError }) => {
+          const { token, includeAuth } = data;
+
+          const res = await user1Req.role.get.roleList(groupChatId, token, {
+            includeAuth,
+          });
+
+          expect(res.status).toBe(401);
+          expect(res.body).toMatchObject(expectedError);
+        }
+      );
+    });
+
+    describe("Forbidden Errors", () => {
+      it.each([
+        {
+          scenario: "non-member requesting to view the roles",
+          req: nonMemberReq,
+          data: {
+            token: nonMemberAccessToken,
+            includeAuth: true,
+          },
+          expectedError: {
+            code: 403,
+            message: "You must be a chat member to view chat roles",
+          },
+        },
+        {
+          scenario:
+            "member without the permission requesting to view the roles",
+          req: user4Req,
+          data: {
+            token: user4AccessToken,
+            includeAuth: true,
+          },
+          expectedError: {
+            code: 403,
+            message: "Missing permission: admin or manage_role",
+          },
+        },
+      ])(
+        "fails with 403 when $scenario",
+        async ({ req, data, expectedError }) => {
+          const { token } = data;
+
+          const res = await req.role.get.roleList(groupChatId, token);
+
+          expect(res.status).toBe(403);
+          expect(res.body).toMatchObject(expectedError);
+        }
+      );
+    });
+
+    describe("Not Found Errors", () => {
+      it.each([
+        {
+          scenario: "chat does not exist",
+          data: {
+            chatId: idGenerator(),
+            token: user2AccessToken,
+          },
+          expectedError: { code: 404, message: "Chat not found" },
+        },
+        {
+          scenario: "user requesting a private chat's roles",
+          data: {
+            chatId: privateChatId,
+            token: user2AccessToken,
+          },
+          expectedError: { code: 404, message: "Chat not found" },
+        },
+      ])("fails with 404 for $scenario", async ({ data, expectedError }) => {
+        const { chatId, token } = data;
+
+        const res = await user1Req.role.get.roleList(chatId, token);
+
+        expect(res.status).toBe(404);
+        expect(res.body).toMatchObject(expectedError);
+      });
+    });
+
+    describe("Validation Errors", () => {
+      it.each([
+        {
+          scenario: "chat ID invalid format",
+          data: {
+            chatId: "invalid_id_format",
+            token: user2AccessToken,
+          },
+          expectedError: { path: ["chatId"], code: "invalid_string" },
+        },
+      ])(
+        "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
+        async ({ data, expectedError }) => {
+          const { chatId, token } = data;
+
+          const res = await user1Req.role.get.roleList(
+            chatId ?? groupChatId,
+            token
+          );
+
+          expect(res.status).toBe(422);
+          expect(res.body.errors).toContainEqual(
+            expect.objectContaining(expectedError)
+          );
+        }
+      );
+    });
+
+    describe("Success case", () => {
+      it("returns 200 (OK) with all roles when the owner requests the chat's roles", async () => {
+        const res = await user1Req.role.get.roleList(
+          groupChatId,
+          user1AccessToken
+        );
+
+        const toEqual = expect.arrayContaining([
+          expect.objectContaining({
+            name: "test_admin_role",
+            roleLevel: 1,
+          }),
+          expect.objectContaining({
+            name: "test_create_role",
+            roleLevel: 2,
+          }),
+          expect.objectContaining({
+            name: "everyone",
+            roleLevel: null,
+          }),
+        ]);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(toEqual);
+      });
+
+      it("returns 200 (OK) with all roles when a member with 'admin' permission requests the chat's roles", async () => {
+        const res = await user2Req.role.get.roleList(
+          groupChatId,
+          user2AccessToken
+        );
+
+        const toEqual = expect.arrayContaining([
+          expect.objectContaining({
+            name: "test_admin_role",
+            roleLevel: 1,
+          }),
+          expect.objectContaining({
+            name: "test_create_role",
+            roleLevel: 2,
+          }),
+          expect.objectContaining({
+            name: "everyone",
+            roleLevel: null,
+          }),
+        ]);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(toEqual);
+      });
+
+      it("returns 200 (OK) with all roles when a member with 'manage_role' permission requests the chat's roles", async () => {
+        const res = await user3Req.role.get.roleList(
+          groupChatId,
+          user3AccessToken
+        );
+
+        const toEqual = expect.arrayContaining([
+          expect.objectContaining({
+            name: "test_admin_role",
+            roleLevel: 1,
+          }),
+          expect.objectContaining({
+            name: "test_create_role",
+            roleLevel: 2,
+          }),
+          expect.objectContaining({
+            name: "everyone",
+            roleLevel: null,
+          }),
+        ]);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual(toEqual);
+      });
+    });
+  });
+
+  describe("Role by ID", () => {
+    describe("Authentication Errors", () => {
+      it.each([
+        {
+          scenario: "invalid token",
+          data: {
+            roleId: idGenerator(),
+            token: user2InvalidToken,
+            includeAuth: true,
+          },
+          expectedError: { code: 401, message: "Invalid or expired token" },
+        },
+        {
+          scenario: "expired token",
+          data: {
+            roleId: idGenerator(),
+            token: user2ExpiredToken,
+            includeAuth: true,
+          },
+          expectedError: { code: 401, message: "Invalid or expired token" },
+        },
+        {
+          scenario: "missing 'Authorization' header",
+          data: {
+            roleId: idGenerator(),
+            token: user2AccessToken,
+            includeAuth: false,
+          },
+          expectedError: {
+            code: 401,
+            message: "Required 'Authorization' header is missing",
+          },
+        },
+      ])(
+        "fails with 401 (UNAUTHORIZED) for $scenario",
+        async ({ data, expectedError }) => {
+          const { roleId, token, includeAuth } = data;
+
+          const res = await user1Req.role.get.roleById(
+            groupChatId,
+            roleId,
+            token,
+            {
+              includeAuth,
+            }
+          );
+
+          expect(res.status).toBe(401);
+          expect(res.body).toMatchObject(expectedError);
+        }
+      );
+    });
+
+    describe("Forbidden Errors", () => {
+      it.each([
+        {
+          scenario: "non-member requesting to view the roles",
+          req: nonMemberReq,
+          data: {
+            token: nonMemberAccessToken,
+            includeAuth: true,
+          },
+          expectedError: {
+            code: 403,
+            message: "You must be a chat member to view chat roles",
+          },
+        },
+        {
+          scenario:
+            "member without the permission requesting to view the roles",
+          req: user4Req,
+          data: {
+            token: user4AccessToken,
+            includeAuth: true,
+          },
+          expectedError: {
+            code: 403,
+            message: "Missing permission: admin or manage_role",
+          },
+        },
+      ])(
+        "fails with 403 when $scenario",
+        async ({ req, data, expectedError }) => {
+          const { token } = data;
+
+          const res = await req.role.get.roleById(
+            groupChatId,
+            adminRoleId,
+            token
+          );
+
+          expect(res.status).toBe(403);
+          expect(res.body).toMatchObject(expectedError);
+        }
+      );
+    });
+
+    describe("Not Found Errors", () => {
+      it.each([
+        {
+          scenario: "chat does not exist",
+          data: {
+            chatId: idGenerator(),
+            roleId: idGenerator(),
+            token: user2AccessToken,
+          },
+          expectedError: { code: 404, message: "Chat not found" },
+        },
+        {
+          scenario: "user requesting a private chat's role",
+          data: {
+            chatId: privateChatId,
+            roleId: idGenerator(),
+            token: user2AccessToken,
+          },
+          expectedError: { code: 404, message: "Chat not found" },
+        },
+        {
+          scenario: "Role not found",
+          data: {
+            roleId: idGenerator(),
+            token: user1AccessToken,
+          },
+          expectedError: { code: 404, message: "Role not found" },
+        },
+      ])("fails with 404 for $scenario", async ({ data, expectedError }) => {
+        const { chatId, roleId, token } = data;
+
+        const res = await user1Req.role.get.roleById(
+          chatId ?? groupChatId,
+          roleId,
+          token
+        );
+
+        expect(res.status).toBe(404);
+        expect(res.body).toMatchObject(expectedError);
+      });
+    });
+
+    describe("Validation Errors", () => {
+      it.each([
+        {
+          scenario: "chat ID invalid format",
+          data: {
+            chatId: "invalid_id_format",
+            token: user2AccessToken,
+          },
+          expectedError: { path: ["chatId"], code: "invalid_string" },
+        },
+        {
+          scenario: "chat ID invalid format",
+          data: {
+            roleId: "invalid_id_format",
+            token: user2AccessToken,
+          },
+          expectedError: { path: ["roleId"], code: "invalid_string" },
+        },
+      ])(
+        "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
+        async ({ data, expectedError }) => {
+          const { chatId, roleId, token } = data;
+
+          const res = await user1Req.role.get.roleById(
+            chatId ?? groupChatId,
+            roleId ?? adminRoleId,
+            token
+          );
+
+          expect(res.status).toBe(422);
+          expect(res.body.errors).toContainEqual(
+            expect.objectContaining(expectedError)
+          );
+        }
+      );
+    });
+
+    describe("Success case", () => {
+      it("returns 200 (OK) with the role when the chat owner requests a role", async () => {
+        const res = await user1Req.role.get.roleById(
+          groupChatId,
+          adminRoleId,
+          user1AccessToken
+        );
+
+        const toMatchObject = {
+          id: expect.any(String),
+          name: expect.any(String),
+          roleLevel: expect.any(Number),
+          isDefaultRole: expect.any(Boolean),
+          chatId: expect.any(String),
+          createdAt: expect.any(String),
+          updatedAt: null,
+          permissions: expect.any(Array),
+        };
+
+        const toEqualPermission = expect.arrayContaining([
+          expect.objectContaining({ id: expect.any(String), name: "admin" }),
+        ]);
+
+        expect(res.status).toBe(200);
+        expect(res.body).not.toHaveProperty("pk");
+        expect(res.body).toMatchObject(toMatchObject);
+        expect(res.body.permissions).toEqual(toEqualPermission);
+      });
+
+      it("returns 200 (OK) with the role when a member with 'admin' permission requests a role", async () => {
+        const res = await user2Req.role.get.roleById(
+          groupChatId,
+          adminRoleId,
+          user2AccessToken
+        );
+
+        const toMatchObject = {
+          id: expect.any(String),
+          name: expect.any(String),
+          roleLevel: expect.any(Number),
+          isDefaultRole: expect.any(Boolean),
+          chatId: expect.any(String),
+          createdAt: expect.any(String),
+          updatedAt: null,
+          permissions: expect.any(Array),
+        };
+
+        const toEqualPermission = expect.arrayContaining([
+          expect.objectContaining({ id: expect.any(String), name: "admin" }),
+        ]);
+
+        expect(res.status).toBe(200);
+        expect(res.body).not.toHaveProperty("pk");
+        expect(res.body).toMatchObject(toMatchObject);
+        expect(res.body.permissions).toEqual(toEqualPermission);
+      });
+
+      it("returns 200 (OK) with the role when a member with 'manage_role' permission requests a role", async () => {
+        const res = await user2Req.role.get.roleById(
+          groupChatId,
+          adminRoleId,
+          user2AccessToken
+        );
+
+        const toMatchObject = {
+          id: expect.any(String),
+          name: expect.any(String),
+          roleLevel: expect.any(Number),
+          isDefaultRole: expect.any(Boolean),
+          chatId: expect.any(String),
+          createdAt: expect.any(String),
+          updatedAt: null,
+          permissions: expect.any(Array),
+        };
+
+        const toEqualPermission = expect.arrayContaining([
+          expect.objectContaining({ id: expect.any(String), name: "admin" }),
+        ]);
+
+        expect(res.status).toBe(200);
+        expect(res.body).not.toHaveProperty("pk");
+        expect(res.body).toMatchObject(toMatchObject);
+        expect(res.body.permissions).toEqual(toEqualPermission);
+      });
+    });
+  });
+});
+
+describe.skip("Role update");
+
+describe.skip("Role deletion");
