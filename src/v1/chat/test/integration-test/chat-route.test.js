@@ -3927,7 +3927,7 @@ describe("Role detail", () => {
       },
     });
 
-    const [roleManagerMember] = await client.$transaction([
+    const [roleManagerMember, normalMember] = await client.$transaction([
       client.userOnChat.create({
         data: {
           chat: {
@@ -3967,7 +3967,7 @@ describe("Role detail", () => {
     adminRoleId = adminRole.id;
 
     return async () => {
-      const memberIds = [roleManagerMember.id];
+      const memberIds = [roleManagerMember.id, normalMember.id];
 
       const roleIds = [adminRole.id, roleManagementRole.id];
 
