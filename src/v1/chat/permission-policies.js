@@ -32,13 +32,18 @@ const executePermissionCheck = (subject, data, requiredPermissions) =>
       role.permissions.some((p) => requiredPermissions.includes(p.name))
   );
 
+const getRolesWithRequiredPermissions = (subject, requiredPermissions) =>
+  subject.roles.filter((role) =>
+    role.permissions.some((p) => requiredPermissions.includes(p.name))
+  );
+
 const getHighestRoleLevel = (user) =>
   Math.min(
-    ...user.roles.reduce((arr, r) => {
+    ...(user?.roles?.reduce?.((arr, r) => {
       if (r.isDefaultRole) return arr;
 
       return arr.concat(r.roleLevel);
-    }, [])
+    }, []) ?? [])
   );
 
 const PERMISSION_POLICIES = {
@@ -351,7 +356,7 @@ const PERMISSION_POLICIES = {
           return {
             allowed: false,
             code: "forbidden",
-            reason: "Cannot mute a higher-ranked member",
+            reason: "You cannot mute a member with higher role level",
           };
         }
 
@@ -364,17 +369,38 @@ const PERMISSION_POLICIES = {
         }
 
         const requiredPermissions = PERMISSIONS.member.update.mute;
-        const hasMutePermission = executePermissionCheck(
+
+        const filteredRoles = getRolesWithRequiredPermissions(
           user,
+          requiredPermissions
+        );
+
+        const highestFilterRoleLevel = getHighestRoleLevel({
+          roles: filteredRoles,
+        });
+
+        const hasPermission = executePermissionCheck(
+          { roles: filteredRoles },
           chat,
           requiredPermissions
         );
 
-        if (!hasMutePermission) {
+        if (!hasPermission) {
           return {
             allowed: false,
             code: "forbidden",
             reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+          };
+        }
+
+        const highestFilterRoleLevelIsLowerOrEqualRank =
+          highestFilterRoleLevel >= targetLevel;
+
+        if (highestFilterRoleLevelIsLowerOrEqualRank) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason: "You cannot mute a member with higher or equal role level",
           };
         }
 
@@ -416,7 +442,7 @@ const PERMISSION_POLICIES = {
           return {
             allowed: false,
             code: "forbidden",
-            reason: "Cannot unmute higher-ranked members",
+            reason: "You cannot unmute a member with higher role level",
           };
         }
 
@@ -428,10 +454,19 @@ const PERMISSION_POLICIES = {
           };
         }
 
-        // Equal rank — permission required
         const requiredPermissions = PERMISSIONS.member.update.unMute;
-        const hasPermission = executePermissionCheck(
+
+        const filteredRoles = getRolesWithRequiredPermissions(
           user,
+          requiredPermissions
+        );
+
+        const highestFilterRoleLevel = getHighestRoleLevel({
+          roles: filteredRoles,
+        });
+
+        const hasPermission = executePermissionCheck(
+          { roles: filteredRoles },
           chat,
           requiredPermissions
         );
@@ -441,6 +476,18 @@ const PERMISSION_POLICIES = {
             allowed: false,
             code: "forbidden",
             reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+          };
+        }
+
+        const highestFilterRoleLevelIsLowerOrEqualRank =
+          highestFilterRoleLevel >= targetLevel;
+
+        if (highestFilterRoleLevelIsLowerOrEqualRank) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason:
+              "You cannot unmute a member with higher or equal role level",
           };
         }
 
@@ -527,17 +574,37 @@ const PERMISSION_POLICIES = {
         }
 
         const requiredPermissions = PERMISSIONS.member.destroy;
-        const hasKickPermission = executePermissionCheck(
+        const filteredRoles = getRolesWithRequiredPermissions(
           user,
+          requiredPermissions
+        );
+
+        const highestFilterRoleLevel = getHighestRoleLevel({
+          roles: filteredRoles,
+        });
+
+        const hasPermission = executePermissionCheck(
+          { roles: filteredRoles },
           chat,
           requiredPermissions
         );
 
-        if (!hasKickPermission) {
+        if (!hasPermission) {
           return {
             allowed: false,
             code: "forbidden",
             reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+          };
+        }
+
+        const highestFilterRoleLevelIsLowerOrEqualRank =
+          highestFilterRoleLevel >= targetRoleLevel;
+
+        if (highestFilterRoleLevelIsLowerOrEqualRank) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason: "You cannot kick a member with higher or equal role level",
           };
         }
 
