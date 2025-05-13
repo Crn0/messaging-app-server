@@ -50,7 +50,7 @@ const {
 
 const { id: user3Id, accessToken: user3AccessToken } = user3.data;
 const { id: user4Id, accessToken: user4AccessToken } = user4.data;
-const { id: user5Id } = user5.data;
+const { id: user5Id, accessToken: user5AccessToken } = user5.data;
 const { id: nonMemberId, accessToken: nonMemberAccessToken } = user6.data;
 
 const { entity: user1Entity } = user1;
@@ -2399,6 +2399,10 @@ describe("Member update", () => {
     let normalMember2Id;
 
     beforeAll(async () => {
+      const defaultRole = await client.role.findFirst({
+        where: { isDefaultRole: true, chat: { id: groupChatId } },
+      });
+
       const [adminRole, highestRole, muteRole] = await client.$transaction([
         client.role.create({
           data: {
@@ -2429,7 +2433,7 @@ describe("Member update", () => {
             },
             permissions: {
               connect: {
-                name: "manage_member",
+                name: "mute_member",
               },
             },
           },
@@ -2481,6 +2485,7 @@ describe("Member update", () => {
               user: {
                 connect: { id: user4Id },
               },
+              roles: { connect: { id: defaultRole.id } },
             },
           }),
           client.userOnChat.create({
@@ -2491,6 +2496,7 @@ describe("Member update", () => {
               user: {
                 connect: { id: user5Id },
               },
+              roles: { connect: { id: defaultRole.id } },
             },
           }),
           client.userOnChat.update({
@@ -2667,11 +2673,10 @@ describe("Member update", () => {
             },
           },
           {
-            scenario:
-              "a member without the needed permission tries to mute a user",
+            scenario: "member role without permission attempts to mute user",
             req: user4Req,
             data: {
-              memberId: user5Id,
+              memberId: user4Id,
               token: user4AccessToken,
               includeAuth: true,
               payload: validForm,
@@ -2679,6 +2684,22 @@ describe("Member update", () => {
             expectedError: {
               code: 403,
               message: "Missing permission: admin or mute_member",
+            },
+          },
+          {
+            scenario:
+              "member role with permission equal to target user role level attempts to mute user",
+            req: user3Req,
+            data: {
+              memberId: user3Id,
+              token: user3AccessToken,
+              includeAuth: true,
+              payload: validForm,
+            },
+            expectedError: {
+              code: 403,
+              message:
+                "You cannot mute a member with higher or equal role level",
             },
           },
           {
@@ -2720,7 +2741,7 @@ describe("Member update", () => {
             },
             expectedError: {
               code: 403,
-              message: "Cannot mute a higher-ranked member",
+              message: "You cannot mute a member with higher role level",
             },
           },
         ])(
@@ -2743,42 +2764,28 @@ describe("Member update", () => {
 
       describe("Success case", () => {
         beforeAll(async () => {
-          await client.$transaction([
-            client.userOnChat.update({
-              where: {
-                id: normalMember1Id,
-              },
-              data: {
-                roles: {
-                  connect: {
-                    id: muteRoleId,
-                  },
+          await client.userOnChat.update({
+            where: {
+              id: normalMember1Id,
+            },
+            data: {
+              roles: {
+                connect: {
+                  id: muteRoleId,
                 },
               },
-              select: {
-                user: { select: { id: true } },
-              },
-            }),
-            client.userOnChat.update({
-              where: {
-                id: normalMember2Id,
-              },
-              data: {
-                roles: {
-                  connect: {
-                    id: muteRoleId,
-                  },
-                },
-              },
-            }),
-          ]);
+            },
+            select: {
+              user: { select: { id: true } },
+            },
+          });
 
           return async () =>
             client.role.update({
               where: { id: muteRoleId },
               data: {
                 members: {
-                  disconnect: [normalMember1Id, normalMember2Id].map((id) => ({
+                  disconnect: [normalMember1Id].map((id) => ({
                     id,
                   })),
                 },
@@ -2812,8 +2819,9 @@ describe("Member update", () => {
             validForm.mutedUntil.getTime()
           );
         });
+
         it("returns 204 (NO_CONTENT) when a higher role member mutes a lower role member", async () => {
-          const res = await user1Req.member.patch.mutedUntil(
+          const res = await user3Req.member.patch.mutedUntil(
             groupChatId,
             user4Id,
             validForm,
@@ -2839,14 +2847,13 @@ describe("Member update", () => {
           );
         });
 
-        it("returns 204 (NO_CONTENT) when a member with 'mute_member' permission mutes another member of equal role level", async () => {
-          const res = await user1Req.member.patch.mutedUntil(
+        it("returns 204 (NO_CONTENT) when a member with 'mute_member' permission mutes a normal member", async () => {
+          const res = await user4Req.member.patch.mutedUntil(
             groupChatId,
             user5Id,
             validForm,
             user4AccessToken
           );
-
           expect(res.status).toBe(204);
 
           const mutedMember = await client.userOnChat.findFirst({
@@ -2888,18 +2895,33 @@ describe("Member update", () => {
             },
           },
           {
-            scenario:
-              "a member without the needed permission tries to unmute a user",
+            scenario: "member role without permission attempts to unmute user",
             req: user4Req,
             data: {
-              memberId: user5Id,
-              payload: validForm,
+              memberId: user4Id,
               token: user4AccessToken,
               includeAuth: true,
+              payload: validForm,
             },
             expectedError: {
               code: 403,
               message: "Missing permission: admin or mute_member",
+            },
+          },
+          {
+            scenario:
+              "member role with permission equal to target user role level attempts to unmute user",
+            req: user3Req,
+            data: {
+              memberId: user3Id,
+              token: user3AccessToken,
+              includeAuth: true,
+              payload: validForm,
+            },
+            expectedError: {
+              code: 403,
+              message:
+                "You cannot unmute a member with higher or equal role level",
             },
           },
           {
@@ -2913,7 +2935,7 @@ describe("Member update", () => {
             },
             expectedError: {
               code: 403,
-              message: "Cannot unmute higher-ranked members",
+              message: "You cannot unmute a member with higher role level",
             },
           },
         ])(
@@ -2936,39 +2958,28 @@ describe("Member update", () => {
 
       describe("Success case", () => {
         beforeAll(async () => {
-          await client.$transaction([
-            client.userOnChat.update({
-              where: {
-                id: normalMember1Id,
-              },
-              data: {
-                roles: {
-                  connect: {
-                    id: muteRoleId,
-                  },
+          await client.userOnChat.update({
+            where: {
+              id: normalMember1Id,
+            },
+            data: {
+              roles: {
+                connect: {
+                  id: muteRoleId,
                 },
               },
-            }),
-            client.userOnChat.update({
-              where: {
-                id: normalMember2Id,
-              },
-              data: {
-                roles: {
-                  connect: {
-                    id: muteRoleId,
-                  },
-                },
-              },
-            }),
-          ]);
+            },
+            select: {
+              user: { select: { id: true } },
+            },
+          });
 
           return async () =>
             client.role.update({
               where: { id: muteRoleId },
               data: {
                 members: {
-                  disconnect: [normalMember1Id, normalMember2Id].map((id) => ({
+                  disconnect: [normalMember1Id].map((id) => ({
                     id,
                   })),
                 },
@@ -3001,7 +3012,7 @@ describe("Member update", () => {
         });
 
         it("returns 204 (NO_CONTENT) when a higher role member mutes a lower role member", async () => {
-          const res = await user1Req.member.patch.mutedUntil(
+          const res = await user3Req.member.patch.mutedUntil(
             groupChatId,
             user4Id,
             validForm,
@@ -3024,8 +3035,8 @@ describe("Member update", () => {
           expect(mutedMember.mutedUntil).toBeNull();
         });
 
-        it("returns 204 (NO_CONTENT) when a member with 'mute_member' permission mutes another member of equal role level", async () => {
-          const res = await user1Req.member.patch.mutedUntil(
+        it("returns 204 (NO_CONTENT) when a member with 'mute_member' permission unmute a normal member", async () => {
+          const res = await user4Req.member.patch.mutedUntil(
             groupChatId,
             user5Id,
             validForm,
