@@ -105,7 +105,7 @@ const createUpdateChatRoleMetaData =
       permissionIds: DTO.permissionIds,
     };
 
-    const role = await roleRepository.updateChatRoleDisplay(data);
+    const role = await roleRepository.updateChatRoleMetaData(roleId, data);
 
     return role;
   };
