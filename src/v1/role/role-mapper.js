@@ -24,7 +24,7 @@ const toData = (action, DTO) => {
       };
     }
     case DATA_ACTIONS.UPDATE_META_DATA: {
-      const data = {};
+      const data = { updatedAt: new Date() };
 
       if (DTO.name) {
         data.name = DTO.name;
@@ -41,6 +41,7 @@ const toData = (action, DTO) => {
     }
     case DATA_ACTIONS.UPDATE_MEMBER: {
       return {
+        updatedAt: new Date(),
         members: {
           connect: {
             id: DTO.memberId,
@@ -50,6 +51,7 @@ const toData = (action, DTO) => {
     }
     case DATA_ACTIONS.UPDATE_MEMBERS: {
       return {
+        updatedAt: new Date(),
         members: {
           set: [],
           connect: DTO.membersId.map((id) => ({ id })),
@@ -58,6 +60,7 @@ const toData = (action, DTO) => {
     }
     case DATA_ACTIONS.UPDATE_ROLE_LEVEL: {
       return {
+        updatedAt: new Date(),
         roleLevel: DTO.roleLevel,
       };
     }
