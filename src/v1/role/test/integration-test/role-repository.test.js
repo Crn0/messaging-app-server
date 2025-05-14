@@ -282,237 +282,245 @@ describe("Role update", () => {
     };
   });
 
-  it("updates the role's display and return the updated object", async () => {
-    const role = await client.role.create({
-      data: {
-        name: "test_role_3",
-        roleLevel: 3,
-        isDefaultRole: false,
-        chat: {
-          connect: {
-            id: chatId,
+  describe("Update name", () => {
+    it("returns the updated object", async () => {
+      const role = await client.role.create({
+        data: {
+          name: "test_role_3",
+          roleLevel: 3,
+          isDefaultRole: false,
+          chat: {
+            connect: {
+              id: chatId,
+            },
           },
         },
-      },
-      select: {
-        id: true,
-      },
+        select: {
+          id: true,
+        },
+      });
+
+      const updatedRole = await roleRepository.updateChatRoleMetaData(role.id, {
+        name: "updated_role_1",
+      });
+
+      const toMatchObject = {
+        chatId,
+        id: expect.any(String),
+        name: "updated_role_1",
+        roleLevel: 3,
+        isDefaultRole: false,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        permissions: [],
+      };
+
+      expect(updatedRole).not.toHaveProperty("pk");
+      expect(updatedRole).toMatchObject(toMatchObject);
+
+      await client.role.delete({ where: { id: updatedRole.id } });
     });
-
-    const updatedRole = await roleRepository.updateChatRoleMetaData(role.id, {
-      name: "updated_role_1",
-    });
-
-    const toMatchObject = {
-      chatId,
-      id: expect.any(String),
-      name: "updated_role_1",
-      roleLevel: 3,
-      isDefaultRole: false,
-      createdAt: expect.any(Date),
-      updatedAt: null,
-      permissions: [],
-    };
-
-    expect(updatedRole).not.toHaveProperty("pk");
-    expect(updatedRole).toMatchObject(toMatchObject);
-
-    await client.role.delete({ where: { id: updatedRole.id } });
   });
 
-  it("insert a member to role and return the updated object", async () => {
-    const role = await client.role.create({
-      data: {
+  describe("Update member", () => {
+    it("insert a single member and returns the updated object", async () => {
+      const role = await client.role.create({
+        data: {
+          name: "default_role",
+          roleLevel: null,
+          isDefaultRole: true,
+          chat: {
+            connect: {
+              id: chatId,
+            },
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const data = {
+        memberId: userId,
+      };
+
+      const updatedRole = await roleRepository.updateChatRoleMember(
+        role.id,
+        chatId,
+        data
+      );
+
+      const { members } = await client.role.findUnique({
+        where: { id: role.id },
+        select: { members: { select: { user: { select: { id: true } } } } },
+      });
+
+      const toMatchObject = {
+        chatId,
+        id: expect.any(String),
         name: "default_role",
         roleLevel: null,
         isDefaultRole: true,
-        chat: {
-          connect: {
-            id: chatId,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        permissions: expect.any(Array),
+      };
+
+      expect(updatedRole).not.toHaveProperty("pk");
+      expect(updatedRole).toMatchObject(toMatchObject);
+      expect(members[0].user.id).toBe(userId);
+
+      await client.role.delete({ where: { id: updatedRole.id } });
+    });
+
+    it("insert a list of member and return the updated object", async () => {
+      const role = await client.role.create({
+        data: {
+          name: "test_role_3",
+          roleLevel: 3,
+          isDefaultRole: false,
+          chat: {
+            connect: {
+              id: chatId,
+            },
           },
         },
-      },
-      select: {
-        id: true,
-      },
-    });
+        select: {
+          id: true,
+        },
+      });
 
-    const data = {
-      memberId: userId,
-    };
+      const data = {
+        membersId: [userId],
+      };
 
-    const updatedRole = await roleRepository.updateChatRoleMember(
-      role.id,
-      chatId,
-      data
-    );
+      const updatedRole = await roleRepository.updateChatRoleMembers(
+        role.id,
+        chatId,
+        data
+      );
 
-    const { members } = await client.role.findUnique({
-      where: { id: role.id },
-      select: { members: { select: { user: { select: { id: true } } } } },
-    });
+      const { members } = await client.role.findUnique({
+        where: { id: role.id },
+        select: { members: { select: { user: { select: { id: true } } } } },
+      });
 
-    const toMatchObject = {
-      chatId,
-      id: expect.any(String),
-      name: "default_role",
-      roleLevel: null,
-      isDefaultRole: true,
-      createdAt: expect.any(Date),
-      updatedAt: null,
-      permissions: expect.any(Array),
-    };
-
-    expect(updatedRole).not.toHaveProperty("pk");
-    expect(updatedRole).toMatchObject(toMatchObject);
-    expect(members[0].user.id).toBe(userId);
-
-    await client.role.delete({ where: { id: updatedRole.id } });
-  });
-
-  it("updates the role's permissions and return the updated object", async () => {
-    const role = await client.role.create({
-      data: {
+      const toMatchObject = {
+        chatId,
+        id: expect.any(String),
         name: "test_role_3",
         roleLevel: 3,
         isDefaultRole: false,
-        chat: {
-          connect: {
-            id: chatId,
-          },
-        },
-      },
-      select: {
-        id: true,
-      },
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        permissions: expect.any(Array),
+      };
+
+      expect(updatedRole).not.toHaveProperty("pk");
+      expect(updatedRole).toMatchObject(toMatchObject);
+      expect(members[0].user.id).toBe(userId);
+
+      await client.role.delete({ where: { id: updatedRole.id } });
     });
-
-    const updatedRole = await roleRepository.updateChatRoleMetaData(role.id, {
-      permissionIds,
-    });
-
-    const toMatchObject = {
-      chatId,
-      id: expect.any(String),
-      name: "test_role_3",
-      roleLevel: 3,
-      isDefaultRole: false,
-      createdAt: expect.any(Date),
-      updatedAt: null,
-      permissions: expect.any(Array),
-    };
-
-    const toEqual = expect.arrayContaining(
-      permissionIds.map((id) => expect.objectContaining({ id }))
-    );
-
-    expect(updatedRole).not.toHaveProperty("pk");
-    expect(updatedRole).toMatchObject(toMatchObject);
-    expect(updatedRole.permissions).toEqual(toEqual);
-
-    await client.role.delete({ where: { id: updatedRole.id } });
   });
 
-  it("updates the role's members and return the updated object", async () => {
-    const role = await client.role.create({
-      data: {
+  describe("Update permission", () => {
+    it("returns the updated object", async () => {
+      const role = await client.role.create({
+        data: {
+          name: "test_role_3",
+          roleLevel: 3,
+          isDefaultRole: false,
+          chat: {
+            connect: {
+              id: chatId,
+            },
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const updatedRole = await roleRepository.updateChatRoleMetaData(role.id, {
+        permissionIds,
+      });
+
+      const toMatchObject = {
+        chatId,
+        id: expect.any(String),
         name: "test_role_3",
         roleLevel: 3,
         isDefaultRole: false,
-        chat: {
-          connect: {
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        permissions: expect.any(Array),
+      };
+
+      const toEqual = expect.arrayContaining(
+        permissionIds.map((id) => expect.objectContaining({ id }))
+      );
+
+      expect(updatedRole).not.toHaveProperty("pk");
+      expect(updatedRole).toMatchObject(toMatchObject);
+      expect(updatedRole.permissions).toEqual(toEqual);
+
+      await client.role.delete({ where: { id: updatedRole.id } });
+    });
+  });
+
+  describe("Update role level", () => {
+    it("updates the roles role level based on the index and return the updated objects", async () => {
+      const roles = await client.role.findMany({
+        orderBy: {
+          roleLevel: "desc",
+        },
+        where: {
+          chat: {
             id: chatId,
           },
         },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    const data = {
-      membersId: [userId],
-    };
-
-    const updatedRole = await roleRepository.updateChatRoleMembers(
-      role.id,
-      chatId,
-      data
-    );
-
-    const { members } = await client.role.findUnique({
-      where: { id: role.id },
-      select: { members: { select: { user: { select: { id: true } } } } },
-    });
-
-    const toMatchObject = {
-      chatId,
-      id: expect.any(String),
-      name: "test_role_3",
-      roleLevel: 3,
-      isDefaultRole: false,
-      createdAt: expect.any(Date),
-      updatedAt: null,
-      permissions: expect.any(Array),
-    };
-
-    expect(updatedRole).not.toHaveProperty("pk");
-    expect(updatedRole).toMatchObject(toMatchObject);
-    expect(members[0].user.id).toBe(userId);
-
-    await client.role.delete({ where: { id: updatedRole.id } });
-  });
-
-  it("updates the roles role level based on the index and return the updated objects", async () => {
-    const roles = await client.role.findMany({
-      orderBy: {
-        roleLevel: "desc",
-      },
-      where: {
-        chat: {
-          id: chatId,
+        select: {
+          id: true,
         },
-      },
-      select: {
-        id: true,
-      },
+      });
+
+      const rolesId = roles.sort().map(({ id }) => id);
+
+      const data = {
+        rolesId,
+      };
+
+      const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+        chatId,
+        data
+      );
+
+      const toEqual = expect.arrayContaining([
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "test_role_2",
+          roleLevel: 1,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "test_role_1",
+          roleLevel: 2,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+      ]);
+
+      expect(updatedRoles).toEqual(toEqual);
     });
-
-    const rolesId = roles.sort().map(({ id }) => id);
-
-    const data = {
-      rolesId,
-    };
-
-    const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
-      chatId,
-      data
-    );
-
-    const toEqual = expect.arrayContaining([
-      expect.objectContaining({
-        chatId,
-        id: expect.any(String),
-        name: "test_role_2",
-        roleLevel: 1,
-        isDefaultRole: false,
-        createdAt: expect.any(Date),
-        updatedAt: null,
-        permissions: expect.any(Array),
-      }),
-      expect.objectContaining({
-        chatId,
-        id: expect.any(String),
-        name: "test_role_1",
-        roleLevel: 2,
-        isDefaultRole: false,
-        createdAt: expect.any(Date),
-        updatedAt: null,
-        permissions: expect.any(Array),
-      }),
-    ]);
-
-    expect(updatedRoles).toEqual(toEqual);
   });
 });
 
