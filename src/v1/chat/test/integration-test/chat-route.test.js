@@ -4479,7 +4479,7 @@ describe("Role detail", () => {
   });
 });
 
-describe("Role update", () => {
+describe("Role update metadata", () => {
   let highestRoleLevelId;
   let adminRoleId;
   let roleManagerId;
@@ -4663,244 +4663,328 @@ describe("Role update", () => {
     };
   });
 
-  describe("Role metadata", () => {
-    describe("Authentication Errors", () => {
-      it.each([
-        {
-          scenario: "invalid token",
-          data: {
-            roleId: idGenerator(),
-            payload: { name: "test_name" },
-            token: user2InvalidToken,
-            includeAuth: true,
-          },
-          expectedError: { code: 401, message: "Invalid or expired token" },
+  describe("Authentication Errors", () => {
+    it.each([
+      {
+        scenario: "invalid token",
+        data: {
+          roleId: idGenerator(),
+          payload: { name: "test_name" },
+          token: user2InvalidToken,
+          includeAuth: true,
         },
-        {
-          scenario: "expired token",
-          data: {
-            roleId: idGenerator(),
-            payload: { name: "test_name" },
-            token: user2ExpiredToken,
-            includeAuth: true,
-          },
-          expectedError: { code: 401, message: "Invalid or expired token" },
+        expectedError: { code: 401, message: "Invalid or expired token" },
+      },
+      {
+        scenario: "expired token",
+        data: {
+          roleId: idGenerator(),
+          payload: { name: "test_name" },
+          token: user2ExpiredToken,
+          includeAuth: true,
         },
-        {
-          scenario: "missing 'Authorization' header",
-          data: {
-            roleId: idGenerator(),
-            payload: { name: "test_name" },
-            token: user2AccessToken,
-            includeAuth: false,
-          },
-          expectedError: {
-            code: 401,
-            message: "Required 'Authorization' header is missing",
-          },
+        expectedError: { code: 401, message: "Invalid or expired token" },
+      },
+      {
+        scenario: "missing 'Authorization' header",
+        data: {
+          roleId: idGenerator(),
+          payload: { name: "test_name" },
+          token: user2AccessToken,
+          includeAuth: false,
         },
-      ])(
-        "fails with 401 (UNAUTHORIZED) for $scenario",
-        async ({ data, expectedError }) => {
-          const { roleId, payload, token, includeAuth } = data;
+        expectedError: {
+          code: 401,
+          message: "Required 'Authorization' header is missing",
+        },
+      },
+    ])(
+      "fails with 401 (UNAUTHORIZED) for $scenario",
+      async ({ data, expectedError }) => {
+        const { roleId, payload, token, includeAuth } = data;
 
-          const res = await user1Req.role.patch.metaData(
-            groupChatId,
-            roleId,
-            payload,
-            token,
-            {
-              includeAuth,
-            }
-          );
+        const res = await user1Req.role.patch.metaData(
+          groupChatId,
+          roleId,
+          payload,
+          token,
+          {
+            includeAuth,
+          }
+        );
 
-          expect(res.status).toBe(401);
-          expect(res.body).toMatchObject(expectedError);
-        }
+        expect(res.status).toBe(401);
+        expect(res.body).toMatchObject(expectedError);
+      }
+    );
+  });
+
+  describe("Forbidden Errors", () => {
+    const getRoleId = (scenario) => {
+      if (
+        scenario === "equal-ranked member updating permissions" ||
+        scenario === "equal-ranked member updating role name"
+      ) {
+        return highestRoleLevelId;
+      }
+
+      if (scenario === "owner updating a default role name") {
+        return defaultRoleId;
+      }
+
+      return adminRoleId;
+    };
+
+    it.each([
+      {
+        scenario: "non-member updating role",
+        req: nonMemberReq,
+        data: {
+          payload: { name: "test_role" },
+          token: nonMemberAccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "You must be a chat member to update roles",
+        },
+      },
+      {
+        scenario: "member without permissions updating role",
+        req: user4Req,
+        data: {
+          payload: { name: "test_role" },
+          token: user4AccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "Missing permission: admin or manage_role",
+        },
+      },
+      {
+        scenario: "owner updating a default role name",
+        req: user1Req,
+        data: {
+          payload: { name: "test_role" },
+          token: user1AccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "You cannot update the name of a default role",
+        },
+      },
+      {
+        scenario: "equal-ranked member updating role name",
+        req: user2Req,
+        data: {
+          payload: { name: "test_role" },
+          token: user2AccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "You cannot update name of a higher or equal role level",
+        },
+      },
+      {
+        scenario: "equal-ranked member updating permissions",
+        req: user2Req,
+        data: {
+          payload: { permissionIds: [idGenerator()] },
+          token: user2AccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message:
+            "You cannot update permissions of a higher or equal role level",
+        },
+      },
+      {
+        scenario: "lower-ranked member updating higher role name",
+        req: user5Req,
+        data: {
+          roleId: highestRoleLevelId,
+          payload: { name: "test_role" },
+          token: user5AccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "You cannot update name of a higher or equal role level",
+        },
+      },
+      {
+        scenario:
+          "higher-role lacks permission, lower-role has it — update name attempt",
+        req: user5Req,
+        data: {
+          payload: { name: "test_role" },
+          token: user5AccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "You cannot update name of a higher or equal role level",
+        },
+      },
+      {
+        scenario: "lower-ranked member updating higher role permissions",
+        req: user5Req,
+        data: {
+          roleId: highestRoleLevelId,
+          payload: { permissionIds: [idGenerator()] },
+          token: user5AccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message:
+            "You cannot update permissions of a higher or equal role level",
+        },
+      },
+      {
+        scenario:
+          "higher-role lacks permission, lower-role has it — update permissions attempt",
+        req: user5Req,
+        data: {
+          payload: { permissionIds: [idGenerator()] },
+          token: user5AccessToken,
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message:
+            "You cannot update permissions of a higher or equal role level",
+        },
+      },
+    ])(
+      "fails with 403 when $scenario",
+      async ({ scenario, req, data, expectedError }) => {
+        const { roleId, payload, token } = data;
+
+        const res = await req.role.patch.metaData(
+          groupChatId,
+          roleId ?? getRoleId(scenario),
+          payload,
+          token
+        );
+
+        expect(res.status).toBe(403);
+        expect(res.body).toMatchObject(expectedError);
+      }
+    );
+  });
+
+  describe("Not Found Errors", () => {
+    it.each([
+      {
+        scenario: "chat does not exist",
+        data: {
+          chatId: idGenerator(),
+          payload: { name: "test_role_name" },
+          token: user2AccessToken,
+        },
+        expectedError: { code: 404, message: "Chat not found" },
+      },
+      {
+        scenario: "role does not exist",
+        data: {
+          roleId: idGenerator(),
+          payload: { name: "test_role_name" },
+          token: user2AccessToken,
+        },
+        expectedError: { code: 404, message: "Role not found" },
+      },
+    ])("fails with 404 for $scenario", async ({ data, expectedError }) => {
+      const { chatId, roleId, payload, token } = data;
+      const res = await user1Req.role.patch.metaData(
+        chatId ?? groupChatId,
+        roleId ?? adminRoleId,
+        payload,
+        token
       );
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject(expectedError);
     });
+  });
 
-    describe("Forbidden Errors", () => {
-      const getRoleId = (scenario) => {
-        if (
-          scenario === "equal-ranked member updating permissions" ||
-          scenario === "equal-ranked member updating role name"
-        ) {
-          return highestRoleLevelId;
-        }
+  describe("Validation Errors", () => {
+    const duplicateId = idGenerator();
 
-        if (scenario === "owner updating a default role name") {
-          return defaultRoleId;
-        }
+    it.each([
+      {
+        scenario: "chat ID invalid format",
+        data: {
+          chatId: "invalid_id_format",
+          payload: {
+            name: "test_created_role",
+          },
+          token: user2AccessToken,
+        },
+        expectedError: { path: ["chatId"], code: "invalid_string" },
+      },
+      {
+        scenario: "role ID invalid format",
+        data: {
+          chatId: idGenerator(),
+          roleId: "invalid_id_format",
+          payload: {
+            name: "test_created_role",
+          },
+          token: user2AccessToken,
+        },
+        expectedError: { path: ["roleId"], code: "invalid_string" },
+      },
+      {
+        scenario: "name invalid type",
+        data: {
+          payload: {
+            name: 42,
+          },
+          token: user2AccessToken,
+        },
+        expectedError: { path: ["name"], code: "invalid_type" },
+      },
+      {
+        scenario: "name invalid length",
+        data: {
+          payload: {
+            name: Array.from({ length: 100 }, () => "foo").join(""),
+          },
+          token: user2AccessToken,
+        },
+        expectedError: { path: ["name"], code: "too_big" },
+      },
+      {
+        scenario: "permission ID at index 0 has an invalid string",
+        data: {
+          payload: {
+            permissionIds: ["invalid_id_format", idGenerator()],
+          },
+          token: user2AccessToken,
+        },
+        expectedError: { path: ["permissionIds", 0], code: "invalid_string" },
+      },
+      {
+        scenario: "duplicate permission ID in the array",
 
-        return adminRoleId;
-      };
-
-      it.each([
-        {
-          scenario: "non-member updating role",
-          req: nonMemberReq,
-          data: {
-            payload: { name: "test_role" },
-            token: nonMemberAccessToken,
-            includeAuth: true,
+        data: {
+          payload: {
+            permissionIds: [duplicateId, duplicateId, idGenerator()],
           },
-          expectedError: {
-            code: 403,
-            message: "You must be a chat member to update roles",
-          },
+          token: user2AccessToken,
         },
-        {
-          scenario: "member without permissions updating role",
-          req: user4Req,
-          data: {
-            payload: { name: "test_role" },
-            token: user4AccessToken,
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 403,
-            message: "Missing permission: admin or manage_role",
-          },
-        },
-        {
-          scenario: "owner updating a default role name",
-          req: user1Req,
-          data: {
-            payload: { name: "test_role" },
-            token: user1AccessToken,
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 403,
-            message: "You cannot update the name of a default role",
-          },
-        },
-        {
-          scenario: "equal-ranked member updating role name",
-          req: user2Req,
-          data: {
-            payload: { name: "test_role" },
-            token: user2AccessToken,
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 403,
-            message: "You cannot update name of a higher or equal role level",
-          },
-        },
-        {
-          scenario: "equal-ranked member updating permissions",
-          req: user2Req,
-          data: {
-            payload: { permissionIds: [idGenerator()] },
-            token: user2AccessToken,
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 403,
-            message:
-              "You cannot update permissions of a higher or equal role level",
-          },
-        },
-        {
-          scenario: "lower-ranked member updating higher role name",
-          req: user5Req,
-          data: {
-            roleId: highestRoleLevelId,
-            payload: { name: "test_role" },
-            token: user5AccessToken,
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 403,
-            message: "You cannot update name of a higher or equal role level",
-          },
-        },
-        {
-          scenario:
-            "higher-role lacks permission, lower-role has it — update name attempt",
-          req: user5Req,
-          data: {
-            payload: { name: "test_role" },
-            token: user5AccessToken,
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 403,
-            message: "You cannot update name of a higher or equal role level",
-          },
-        },
-        {
-          scenario: "lower-ranked member updating higher role permissions",
-          req: user5Req,
-          data: {
-            roleId: highestRoleLevelId,
-            payload: { permissionIds: [idGenerator()] },
-            token: user5AccessToken,
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 403,
-            message:
-              "You cannot update permissions of a higher or equal role level",
-          },
-        },
-        {
-          scenario:
-            "higher-role lacks permission, lower-role has it — update permissions attempt",
-          req: user5Req,
-          data: {
-            payload: { permissionIds: [idGenerator()] },
-            token: user5AccessToken,
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 403,
-            message:
-              "You cannot update permissions of a higher or equal role level",
-          },
-        },
-      ])(
-        "fails with 403 when $scenario",
-        async ({ scenario, req, data, expectedError }) => {
-          const { roleId, payload, token } = data;
-
-          const res = await req.role.patch.metaData(
-            groupChatId,
-            roleId ?? getRoleId(scenario),
-            payload,
-            token
-          );
-
-          expect(res.status).toBe(403);
-          expect(res.body).toMatchObject(expectedError);
-        }
-      );
-    });
-
-    describe("Not Found Errors", () => {
-      it.each([
-        {
-          scenario: "chat does not exist",
-          data: {
-            chatId: idGenerator(),
-            payload: { name: "test_role_name" },
-            token: user2AccessToken,
-          },
-          expectedError: { code: 404, message: "Chat not found" },
-        },
-        {
-          scenario: "role does not exist",
-          data: {
-            roleId: idGenerator(),
-            payload: { name: "test_role_name" },
-            token: user2AccessToken,
-          },
-          expectedError: { code: 404, message: "Role not found" },
-        },
-      ])("fails with 404 for $scenario", async ({ data, expectedError }) => {
+        expectedError: { path: ["permissionIds"], code: "custom" },
+      },
+    ])(
+      "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
+      async ({ data, expectedError }) => {
         const { chatId, roleId, payload, token } = data;
+
         const res = await user1Req.role.patch.metaData(
           chatId ?? groupChatId,
           roleId ?? adminRoleId,
@@ -4908,210 +4992,39 @@ describe("Role update", () => {
           token
         );
 
-        expect(res.status).toBe(404);
-        expect(res.body).toMatchObject(expectedError);
-      });
-    });
+        expect(res.status).toBe(422);
+        expect(res.body.errors).toContainEqual(
+          expect.objectContaining(expectedError)
+        );
+      }
+    );
+  });
 
-    describe("Validation Errors", () => {
-      const duplicateId = idGenerator();
-
-      it.each([
-        {
-          scenario: "chat ID invalid format",
-          data: {
-            chatId: "invalid_id_format",
-            payload: {
-              name: "test_created_role",
-            },
-            token: user2AccessToken,
-          },
-          expectedError: { path: ["chatId"], code: "invalid_string" },
-        },
-        {
-          scenario: "role ID invalid format",
-          data: {
-            chatId: idGenerator(),
-            roleId: "invalid_id_format",
-            payload: {
-              name: "test_created_role",
-            },
-            token: user2AccessToken,
-          },
-          expectedError: { path: ["roleId"], code: "invalid_string" },
-        },
-        {
-          scenario: "name invalid type",
-          data: {
-            payload: {
-              name: 42,
-            },
-            token: user2AccessToken,
-          },
-          expectedError: { path: ["name"], code: "invalid_type" },
-        },
-        {
-          scenario: "name invalid length",
-          data: {
-            payload: {
-              name: Array.from({ length: 100 }, () => "foo").join(""),
-            },
-            token: user2AccessToken,
-          },
-          expectedError: { path: ["name"], code: "too_big" },
-        },
-        {
-          scenario: "permission ID at index 0 has an invalid string",
-          data: {
-            payload: {
-              permissionIds: ["invalid_id_format", idGenerator()],
-            },
-            token: user2AccessToken,
-          },
-          expectedError: { path: ["permissionIds", 0], code: "invalid_string" },
-        },
-        {
-          scenario: "duplicate permission ID in the array",
-
-          data: {
-            payload: {
-              permissionIds: [duplicateId, duplicateId, idGenerator()],
-            },
-            token: user2AccessToken,
-          },
-          expectedError: { path: ["permissionIds"], code: "custom" },
-        },
-      ])(
-        "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
-        async ({ data, expectedError }) => {
-          const { chatId, roleId, payload, token } = data;
-
-          const res = await user1Req.role.patch.metaData(
-            chatId ?? groupChatId,
-            roleId ?? adminRoleId,
-            payload,
-            token
-          );
-
-          expect(res.status).toBe(422);
-          expect(res.body.errors).toContainEqual(
-            expect.objectContaining(expectedError)
-          );
-        }
-      );
-    });
-
-    describe("Update name", () => {
-      beforeEach(async () => {
-        client.$transaction([
-          client.role.update({
-            where: {
-              id: adminRoleId,
-            },
-            data: {
-              name: "test_admin_role",
-            },
-          }),
-          client.role.update({
-            where: {
-              id: lowestRoleId,
-            },
-            data: {
-              name: "test_lowest_role",
-            },
-          }),
-        ]);
-      });
-
-      describe("Success case", () => {
-        it("returns 204 (NO_CONTENT) when the chat owner updates an admin role", async () => {
-          const payload = { name: "updated_name_by_owner" };
-
-          const res = await user1Req.role.patch.metaData(
-            groupChatId,
-            adminRoleId,
-            payload,
-            user1AccessToken
-          );
-
-          expect(res.status).toBe(204);
-
-          const updatedRole = await client.role.findUnique({
-            where: { id: adminRoleId },
-          });
-
-          expect(updatedRole.name).toMatch(payload.name);
-          expect(new Date(updatedRole.updatedAt)).not.toBeNull();
-        });
-
-        it("returns 204 (NO_CONTENT) when a member with the highest role and proper permission updates an admin role", async () => {
-          const payload = { name: "updated_name_by_higher_ranked_member" };
-
-          const res = await user2Req.role.patch.metaData(
-            groupChatId,
-            adminRoleId,
-            payload,
-            user2AccessToken
-          );
-
-          expect(res.status).toBe(204);
-
-          const updatedRole = await client.role.findUnique({
-            where: { id: adminRoleId },
-          });
-
-          expect(updatedRole.name).toMatch(payload.name);
-          expect(new Date(updatedRole.updatedAt)).not.toBeNull();
-        });
-
-        it("returns 204 (NO_CONTENT) when a member with the higher role and proper permission updates an lower role", async () => {
-          const payload = {
-            name: "updated_name_by_member_with_manage_role_perm",
-          };
-
-          const res = await user5Req.role.patch.metaData(
-            groupChatId,
-            lowestRoleId,
-            payload,
-            user5AccessToken
-          );
-
-          expect(res.status).toBe(204);
-
-          const updatedRole = await client.role.findUnique({
-            where: { id: lowestRoleId },
-          });
-
-          expect(updatedRole.name).toMatch(payload.name);
-          expect(new Date(updatedRole.updatedAt)).not.toBeNull();
-        });
-      });
-    });
-
-    describe("Update permissions", () => {
-      beforeEach(async () => {
-        await client.role.update({
+  describe("Update name", () => {
+    beforeEach(async () => {
+      client.$transaction([
+        client.role.update({
           where: {
             id: adminRoleId,
           },
           data: {
-            permissions: {
-              set: [],
-              connect: { name: "admin" },
-            },
+            name: "test_admin_role",
           },
-        });
-      });
-
-      it("returns 204 (NO_CONTENT) when the chat owner updates an admin role", async () => {
-        const permissions = await client.permission.findMany({
+        }),
+        client.role.update({
           where: {
-            name: { in: ["kick_member", "manage_role"] },
+            id: lowestRoleId,
           },
-          select: { id: true, name: true },
-        });
+          data: {
+            name: "test_lowest_role",
+          },
+        }),
+      ]);
+    });
 
-        const payload = { permissionIds: permissions.map(({ id }) => id) };
+    describe("Success case", () => {
+      it("returns 204 (NO_CONTENT) when the chat owner updates an admin role", async () => {
+        const payload = { name: "updated_name_by_owner" };
 
         const res = await user1Req.role.patch.metaData(
           groupChatId,
@@ -5124,38 +5037,14 @@ describe("Role update", () => {
 
         const updatedRole = await client.role.findUnique({
           where: { id: adminRoleId },
-          select: {
-            permissions: {
-              select: {
-                name: true,
-              },
-            },
-          },
         });
 
-        const expectedRoleUpdatedPermissions = expect.arrayContaining([
-          expect.objectContaining({
-            name: "kick_member",
-          }),
-          expect.objectContaining({
-            name: "manage_role",
-          }),
-        ]);
-
-        expect(updatedRole.permissions).toHaveLength(2);
-        expect(updatedRole.permissions).toEqual(expectedRoleUpdatedPermissions);
+        expect(updatedRole.name).toMatch(payload.name);
         expect(new Date(updatedRole.updatedAt)).not.toBeNull();
       });
 
       it("returns 204 (NO_CONTENT) when a member with the highest role and proper permission updates an admin role", async () => {
-        const permissions = await client.permission.findMany({
-          where: {
-            name: { in: ["kick_member", "manage_role", "send_message"] },
-          },
-          select: { id: true, name: true },
-        });
-
-        const payload = { permissionIds: permissions.map(({ id }) => id) };
+        const payload = { name: "updated_name_by_higher_ranked_member" };
 
         const res = await user2Req.role.patch.metaData(
           groupChatId,
@@ -5168,42 +5057,16 @@ describe("Role update", () => {
 
         const updatedRole = await client.role.findUnique({
           where: { id: adminRoleId },
-          select: {
-            permissions: {
-              select: {
-                name: true,
-              },
-            },
-          },
         });
 
-        const expectedRoleUpdatedPermissions = expect.arrayContaining([
-          expect.objectContaining({
-            name: "kick_member",
-            name: "send_message",
-          }),
-          expect.objectContaining({
-            name: "manage_role",
-          }),
-          expect.objectContaining({
-            name: "send_message",
-          }),
-        ]);
-
-        expect(updatedRole.permissions).toHaveLength(3);
-        expect(updatedRole.permissions).toEqual(expectedRoleUpdatedPermissions);
+        expect(updatedRole.name).toMatch(payload.name);
         expect(new Date(updatedRole.updatedAt)).not.toBeNull();
       });
 
       it("returns 204 (NO_CONTENT) when a member with the higher role and proper permission updates an lower role", async () => {
-        const permissions = await client.permission.findMany({
-          where: {
-            name: { in: ["admin"] },
-          },
-          select: { id: true, name: true },
-        });
-
-        const payload = { permissionIds: permissions.map(({ id }) => id) };
+        const payload = {
+          name: "updated_name_by_member_with_manage_role_perm",
+        };
 
         const res = await user5Req.role.patch.metaData(
           groupChatId,
@@ -5216,25 +5079,160 @@ describe("Role update", () => {
 
         const updatedRole = await client.role.findUnique({
           where: { id: lowestRoleId },
-          select: {
-            permissions: {
-              select: {
-                name: true,
-              },
-            },
-          },
         });
 
-        const expectedRoleUpdatedPermissions = expect.arrayContaining([
-          expect.objectContaining({
-            name: "admin",
-          }),
-        ]);
-
-        expect(updatedRole.permissions).toHaveLength(1);
-        expect(updatedRole.permissions).toEqual(expectedRoleUpdatedPermissions);
+        expect(updatedRole.name).toMatch(payload.name);
         expect(new Date(updatedRole.updatedAt)).not.toBeNull();
       });
+    });
+  });
+
+  describe("Update permissions", () => {
+    beforeEach(async () => {
+      await client.role.update({
+        where: {
+          id: adminRoleId,
+        },
+        data: {
+          permissions: {
+            set: [],
+            connect: { name: "admin" },
+          },
+        },
+      });
+    });
+
+    it("returns 204 (NO_CONTENT) when the chat owner updates an admin role", async () => {
+      const permissions = await client.permission.findMany({
+        where: {
+          name: { in: ["kick_member", "manage_role"] },
+        },
+        select: { id: true, name: true },
+      });
+
+      const payload = { permissionIds: permissions.map(({ id }) => id) };
+
+      const res = await user1Req.role.patch.metaData(
+        groupChatId,
+        adminRoleId,
+        payload,
+        user1AccessToken
+      );
+
+      expect(res.status).toBe(204);
+
+      const updatedRole = await client.role.findUnique({
+        where: { id: adminRoleId },
+        select: {
+          permissions: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      const expectedRoleUpdatedPermissions = expect.arrayContaining([
+        expect.objectContaining({
+          name: "kick_member",
+        }),
+        expect.objectContaining({
+          name: "manage_role",
+        }),
+      ]);
+
+      expect(updatedRole.permissions).toHaveLength(2);
+      expect(updatedRole.permissions).toEqual(expectedRoleUpdatedPermissions);
+      expect(new Date(updatedRole.updatedAt)).not.toBeNull();
+    });
+
+    it("returns 204 (NO_CONTENT) when a member with the highest role and proper permission updates an admin role", async () => {
+      const permissions = await client.permission.findMany({
+        where: {
+          name: { in: ["kick_member", "manage_role", "send_message"] },
+        },
+        select: { id: true, name: true },
+      });
+
+      const payload = { permissionIds: permissions.map(({ id }) => id) };
+
+      const res = await user2Req.role.patch.metaData(
+        groupChatId,
+        adminRoleId,
+        payload,
+        user2AccessToken
+      );
+
+      expect(res.status).toBe(204);
+
+      const updatedRole = await client.role.findUnique({
+        where: { id: adminRoleId },
+        select: {
+          permissions: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      const expectedRoleUpdatedPermissions = expect.arrayContaining([
+        expect.objectContaining({
+          name: "kick_member",
+          name: "send_message",
+        }),
+        expect.objectContaining({
+          name: "manage_role",
+        }),
+        expect.objectContaining({
+          name: "send_message",
+        }),
+      ]);
+
+      expect(updatedRole.permissions).toHaveLength(3);
+      expect(updatedRole.permissions).toEqual(expectedRoleUpdatedPermissions);
+      expect(new Date(updatedRole.updatedAt)).not.toBeNull();
+    });
+
+    it("returns 204 (NO_CONTENT) when a member with the higher role and proper permission updates an lower role", async () => {
+      const permissions = await client.permission.findMany({
+        where: {
+          name: { in: ["admin"] },
+        },
+        select: { id: true, name: true },
+      });
+
+      const payload = { permissionIds: permissions.map(({ id }) => id) };
+
+      const res = await user5Req.role.patch.metaData(
+        groupChatId,
+        lowestRoleId,
+        payload,
+        user5AccessToken
+      );
+
+      expect(res.status).toBe(204);
+
+      const updatedRole = await client.role.findUnique({
+        where: { id: lowestRoleId },
+        select: {
+          permissions: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      const expectedRoleUpdatedPermissions = expect.arrayContaining([
+        expect.objectContaining({
+          name: "admin",
+        }),
+      ]);
+
+      expect(updatedRole.permissions).toHaveLength(1);
+      expect(updatedRole.permissions).toEqual(expectedRoleUpdatedPermissions);
+      expect(new Date(updatedRole.updatedAt)).not.toBeNull();
     });
   });
 });
