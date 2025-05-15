@@ -462,7 +462,7 @@ const createCanViewRole =
     return next();
   };
 
-const createCanUpdateRoleName =
+const createCanUpdateRoleMetaData =
   ({ chatService, roleService, chatPolicy }) =>
   async (req, _, next) => {
     const { chatId, roleId } = req.params;
@@ -472,25 +472,39 @@ const createCanUpdateRoleName =
       { error: chatError, data: chat },
       { error: chatRolesError, data: chatRoles },
       { error: userRolesError, data: userRoles },
+      { error: targetRoleError, data: targetRole },
     ] = await Promise.all([
       tryCatchAsync(() => chatService.getChatById(chatId)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+      tryCatchAsync(() => roleService.getChatRoleById(roleId, chatId)),
     ]);
 
-    if (chatError || chatRolesError || userRolesError) {
-      return next(chatError || chatRolesError || userRolesError);
+    if (chatError || chatRolesError || userRolesError || targetRoleError) {
+      return next(
+        chatError || chatRolesError || userRolesError || targetRoleError
+      );
     }
 
     chat.roles = chatRoles;
     user.roles = userRoles;
+    const inputKeys = Object.keys(req.body);
 
-    const { success, code, message } = chatPolicy.checkUpdateChatPermission(
+    const roleFields = ["name", "permissionIds"].reduce((result, key) => {
+      if (inputKeys.includes(key)) {
+        return result.concat(key === "permissionIds" ? "permissions" : key);
+      }
+
+      return result;
+    }, []);
+
+    const { success, code, message } = chatPolicy.role.checkUpdateMetaData(
       user,
       chat,
-      "chat",
-      "update",
-      "avatar"
+      {
+        targetRole,
+        fields: roleFields,
+      }
     );
 
     if (!success) {
@@ -529,6 +543,8 @@ export default (dependencies) => {
 
   const canViewRole = createCanViewRole(dependencies);
 
+  const canUpdateRoleMetaData = createCanUpdateRoleMetaData(dependencies);
+
   return Object.freeze({
     uploader,
     canCreateChat,
@@ -543,5 +559,6 @@ export default (dependencies) => {
     canKickMember,
     canCreateRole,
     canViewRole,
+    canUpdateRoleMetaData,
   });
 };

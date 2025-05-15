@@ -182,6 +182,24 @@ const checkRoleViewPermission = (user, chat) => {
   return success(reason);
 };
 
+const checkRoleUpdateMetaDataPermission = (
+  user,
+  chat,
+  { fields, targetRole }
+) => {
+  const { allowed, code, reason } = executePolicyCheck(user, chat, {
+    resource: "role",
+    action: "update",
+    field: "metaData",
+    context: { fields, targetRole },
+  });
+
+  if (!allowed)
+    return code === "forbidden" ? forbidden(reason) : notFound(reason);
+
+  return success(reason);
+};
+
 export default {
   chat: {
     checkCreate: checkChatCreation,
@@ -201,5 +219,6 @@ export default {
   role: {
     checkCreate: checkRoleCreatePermission,
     checkView: checkRoleViewPermission,
+    checkUpdateMetaData: checkRoleUpdateMetaDataPermission,
   },
 };

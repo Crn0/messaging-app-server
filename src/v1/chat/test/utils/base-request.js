@@ -332,7 +332,7 @@ const ROLE = ({ request, baseUrl }) => {
   };
 
   const POST = () => {
-    const createRole = (chatId, payload, token, ops) => {
+    const createRole = async (chatId, payload, token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
       const url = `${path}/${chatId}/roles`;
 
@@ -351,7 +351,25 @@ const ROLE = ({ request, baseUrl }) => {
     return Object.freeze({ createRole });
   };
 
-  const PATCH = () => Object.freeze({});
+  const PATCH = () => {
+    const metaData = async (chatId, roleId, payload, token, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/${chatId}/roles/${roleId}`;
+
+      if (!options.includeAuth) {
+        return request.patch(url).send(payload).accept("json").type("json");
+      }
+
+      return request
+        .patch(url)
+        .send(payload)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    return Object.freeze({ metaData });
+  };
 
   const DELETE = () => Object.freeze({});
 
