@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { array, z } from "zod";
 
 const CHAT_TYPE = ["DirectChat", "GroupChat"];
 const MAX_FILE_SIZE = 10_000_000; // 10mb
@@ -290,6 +290,19 @@ const patchMemberMuteSchema = z.object({
   ),
 });
 
+const patchRoleMetaDataSchema = z.object({
+  name: nameSchema.optional(),
+  permissionIds: z
+    .array(idSchema)
+    .refine(
+      (permissionIds) => new Set(permissionIds).size === permissionIds.length,
+      {
+        message: "All items must be unique, no duplicate values allowed",
+      }
+    )
+    .optional(),
+});
+
 export {
   chatParamSchema,
   memberParamSchema,
@@ -301,4 +314,5 @@ export {
   patchChatNameSchema,
   patchChatAvatarSchema,
   patchMemberMuteSchema,
+  patchRoleMetaDataSchema,
 };
