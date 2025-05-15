@@ -1,7 +1,7 @@
 import { httpStatus } from "../../constants/index.js";
 import APIError from "../../errors/api-error.js";
 
-const DEFAULT_PERMISSIONS = ["send_messages", "create_invites", "view_chat"];
+const DEFAULT_PERMISSIONS = ["send_message", "create_invite", "view_chat"];
 
 const createInsertPermission =
   ({ permissionRepository }) =>
