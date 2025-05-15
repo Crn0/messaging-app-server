@@ -59,7 +59,7 @@ beforeAll(async () => {
 
 describe("Chat creation", () => {
   it("a create a direct-chat between the users", async () => {
-    const data = { chatId: directChatId, membersId: [user1Id, user2Id] };
+    const data = { chatId: directChatId, memberIds: [user1Id, user2Id] };
 
     const chat = await chatRepository.insertDirectChat(data);
 

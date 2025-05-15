@@ -59,7 +59,7 @@ describe("Chat creation", () => {
   it("create direct-chat", async () => {
     const data = {
       chatId: idGenerator(),
-      membersId: [user1Id, user2Id],
+      memberIds: [user1Id, user2Id],
     };
 
     const chat = await chatService.createDirectChat(data);

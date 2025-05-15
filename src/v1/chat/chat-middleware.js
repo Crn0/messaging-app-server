@@ -39,7 +39,7 @@ const createUploader =
 const createCanCreateChat =
   ({ chatService, blockUserService, chatPolicy }) =>
   async (req, _, next) => {
-    const { chatId, membersId, type } = req.body;
+    const { chatId, memberIds, type } = req.body;
     const user = { id: req.user.id };
     const targetUser = {};
 
@@ -50,7 +50,7 @@ const createCanCreateChat =
     ] = await Promise.all([
       tryCatchAsync(() => chatService.getChatsByMemberId(user.id)),
       tryCatchAsync(() => chatService.getChatById(chatId)),
-      tryCatchAsync(() => chatService.getDirectChatByMembersId(membersId)),
+      tryCatchAsync(() => chatService.getDirectChatByMembersId(memberIds)),
     ]);
 
     if (chatsError) {
@@ -58,7 +58,7 @@ const createCanCreateChat =
     }
 
     if (type === "DirectChat") {
-      targetUser.id = membersId.reduce((id, nextId) =>
+      targetUser.id = memberIds.reduce((id, nextId) =>
         user.id !== id ? id : nextId
       );
 

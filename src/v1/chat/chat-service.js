@@ -45,12 +45,12 @@ const createInsertDirectChat =
   ({ chatRepository, userService, roleService }) =>
   async (DTO) => {
     await Promise.all(
-      DTO.membersId.map(async (id) => userService.getUserById(id))
+      DTO.memberIds.map(async (id) => userService.getUserById(id))
     );
 
     const data = {
       chatId: DTO?.chatId,
-      membersId: DTO.membersId,
+      memberIds: DTO.memberIds,
     };
 
     const chat = await chatRepository.insertDirectChat(data);
@@ -60,7 +60,7 @@ const createInsertDirectChat =
     });
 
     await roleService.updateChatRoleMembers(defaultRole?.id, DTO.chatId, {
-      membersId: DTO.membersId,
+      memberIds: DTO.memberIds,
     });
 
     return chat;
@@ -139,7 +139,7 @@ const createInsertGroupChat =
     });
 
     await roleService.updateChatRoleMembers(defaultRole?.id, chat.id, {
-      membersId: [DTO.ownerId],
+      memberIds: [DTO.ownerId],
     });
 
     return chat;
@@ -358,9 +358,9 @@ const createGetChatById =
 
 const createGetDirectChatByMembersId =
   ({ chatRepository, userService }) =>
-  async (membersId) => {
+  async (memberIds) => {
     await Promise.all(
-      membersId.map((memberId) => userService.getUserById(memberId))
+      memberIds.map((memberId) => userService.getUserById(memberId))
     );
 
     const filter = {
@@ -370,7 +370,7 @@ const createGetDirectChatByMembersId =
           every: {
             user: {
               id: {
-                in: membersId,
+                in: memberIds,
               },
             },
           },

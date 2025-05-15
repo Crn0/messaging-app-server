@@ -164,7 +164,7 @@ describe("Chat creation", () => {
   const diretChatForm = {
     chatId: directChatId,
     type: "DirectChat",
-    membersId: [user1Id, user2Id],
+    memberIds: [user1Id, user2Id],
   };
 
   const groupChatForm = {
@@ -266,7 +266,7 @@ describe("Chat creation", () => {
             payload: {
               chatId: idGenerator(),
               type: "DirectChat",
-              membersId: [user2Id, user3Id],
+              memberIds: [user2Id, user3Id],
             },
           },
           expectedError: {
@@ -307,7 +307,7 @@ describe("Chat creation", () => {
             payload: {
               chatId: "",
               type: "DirectChat",
-              membersId: [user1Id, user2Id],
+              memberIds: [user1Id, user2Id],
             },
           },
           expectedError: { path: ["chatId"], code: "invalid_string" },
@@ -318,7 +318,7 @@ describe("Chat creation", () => {
             token: user1AccessToken,
             payload: {
               type: "DirectChat",
-              membersId: [user1Id, user2Id],
+              memberIds: [user1Id, user2Id],
             },
           },
           expectedError: { path: ["chatId"], code: "invalid_type" },
@@ -330,10 +330,10 @@ describe("Chat creation", () => {
             payload: {
               chatId: directChatId,
               type: "DirectChat",
-              membersId: [user1Id],
+              memberIds: [user1Id],
             },
           },
-          expectedError: { path: ["membersId"], code: "too_small" },
+          expectedError: { path: ["memberIds"], code: "too_small" },
         },
         {
           scenario: "members ID too big",
@@ -342,10 +342,10 @@ describe("Chat creation", () => {
             payload: {
               chatId: directChatId,
               type: "DirectChat",
-              membersId: [user1Id, user2Id, user1Id],
+              memberIds: [user1Id, user2Id, user1Id],
             },
           },
-          expectedError: { path: ["membersId"], code: "too_big" },
+          expectedError: { path: ["memberIds"], code: "too_big" },
         },
         {
           scenario: "index 0 of members ID is not a valid UUID",
@@ -353,11 +353,11 @@ describe("Chat creation", () => {
             token: user1AccessToken,
             payload: {
               chatId: directChatId,
-              membersId: ["", user2Id],
+              memberIds: ["", user2Id],
               type: "DirectChat",
             },
           },
-          expectedError: { path: ["membersId", 0], code: "invalid_string" },
+          expectedError: { path: ["memberIds", 0], code: "invalid_string" },
         },
         {
           scenario: "members ID field is undefined",
@@ -368,7 +368,7 @@ describe("Chat creation", () => {
               type: "DirectChat",
             },
           },
-          expectedError: { path: ["membersId"], code: "invalid_type" },
+          expectedError: { path: ["memberIds"], code: "invalid_type" },
         },
       ])(
         "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
@@ -449,7 +449,7 @@ describe("Chat creation", () => {
             payload: {
               chatId: idGenerator(),
               type: "DirectChat",
-              membersId: [user1Id, user2Id],
+              memberIds: [user1Id, user2Id],
             },
             includeAuth: true,
           },
