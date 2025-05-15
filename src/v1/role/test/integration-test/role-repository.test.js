@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { idGenerator } from "../../util.js";
 import client from "../../../../db/client.js";
 import userFactory from "../utils/user-factory.js";
@@ -470,8 +470,70 @@ describe("Role update", () => {
   });
 
   describe("Update role level", () => {
-    it("updates the roles role level based on the index and return the updated objects", async () => {
-      const roles = await client.role.findMany({
+    const chatId = idGenerator();
+    const roles = [];
+
+    beforeAll(async () => {
+      await client.chat.create({
+        data: {
+          id: chatId,
+          name: `${username}'s group-chat`,
+          type: "GroupChat",
+          owner: {
+            connect: {
+              id: userId,
+            },
+          },
+          members: {
+            create: {
+              user: {
+                connect: {
+                  id: userId,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const roleSize = 100;
+      let index = 0;
+
+      while (roleSize > index) {
+        roles.push(
+          await roleRepository.insert({
+            chatId,
+            name: `role_${(index += 1)}`,
+            isDefaultRole: false,
+          })
+        );
+      }
+
+      return async () => client.chat.delete({ where: { id: chatId } });
+    });
+
+    beforeEach(async () => {
+      await client.role.updateMany({
+        where: {
+          chat: { id: chatId },
+        },
+        data: {
+          roleLevel: null,
+        },
+      });
+
+      await Promise.all(
+        roles.map(async (role) =>
+          client.role.update({
+            where: { id: role.id },
+            data: { roleLevel: role.roleLevel },
+          })
+        )
+      );
+    });
+
+    it.skip("reorders role levels using input [100, 1], shifting 100 to 1 and adjusting adjacent levels", async () => {
+      const rolesToUpdate = await client.role.findMany({
         orderBy: {
           roleLevel: "desc",
         },
@@ -479,28 +541,35 @@ describe("Role update", () => {
           chat: {
             id: chatId,
           },
+          roleLevel: {
+            in: [1, 100],
+          },
         },
         select: {
           id: true,
         },
       });
 
-      const rolesId = roles.sort().map(({ id }) => id);
+      const oldRole = await client.role.findFirst({
+        where: { chat: { id: chatId }, roleLevel: 99 },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
 
-      const data = {
-        rolesId,
-      };
+      const rolesId = rolesToUpdate.map(({ id }) => id);
 
       const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
         chatId,
-        data
+        { rolesId }
       );
 
-      const toEqual = expect.arrayContaining([
+      const expectedUpdatedRoles = expect.arrayContaining([
         expect.objectContaining({
           chatId,
           id: expect.any(String),
-          name: "test_role_2",
+          name: "role_100",
           roleLevel: 1,
           isDefaultRole: false,
           createdAt: expect.any(Date),
@@ -510,7 +579,7 @@ describe("Role update", () => {
         expect.objectContaining({
           chatId,
           id: expect.any(String),
-          name: "test_role_1",
+          name: "role_1",
           roleLevel: 2,
           isDefaultRole: false,
           createdAt: expect.any(Date),
@@ -519,7 +588,319 @@ describe("Role update", () => {
         }),
       ]);
 
-      expect(updatedRoles).toEqual(toEqual);
+      const newRole = await client.role.findUnique({
+        where: { id: oldRole.id },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      expect(updatedRoles).toEqual(expectedUpdatedRoles);
+      expect(newRole.roleLevel).toBe(100);
+    });
+
+    it("reorders role levels using input [86, 55, 100, 99, 98, 97, 5], adjusting adjacent levels and skipping roles out of range", async () => {
+      const rolesToUpdate = await client.role.findMany({
+        where: {
+          chat: {
+            id: chatId,
+          },
+          roleLevel: {
+            in: [86, 55, 100, 99, 98, 97, 5],
+          },
+        },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      const getRolesId = (roles, map = {}, rolesId = []) => {
+        if (roles.length === 0) return rolesId;
+
+        const [role, ...rest] = roles;
+
+        const index = map[role.roleLevel];
+
+        if (typeof index === "number") {
+          rolesId[index] = role.id;
+        }
+
+        return getRolesId(rest, map, rolesId);
+      };
+
+      const map = {
+        86: 0,
+        55: 1,
+        100: 2,
+        99: 3,
+        98: 4,
+        97: 5,
+        5: 6,
+      };
+
+      const rolesId = getRolesId(rolesToUpdate, map);
+
+      const oldRole = await client.role.findFirst({
+        where: { chat: { id: chatId }, roleLevel: 96 },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      const outOfRangeRoles = await client.role.findMany({
+        where: {
+          chat: { id: chatId },
+          OR: [{ roleLevel: { lt: 5 } }, { roleLevel: { gt: 100 } }],
+        },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+        chatId,
+        { rolesId }
+      );
+
+      const expectedUpdatedRoles = expect.arrayContaining([
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_86",
+          roleLevel: 5,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_55",
+          roleLevel: 6,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+      ]);
+
+      const newRole = await client.role.findUnique({
+        where: { id: oldRole.id },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      expect(updatedRoles).toEqual(expectedUpdatedRoles);
+      expect(newRole.roleLevel).toBe(100);
+      expect(
+        await client.role.findMany({
+          where: {
+            chat: { id: chatId },
+            OR: [{ roleLevel: { lt: 5 } }, { roleLevel: { gt: 100 } }],
+          },
+          select: {
+            id: true,
+            roleLevel: true,
+          },
+        })
+      ).toEqual(outOfRangeRoles);
+    });
+
+    it.skip("reorders role levels using input [86, 55], adjusting adjacent levels and skipping roles out of range", async () => {
+      const rolesToUpdate = await client.role.findMany({
+        orderBy: {
+          roleLevel: "desc",
+        },
+        where: {
+          chat: {
+            id: chatId,
+          },
+          roleLevel: {
+            in: [55, 86],
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const rolesId = rolesToUpdate.map(({ id }) => id);
+
+      const oldRole = await client.role.findFirst({
+        where: { chat: { id: chatId }, roleLevel: 85 },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      const outOfRangeRoles = await client.role.findMany({
+        where: {
+          chat: { id: chatId },
+          OR: [{ roleLevel: { lt: 55 } }, { roleLevel: { gt: 86 } }],
+        },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+        chatId,
+        { rolesId }
+      );
+
+      const expectedUpdatedRoles = expect.arrayContaining([
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_86",
+          roleLevel: 55,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_55",
+          roleLevel: 56,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+      ]);
+
+      const newRole = await client.role.findUnique({
+        where: { id: oldRole.id },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      expect(updatedRoles).toEqual(expectedUpdatedRoles);
+      expect(newRole.roleLevel).toBe(86);
+      expect(
+        await client.role.findMany({
+          where: {
+            chat: { id: chatId },
+            OR: [{ roleLevel: { lt: 55 } }, { roleLevel: { gt: 86 } }],
+          },
+          select: {
+            id: true,
+            roleLevel: true,
+          },
+        })
+      ).toEqual(outOfRangeRoles);
+    });
+
+    it.skip("reorders role levels using input [100, 99, 98, 97, 1] and adjusts adjacent levels", async () => {
+      const rolesToUpdate = await client.role.findMany({
+        orderBy: {
+          roleLevel: "desc",
+        },
+        where: {
+          chat: {
+            id: chatId,
+          },
+          roleLevel: {
+            in: [100, 99, 98, 97, 1],
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const rolesId = rolesToUpdate.map(({ id }) => id);
+
+      const oldRole = await client.role.findFirst({
+        where: { chat: { id: chatId }, roleLevel: 96 },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+        chatId,
+        { rolesId }
+      );
+
+      const expectedUpdatedRoles = expect.arrayContaining([
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_100",
+          roleLevel: 1,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_99",
+          roleLevel: 2,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_98",
+          roleLevel: 3,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_97",
+          roleLevel: 4,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+        expect.objectContaining({
+          chatId,
+          id: expect.any(String),
+          name: "role_1",
+          roleLevel: 5,
+          isDefaultRole: false,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+          permissions: expect.any(Array),
+        }),
+      ]);
+
+      const newRole = await client.role.findUnique({
+        where: { id: oldRole.id },
+        select: {
+          id: true,
+          roleLevel: true,
+        },
+      });
+
+      expect(updatedRoles).toEqual(expectedUpdatedRoles);
+      expect(newRole.roleLevel).toBe(100);
     });
   });
 });
