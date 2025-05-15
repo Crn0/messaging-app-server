@@ -136,11 +136,11 @@ const createUpdateChatRoleMembers =
   ({ roleRepository, chatService }) =>
   async (roleId, chatId, DTO) => {
     await Promise.all(
-      DTO.membersId.map((id) => chatService.getMemberById(chatId, id))
+      DTO.memberIds.map((id) => chatService.getMemberById(chatId, id))
     );
 
     const data = {
-      membersId: DTO.membersId,
+      memberIds: DTO.memberIds,
     };
 
     const role = await roleRepository.updateChatRoleMembers(
