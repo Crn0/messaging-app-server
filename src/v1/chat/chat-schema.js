@@ -297,7 +297,8 @@ const patchRoleMetaDataSchema = z.object({
     .refine(
       (permissionIds) => new Set(permissionIds).size === permissionIds.length,
       {
-        message: "All items must be unique, no duplicate values allowed",
+        message:
+          "All permission IDs must be unique, no duplicate values allowed",
       }
     )
     .optional(),
