@@ -116,14 +116,14 @@ const updateChatRoleMember = async (roleId, chatId, { memberId }) => {
   return toEntity(role);
 };
 
-const updateChatRoleMembers = async (roleId, chatId, { membersId }) => {
+const updateChatRoleMembers = async (roleId, chatId, { memberIds }) => {
   const userOnChats = await client.userOnChat.findMany({
     where: {
       chat: {
         id: chatId,
       },
       user: {
-        id: { in: membersId },
+        id: { in: memberIds },
       },
     },
     select: {
@@ -133,7 +133,7 @@ const updateChatRoleMembers = async (roleId, chatId, { membersId }) => {
 
   const userOnChatsId = userOnChats.map(({ id }) => id);
 
-  const data = toData("update:members", { membersId: userOnChatsId });
+  const data = toData("update:members", { memberIds: userOnChatsId });
 
   const role = await client.role.update({
     data,

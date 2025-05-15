@@ -53,7 +53,7 @@ const toData = (action, DTO) => {
       return {
         updatedAt: new Date(),
         members: {
-          connect: DTO.membersId.map((id) => ({ id })),
+          connect: DTO.memberIds.map((id) => ({ id })),
         },
       };
     }

@@ -391,7 +391,7 @@ describe("Role update", () => {
       });
 
       const data = {
-        membersId: [userId],
+        memberIds: [userId],
       };
 
       const updatedRole = await roleRepository.updateChatRoleMembers(
