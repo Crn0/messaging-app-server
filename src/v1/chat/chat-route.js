@@ -260,7 +260,13 @@ router.post(
 
 router.patch("/:chatId/roles/role-levels");
 
-router.patch("/:chatId/roles/:roleId");
+router.patch(
+  "/:chatId/roles/:roleId",
+  ZodparamValidator(schema.roleParamSchema),
+  ZodbodyValidator(schema.patchRoleMetaDataSchema),
+  chatMiddleware.canUpdateRoleMetaData,
+  chatController.updateRoleMetaData
+);
 
 router.patch("/:chatId/roles/:roleId/members");
 
