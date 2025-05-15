@@ -147,30 +147,103 @@ const updateChatRoleMembers = async (roleId, chatId, { membersId }) => {
 };
 
 const updateChatRolesRoleLevel = async (chatId, { rolesId }) => {
-  await client.role.updateMany({
-    where: {
-      chat: { id: chatId },
-    },
-    data: {
-      roleLevel: null,
-    },
-  });
+  let oldRoles;
+  let rolesToUpdate;
 
-  const roles = await client.$transaction(
-    rolesId.map((id, index) => {
-      const data = toData("update:roleLevel", { roleLevel: index + 1 });
+  try {
+    [oldRoles, rolesToUpdate] = await Promise.all([
+      client.role.findMany({
+        where: { chat: { id: chatId }, isDefaultRole: false },
+      }),
+      client.role.findMany({
+        where: { id: { in: rolesId }, chat: { id: chatId } },
+      }),
+    ]);
 
-      return client.role.update({
-        data,
-        where: {
-          id,
+    const roleLevels = rolesToUpdate.map((r) => r.roleLevel);
+    const minRoleLevel = Math.min(...roleLevels);
+    const maxRoleLevel = Math.max(...roleLevels);
+    const rolesInRange = await client.role.findMany({
+      orderBy: { roleLevel: "asc" },
+      where: {
+        chat: { id: chatId },
+        id: { notIn: rolesId },
+        roleLevel: {
+          gt: minRoleLevel,
+          lt: maxRoleLevel,
         },
-        include: field.default,
-      });
-    })
-  );
+      },
+      select: {
+        id: true,
+        roleLevel: true,
+      },
+    });
 
-  return roles.sort((a, b) => a.roleLevel - b.roleLevel).map(toEntity);
+    await client.role.updateMany({
+      where: {
+        chat: { id: chatId },
+        roleLevel: {
+          gte: minRoleLevel,
+          lte: maxRoleLevel,
+        },
+      },
+      data: {
+        roleLevel: null,
+      },
+    });
+
+    let roleLevelCounter = minRoleLevel + rolesToUpdate.length;
+
+    await Promise.all(
+      rolesInRange.map(async (role) => {
+        const currentRoleLevel = roleLevelCounter;
+        console.log(roleLevelCounter, role.roleLevel, minRoleLevel);
+        roleLevelCounter += 1;
+
+        return client.role.update({
+          where: {
+            id: role.id,
+          },
+          data: {
+            roleLevel: currentRoleLevel,
+          },
+        });
+      })
+    );
+
+    const roles = await client.$transaction(
+      rolesId.map((id, i) => {
+        const data = toData("update:roleLevel", {
+          roleLevel: minRoleLevel + i,
+        });
+        return client.role.update({
+          data,
+          where: {
+            id,
+          },
+          include: field.default,
+        });
+      })
+    );
+
+    return roles.sort((a, b) => a.roleLevel - b.roleLevel).map(toEntity);
+  } catch (e) {
+    await Promise.all(
+      oldRoles.map(async (role) =>
+        client.role.update({
+          where: {
+            id: role.id,
+          },
+          data: {
+            roleLevel: role.roleLevel,
+            updatedAt: role.updatedAt,
+          },
+        })
+      )
+    );
+
+    throw e;
+  }
 };
 
 const deleteChatRoleById = async (roleId, chatId) => {
