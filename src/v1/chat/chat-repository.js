@@ -2,15 +2,15 @@ import client from "../../db/client.js";
 import { toData, toEntity } from "./chat-mapper.js";
 import field from "./include.js";
 
-const insertDirectChat = async ({ chatId, membersId }) => {
+const insertDirectChat = async ({ chatId, memberIds }) => {
   const insertData = toData("insert", {
     chatId,
-    memberId: membersId[0],
+    memberId: memberIds[0],
     type: "DirectChat",
   });
 
   const updateData = toData("update:member", {
-    memberId: membersId[1],
+    memberId: memberIds[1],
     type: "DirectChat",
   });
 

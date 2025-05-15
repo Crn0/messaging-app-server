@@ -19,23 +19,23 @@ const ACCEPTED_ATTACHMENTS_TYPES = [
 ];
 
 const directChatCreationCondition = (data, ctx) => {
-  let membersIdIndex;
+  let memberIdsIndex;
 
   const chatIdIsUndefined = typeof data.chatId === "undefined";
   const chatIdInvalidFormat =
     z.string().uuid().safeParse(data.chatId).success === false;
 
-  const membersIdIsUndefined = typeof data?.membersId === "undefined";
-  const membersIdLengthIsNotTwo = Array.isArray(data.membersId)
-    ? data?.membersId?.length !== 2
+  const memberIdsIsUndefined = typeof data?.memberIds === "undefined";
+  const memberIdsLengthIsNotTwo = Array.isArray(data.memberIds)
+    ? data?.memberIds?.length !== 2
     : false;
 
-  const membersIdInvalidFormat = data?.membersId?.some?.((id, index) => {
+  const memberIdsInvalidFormat = data?.memberIds?.some?.((id, index) => {
     if (z.string().uuid().safeParse(id).success) {
       return false;
     }
 
-    membersIdIndex = index;
+    memberIdsIndex = index;
 
     return true;
   });
@@ -59,35 +59,35 @@ const directChatCreationCondition = (data, ctx) => {
     });
   }
 
-  if (membersIdIsUndefined) {
+  if (memberIdsIsUndefined) {
     ctx.addIssue({
       code: "invalid_type",
       expected: "array",
       received: "undefined",
-      path: ["membersId"],
+      path: ["memberIds"],
       message: "Members ID is required",
     });
   }
 
-  if (membersIdLengthIsNotTwo) {
+  if (memberIdsLengthIsNotTwo) {
     ctx.addIssue({
-      code: data?.membersId?.length < 2 ? "too_small" : "too_big",
+      code: data?.memberIds?.length < 2 ? "too_small" : "too_big",
       minimun: undefined,
       maximum: 2,
       type: "array",
       inclusive: true,
       exact: true,
       message: "Members ID must contain exactly 2 IDs",
-      path: ["membersId"],
+      path: ["memberIds"],
     });
   }
 
-  if (membersIdInvalidFormat) {
+  if (memberIdsInvalidFormat) {
     ctx.addIssue({
       validation: "uuid",
       code: "invalid_string",
       message: "The provided ID is not a valid UUID format",
-      path: ["membersId", membersIdIndex],
+      path: ["memberIds", memberIdsIndex],
     });
   }
 };
@@ -204,7 +204,7 @@ const multerAvatarSchema = z.object(
 const directChatCreationSchema = z.object({
   chatId: z.string().optional(),
   type: chatType,
-  membersId: z.array(z.string()).optional(),
+  memberIds: z.array(z.string()).optional(),
 });
 
 const groupChatCreationSchema = z.object({
