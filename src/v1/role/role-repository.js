@@ -197,7 +197,7 @@ const updateChatRolesRoleLevel = async (chatId, { rolesId }) => {
     await Promise.all(
       rolesInRange.map(async (role) => {
         const currentRoleLevel = roleLevelCounter;
-        console.log(roleLevelCounter, role.roleLevel, minRoleLevel);
+
         roleLevelCounter += 1;
 
         return client.role.update({
