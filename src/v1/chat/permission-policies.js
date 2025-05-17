@@ -793,7 +793,90 @@ const PERMISSION_POLICIES = {
           reason: "Update permission granted",
         };
       },
-      relation: (user, chat, { field, targetRoles }) => {},
+      member: (user, chat, { targetRole }) => {
+        const { isDefaultRole } = targetRole;
+        const isUserMember = chat.members.includes(user.id);
+        const isUserOwner = chat.ownerId === user.id;
+
+        if (!isUserMember) {
+          return {
+            allowed: false,
+            code: chat.isPrivate ? "not_found" : "forbidden",
+            reason: chat.isPrivate
+              ? "Chat not found"
+              : "You must be a chat member to update roles",
+          };
+        }
+
+        if (isDefaultRole) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason: "You are not allowed to modify members of a default role",
+          };
+        }
+
+        if (isUserOwner) {
+          return {
+            allowed: true,
+            code: "ok",
+            reason: "Chat owner can update roles",
+          };
+        }
+
+        const userLevel = getHighestRoleLevel(user);
+
+        const userIsLowerOrEqualRank = userLevel >= targetRole?.roleLevel;
+
+        if (userIsLowerOrEqualRank) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason: `You cannot update members of a higher or equal role level`,
+          };
+        }
+
+        const requiredPermissions = PERMISSIONS.role.update;
+        const filteredRoles = getRolesWithRequiredPermissions(
+          user,
+          requiredPermissions
+        );
+
+        const highestPermittedLevel = getHighestRoleLevel({
+          roles: filteredRoles,
+        });
+
+        const hasPermission = executePermissionCheck(
+          user,
+          chat,
+          requiredPermissions
+        );
+
+        if (!hasPermission) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+          };
+        }
+
+        const highestPermittedLevelIsLowerOrEqualRank =
+          highestPermittedLevel >= targetRole.roleLevel;
+
+        if (highestPermittedLevelIsLowerOrEqualRank) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason: `You cannot update members of a higher or equal role level`,
+          };
+        }
+
+        return {
+          allowed: true,
+          code: "ok",
+          reason: "Update permission granted",
+        };
+      },
     },
   },
 };
