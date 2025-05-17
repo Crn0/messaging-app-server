@@ -228,6 +228,12 @@ const roleParamSchema = z.object({
   roleId: idSchema,
 });
 
+const roleMemberParamSchema = z.object({
+  chatId: idSchema,
+  roleId: idSchema,
+  memberId: idSchema,
+});
+
 const publicChatQuerySchema = z.object({
   before: idSchema.optional(),
   after: idSchema.optional(),
@@ -304,10 +310,20 @@ const patchRoleMetaDataSchema = z.object({
     .optional(),
 });
 
+const patchRoleMembersSchema = z.object({
+  memberIds: z
+    .array(idSchema)
+    .refine((memberIds) => new Set(memberIds).size === memberIds.length, {
+      message: "All member IDs must be unique, no duplicate values allowed",
+    })
+    .optional(),
+});
+
 export {
   chatParamSchema,
   memberParamSchema,
   roleParamSchema,
+  roleMemberParamSchema,
   publicChatQuerySchema,
   memberListParamSchema,
   chatFormSchema,
@@ -316,4 +332,5 @@ export {
   patchChatAvatarSchema,
   patchMemberMuteSchema,
   patchRoleMetaDataSchema,
+  patchRoleMembersSchema,
 };
