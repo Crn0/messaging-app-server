@@ -87,14 +87,15 @@ const updateChatRoleMetaData = async (roleId, { name, permissionIds }) => {
 };
 
 const updateChatRoleMember = async (roleId, chatId, { memberId }) => {
+  const [chat, member] = await client.$transaction([
+    client.chat.findUnique({ where: { id: chatId }, select: { pk: true } }),
+    client.user.findUnique({ where: { id: memberId }, select: { pk: true } }),
+  ]);
+
   const userOnChat = await client.userOnChat.findFirst({
     where: {
-      chat: {
-        id: chatId,
-      },
-      user: {
-        id: memberId,
-      },
+      chatPk: chat.pk,
+      userPk: member.pk,
     },
     select: {
       id: true,
@@ -117,14 +118,20 @@ const updateChatRoleMember = async (roleId, chatId, { memberId }) => {
 };
 
 const updateChatRoleMembers = async (roleId, chatId, { memberIds }) => {
+  const [chat, members] = await client.$transaction([
+    client.chat.findUnique({ where: { id: chatId }, select: { pk: true } }),
+    client.user.findMany({
+      where: { id: { in: memberIds } },
+      select: { pk: true },
+    }),
+  ]);
+
+  const memberPks = members.map(({ pk }) => pk);
+
   const userOnChats = await client.userOnChat.findMany({
     where: {
-      chat: {
-        id: chatId,
-      },
-      user: {
-        id: { in: memberIds },
-      },
+      chatPk: chat.pk,
+      userPk: { in: memberPks },
     },
     select: {
       id: true,
