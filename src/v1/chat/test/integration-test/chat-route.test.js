@@ -4561,7 +4561,7 @@ describe("Role update", () => {
       client.role.create({
         data: {
           name: "test_lowest_role",
-          roleLevel: 6,
+          roleLevel: 5,
           isDefaultRole: false,
           chat: {
             connect: {
@@ -5525,7 +5525,7 @@ describe("Role update", () => {
 
             const role = await client.role.findFirst({
               where: {
-                roleLevel: 6,
+                roleLevel: 5,
                 chat: { id: groupChatId },
               },
             });
