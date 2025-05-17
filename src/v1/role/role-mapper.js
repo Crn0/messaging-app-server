@@ -4,6 +4,7 @@ const DATA_ACTIONS = {
   UPDATE_MEMBER: "update:member",
   UPDATE_MEMBERS: "update:members",
   UPDATE_ROLE_LEVEL: "update:roleLevel",
+  DELETE_MEMBER: "delete:member",
 };
 
 const toData = (action, DTO) => {
@@ -61,6 +62,16 @@ const toData = (action, DTO) => {
       return {
         updatedAt: new Date(),
         roleLevel: DTO.roleLevel,
+      };
+    }
+    case DATA_ACTIONS.DELETE_MEMBER: {
+      return {
+        updatedAt: new Date(),
+        members: {
+          disconnect: {
+            id: DTO.memberId,
+          },
+        },
       };
     }
     default: {

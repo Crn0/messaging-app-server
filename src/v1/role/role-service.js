@@ -181,6 +181,22 @@ const createUpdateChatRolesRoleLevel =
     return role;
   };
 
+const createDeleteChatRoleMemberById =
+  ({ roleRepository, chatService }) =>
+  async (chatId, roleId, memberId) => {
+    const [_, roleExist] = await Promise.all([
+      chatService.getChatById(chatId),
+      roleRepository.findChatRoleById(roleId, chatId),
+      chatService.getMemberById(chatId, memberId),
+    ]);
+
+    if (!roleExist) {
+      throw new APIError("Role not found", httpStatus.NOT_FOUND);
+    }
+
+    return roleRepository.deleteChatRoleMemberById(roleId, chatId, memberId);
+  };
+
 const createDeleteChatRoleById =
   ({ roleRepository, chatService }) =>
   async (roleId, chatId) => {
@@ -210,6 +226,7 @@ export default (dependencies) => {
   const updateChatRoleMembers = createUpdateChatRoleMembers(dependencies);
   const updateChatRolesRoleLevel = createUpdateChatRolesRoleLevel(dependencies);
 
+  const deleteChatRoleMemberById = createDeleteChatRoleMemberById(dependencies);
   const deleteChatRoleById = createDeleteChatRoleById(dependencies);
 
   return Object.freeze({
@@ -223,6 +240,7 @@ export default (dependencies) => {
     updateChatRoleMember,
     updateChatRoleMembers,
     updateChatRolesRoleLevel,
+    deleteChatRoleMemberById,
     deleteChatRoleById,
   });
 };

@@ -246,6 +246,32 @@ const updateChatRolesRoleLevel = async (chatId, { rolesId }) => {
   }
 };
 
+const deleteChatRoleMemberById = async (roleId, chatId, memberId) => {
+  const [chat, member] = await client.$transaction([
+    client.chat.findUnique({ where: { id: chatId }, select: { pk: true } }),
+    client.user.findUnique({ where: { id: memberId }, select: { pk: true } }),
+  ]);
+
+  const userOnChat = await client.userOnChat.findFirst({
+    where: {
+      chatPk: chat.pk,
+      userPk: member.pk,
+    },
+    select: { id: true },
+  });
+
+  const data = toData("delete:member", { memberId: userOnChat.id });
+
+  const role = await client.role.update({
+    data,
+    where: {
+      id: roleId,
+    },
+    include: field.default,
+  });
+  return toEntity(role);
+};
+
 const deleteChatRoleById = async (roleId, chatId) => {
   const role = await client.role.delete({
     where: {
@@ -270,5 +296,6 @@ export default {
   updateChatRoleMember,
   updateChatRoleMembers,
   updateChatRolesRoleLevel,
+  deleteChatRoleMemberById,
   deleteChatRoleById,
 };
