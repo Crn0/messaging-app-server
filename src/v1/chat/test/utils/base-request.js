@@ -387,7 +387,24 @@ const ROLE = ({ request, baseUrl }) => {
     return Object.freeze({ metaData, members });
   };
 
-  const DELETE = () => Object.freeze({});
+  const DELETE = () => {
+    const member = async (chatId, roleId, memberId, token, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/${chatId}/roles/${roleId}/members/${memberId}`;
+
+      if (!options.includeAuth) {
+        return request.delete(url).accept("json").type("json");
+      }
+
+      return request
+        .delete(url)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    return Object.freeze({ member });
+  };
 
   return Object.freeze({
     get: GET(),
