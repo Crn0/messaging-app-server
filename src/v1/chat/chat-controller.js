@@ -291,6 +291,34 @@ const createUpdateRoleMetaData =
     return res.sendStatus(httpStatus.NO_CONTENT);
   };
 
+const createUpdateRoleMembers =
+  ({ roleService }) =>
+  async (req, res, next) => {
+    const { roleId, chatId } = req.params;
+
+    const { error } = await tryCatchAsync(() =>
+      roleService.updateChatRoleMembers(roleId, chatId, req.body)
+    );
+
+    if (error) return next(error);
+
+    return res.sendStatus(httpStatus.NO_CONTENT);
+  };
+
+const createDeleteRoleMember =
+  ({ roleService }) =>
+  async (req, res, next) => {
+    const { roleId, chatId, memberId } = req.params;
+
+    const { error } = await tryCatchAsync(() =>
+      roleService.deleteChatRoleMemberById(chatId, roleId, memberId)
+    );
+
+    if (error) return next(error);
+
+    return res.sendStatus(httpStatus.NO_CONTENT);
+  };
+
 export default (dependencies) => {
   const createChat = createCreateChat(dependencies);
 
@@ -318,6 +346,9 @@ export default (dependencies) => {
   const getRole = createGetRole(dependencies);
 
   const updateRoleMetaData = createUpdateRoleMetaData(dependencies);
+  const updateRoleMembers = createUpdateRoleMembers(dependencies);
+
+  const deleteRoleMember = createDeleteRoleMember(dependencies);
 
   return Object.freeze({
     createChat,
@@ -337,5 +368,7 @@ export default (dependencies) => {
     getRoles,
     getRole,
     updateRoleMetaData,
+    updateRoleMembers,
+    deleteRoleMember,
   });
 };

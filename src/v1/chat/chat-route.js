@@ -268,9 +268,22 @@ router.patch(
   chatController.updateRoleMetaData
 );
 
-router.patch("/:chatId/roles/:roleId/members");
+router.patch(
+  "/:chatId/roles/:roleId/members",
+  ZodparamValidator(schema.roleParamSchema),
+  ZodbodyValidator(schema.patchRoleMembersSchema),
+  chatMiddleware.canUpdateRoleMembers,
+  chatController.updateRoleMembers
+);
 
 router.delete("/:chatId/roles/:roleId");
+
+router.delete(
+  "/:chatId/roles/:roleId/members/:memberId",
+  ZodparamValidator(schema.roleMemberParamSchema),
+  chatMiddleware.canUpdateRoleMembers,
+  chatController.deleteRoleMember
+);
 
 // =================
 // CHAT MESSAGE ROUTE
