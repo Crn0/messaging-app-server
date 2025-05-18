@@ -171,7 +171,7 @@ describe("Member detail", () => {
             memberId,
             token
           );
-          console.log(res.body.errors);
+
           expect(res.status).toBe(404);
           expect(res.body).toMatchObject(expectedError);
         }
