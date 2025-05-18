@@ -95,12 +95,6 @@ describe("Role creation", () => {
       name: "create_role_with_permissions",
       isDefaultRole: true,
     };
-    console.log(
-      await client.permission.findMany({
-        where: { name: { in: permissions } },
-      }),
-      permissions
-    );
 
     const role = await roleRepository.insert(data);
 
@@ -615,11 +609,11 @@ describe("Role update", () => {
         },
       });
 
-      const rolesId = rolesToUpdate.map(({ id }) => id);
+      const roleIds = rolesToUpdate.map(({ id }) => id);
 
-      const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+      const updatedRoles = await roleRepository.updateChatRoleRoleLevels(
         chatId,
-        { rolesId }
+        { roleIds }
       );
 
       const expectedUpdatedRoles = expect.arrayContaining([
@@ -673,18 +667,18 @@ describe("Role update", () => {
         },
       });
 
-      const getRolesId = (roles, map = {}, rolesId = []) => {
-        if (roles.length === 0) return rolesId;
+      const getRolesId = (roles, map = {}, roleIds = []) => {
+        if (roles.length === 0) return roleIds;
 
         const [role, ...rest] = roles;
 
         const index = map[role.roleLevel];
 
         if (typeof index === "number") {
-          rolesId[index] = role.id;
+          roleIds[index] = role.id;
         }
 
-        return getRolesId(rest, map, rolesId);
+        return getRolesId(rest, map, roleIds);
       };
 
       const map = {
@@ -697,7 +691,7 @@ describe("Role update", () => {
         5: 6,
       };
 
-      const rolesId = getRolesId(rolesToUpdate, map);
+      const roleIds = getRolesId(rolesToUpdate, map);
 
       const oldRole = await client.role.findFirst({
         where: { chat: { id: chatId }, roleLevel: 96 },
@@ -718,9 +712,9 @@ describe("Role update", () => {
         },
       });
 
-      const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+      const updatedRoles = await roleRepository.updateChatRoleRoleLevels(
         chatId,
-        { rolesId }
+        { roleIds }
       );
 
       const expectedUpdatedRoles = expect.arrayContaining([
@@ -789,7 +783,7 @@ describe("Role update", () => {
         },
       });
 
-      const rolesId = rolesToUpdate.map(({ id }) => id);
+      const roleIds = rolesToUpdate.map(({ id }) => id);
 
       const oldRole = await client.role.findFirst({
         where: { chat: { id: chatId }, roleLevel: 85 },
@@ -810,9 +804,9 @@ describe("Role update", () => {
         },
       });
 
-      const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+      const updatedRoles = await roleRepository.updateChatRoleRoleLevels(
         chatId,
-        { rolesId }
+        { roleIds }
       );
 
       const expectedUpdatedRoles = expect.arrayContaining([
@@ -880,7 +874,7 @@ describe("Role update", () => {
         },
       });
 
-      const rolesId = rolesToUpdate.map(({ id }) => id);
+      const roleIds = rolesToUpdate.map(({ id }) => id);
 
       const oldRole = await client.role.findFirst({
         where: { chat: { id: chatId }, roleLevel: 96 },
@@ -890,9 +884,9 @@ describe("Role update", () => {
         },
       });
 
-      const updatedRoles = await roleRepository.updateChatRolesRoleLevel(
+      const updatedRoles = await roleRepository.updateChatRoleRoleLevels(
         chatId,
-        { rolesId }
+        { roleIds }
       );
 
       const expectedUpdatedRoles = expect.arrayContaining([
