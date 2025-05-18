@@ -83,7 +83,6 @@ beforeAll(async () => {
 describe("Metadata", () => {
   let highestRoleLevelId;
   let adminRoleId;
-  let roleManagerId;
   let lowestRoleId;
   let defaultRoleId;
 
@@ -254,7 +253,6 @@ describe("Metadata", () => {
 
     highestRoleLevelId = highestRoleLevel.id;
     adminRoleId = adminRole.id;
-    roleManagerId = roleManager.id;
     lowestRoleId = lowestRole.id;
     defaultRoleId = defaultRole.id;
   });
