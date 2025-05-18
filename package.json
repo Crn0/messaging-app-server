@@ -26,6 +26,7 @@
     "migrateCreateOnly": "dotenv -e .env.dev -- npx prisma migrate dev --create-only",
     "dbPush": "dotenv -e .env.dev -- npx prisma db push",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "cleanupTestDb": "dotenv -e .env.test -- node test/helpers/clean-up.js",
     "update": "ncu -u -x eslint",
     "format": "prettier --write \"**/*.{js,mjs}\""
   },
