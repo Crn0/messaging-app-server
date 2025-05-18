@@ -51,7 +51,7 @@ const insertWithTransaction = async ({
       permissions,
     });
 
-    const role = await client.role.create({
+    const role = await tx.role.create({
       data,
       include: field.default,
     });
