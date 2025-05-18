@@ -36,12 +36,10 @@ const insertWithTransaction = async ({
       select: { pk: true },
     });
 
-    const [{ last_level: lastLevel }] = await tx.$queryRawUnsafe(`
-      UPDATE "ChatRoleCounters"
-      SET last_level = last_level + 1
-      WHERE chat_pk = ${chat.pk}
-      RETURNING last_level
-    `);
+    const [{ last_level: lastLevel }] = await tx.$queryRawUnsafe(
+      'UPDATE "ChatRoleCounters" SET last_level = last_level + 1 WHERE chat_pk = $1 RETURNING last_level',
+      chat.pk
+    );
 
     const roleLevel = lastLevel;
 
