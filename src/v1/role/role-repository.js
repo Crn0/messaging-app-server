@@ -24,6 +24,46 @@ const insert = async ({ chatId, name, isDefaultRole, permissionIds }) => {
   return toEntity(role);
 };
 
+const insertWithTransaction = async ({
+  chatId,
+  name,
+  isDefaultRole,
+  permissionIds,
+}) => {
+  const transaction = await client.$transaction(async (tx) => {
+    const chat = await tx.chat.findUnique({
+      where: { id: chatId },
+      select: { pk: true },
+    });
+
+    const [{ last_level: lastLevel }] = await tx.$queryRawUnsafe(`
+      UPDATE "ChatRoleCounters"
+      SET last_level = last_level + 1
+      WHERE chat_pk = ${chat.pk}
+      RETURNING last_level
+    `);
+
+    const roleLevel = lastLevel;
+
+    const data = toData("insert", {
+      chatId,
+      name,
+      roleLevel,
+      isDefaultRole,
+      permissionIds,
+    });
+
+    const role = await client.role.create({
+      data,
+      include: field.default,
+    });
+
+    return toEntity(role);
+  });
+
+  return transaction;
+};
+
 const findChatRoleById = async (roleId, chatId) => {
   const role = await client.role.findFirst({
     where: { id: roleId, chat: { id: chatId } },
@@ -295,6 +335,7 @@ const deleteChatRoleById = async (roleId, chatId) => {
 
 export default {
   insert,
+  insertWithTransaction,
   findChatRoleById,
   findChatDefaultRolesById,
   findChatRolesById,
