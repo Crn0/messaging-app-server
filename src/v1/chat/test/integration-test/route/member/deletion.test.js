@@ -1,11 +1,11 @@
 import req from "supertest";
 import { describe, it, expect, beforeAll } from "vitest";
-import client from "../../../../../db/client.js";
-import app from "../../utils/server.js";
-import userFactory from "../../utils/user-factory.js";
-import initSetupUsers from "../../utils/setup-users.js";
-import baseRequest from "../../utils/base-request.js";
-import { idGenerator } from "../../../utils.js";
+import client from "../../../../../../db/client.js";
+import app from "../../../utils/server.js";
+import userFactory from "../../../utils/user-factory.js";
+import initSetupUsers from "../../../utils/setup-users.js";
+import baseRequest from "../../../utils/base-request.js";
+import { idGenerator } from "../../../../utils.js";
 
 const request = baseRequest({ request: req(app), url: "/api/v1" });
 

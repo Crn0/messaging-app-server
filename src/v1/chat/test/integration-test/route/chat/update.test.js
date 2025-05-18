@@ -1,13 +1,13 @@
 import req from "supertest";
 import { describe, it, expect, beforeAll } from "vitest";
-import client from "../../../../../db/client.js";
-import app from "../../utils/server.js";
-import Storage from "../../../../storage/index.js";
-import userFactory from "../../utils/user-factory.js";
-import initSetupUsers from "../../utils/setup-users.js";
-import baseRequest from "../../utils/base-request.js";
-import attachment from "../../data/file-upload.js";
-import { idGenerator } from "../../../utils.js";
+import client from "../../../../../../db/client.js";
+import app from "../../../utils/server.js";
+import Storage from "../../../../../storage/index.js";
+import userFactory from "../../../utils/user-factory.js";
+import initSetupUsers from "../../../utils/setup-users.js";
+import baseRequest from "../../../utils/base-request.js";
+import attachment from "../../../data/file-upload.js";
+import { idGenerator } from "../../../../utils.js";
 
 const TEST_UPLOAD = false;
 
