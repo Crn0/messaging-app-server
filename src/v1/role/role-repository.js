@@ -193,7 +193,7 @@ const updateChatRoleMembers = async (roleId, chatId, { memberIds }) => {
   return toEntity(role);
 };
 
-const updateChatRolesRoleLevel = async (chatId, { rolesId }) => {
+const updateChatRolesRoleLevel = async (chatId, { roleIds }) => {
   let oldRoles;
   let rolesToUpdate;
 
@@ -203,7 +203,7 @@ const updateChatRolesRoleLevel = async (chatId, { rolesId }) => {
         where: { chat: { id: chatId }, isDefaultRole: false },
       }),
       client.role.findMany({
-        where: { id: { in: rolesId }, chat: { id: chatId } },
+        where: { id: { in: roleIds }, chat: { id: chatId } },
       }),
     ]);
 
@@ -214,7 +214,7 @@ const updateChatRolesRoleLevel = async (chatId, { rolesId }) => {
       orderBy: { roleLevel: "asc" },
       where: {
         chat: { id: chatId },
-        id: { notIn: rolesId },
+        id: { notIn: roleIds },
         roleLevel: {
           gt: minRoleLevel,
           lt: maxRoleLevel,
@@ -259,7 +259,7 @@ const updateChatRolesRoleLevel = async (chatId, { rolesId }) => {
     );
 
     const roles = await client.$transaction(
-      rolesId.map((id, i) => {
+      roleIds.map((id, i) => {
         const data = toData("update:roleLevel", {
           roleLevel: minRoleLevel + i,
         });
