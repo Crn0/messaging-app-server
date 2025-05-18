@@ -28,12 +28,12 @@ const createInsertDefaultRole =
   async (DTO) => {
     await chatService.getChatById(DTO.chatId);
 
-    const permissions = await permissionService.getDefaultPermissions();
-
-    const permissionIds = permissions.map(({ id }) => id);
+    const permissions = (await permissionService.getDefaultPermissions()).map(
+      ({ name }) => name
+    );
 
     const data = {
-      permissionIds,
+      permissions,
       name: "everyone",
       chatId: DTO.chatId,
       isDefaultRole: true,
@@ -102,7 +102,7 @@ const createUpdateChatRoleMetaData =
 
     const data = {
       name: DTO.name,
-      permissionIds: DTO.permissionIds,
+      permissions: DTO.permissions,
     };
 
     const role = await roleRepository.updateChatRoleMetaData(roleId, data);

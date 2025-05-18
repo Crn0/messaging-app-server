@@ -1,6 +1,22 @@
-import { array, z } from "zod";
+import { z } from "zod";
 
 const CHAT_TYPE = ["DirectChat", "GroupChat"];
+const PERMISSIONS = [
+  // GENERAL SERVER PERMISSIONS
+  "manage_role",
+  "manage_chat",
+  "view_chat",
+  // MEMBERSHIP PERMISSIONS
+  "create_invite",
+  "manage_member",
+  "kick_member",
+  "mute_member",
+  // TEXT PERMISSIONS
+  "send_message",
+  "manage_message",
+  // ADVANCED PERMISSIONS
+  "admin",
+];
 const MAX_FILE_SIZE = 10_000_000; // 10mb
 const ACCEPTED_AVATAR_TYPES = [
   "image/jpeg",
@@ -136,6 +152,8 @@ const groupChatCreationCondition = (data, ctx) => {
 };
 
 const chatType = z.enum(CHAT_TYPE);
+
+const rolePermissions = z.enum(PERMISSIONS);
 
 const idSchema = z
   .string()
@@ -298,15 +316,11 @@ const patchMemberMuteSchema = z.object({
 
 const patchRoleMetaDataSchema = z.object({
   name: nameSchema.optional(),
-  permissionIds: z
-    .array(idSchema)
-    .refine(
-      (permissionIds) => new Set(permissionIds).size === permissionIds.length,
-      {
-        message:
-          "All permission IDs must be unique, no duplicate values allowed",
-      }
-    )
+  permissions: z
+    .array(rolePermissions)
+    .refine((perms) => new Set(perms).size === perms.length, {
+      message: "All permission must be unique, no duplicate values allowed",
+    })
     .optional(),
 });
 
@@ -317,6 +331,14 @@ const patchRoleMembersSchema = z.object({
       message: "All member IDs must be unique, no duplicate values allowed",
     })
     .optional(),
+});
+
+const patchRoleLevelsSchema = z.object({
+  roleIds: z
+    .array(idSchema)
+    .refine((memberIds) => new Set(memberIds).size === memberIds.length, {
+      message: "All role IDs must be unique, no duplicate values allowed",
+    }),
 });
 
 export {
@@ -333,4 +355,5 @@ export {
   patchMemberMuteSchema,
   patchRoleMetaDataSchema,
   patchRoleMembersSchema,
+  patchRoleLevelsSchema,
 };

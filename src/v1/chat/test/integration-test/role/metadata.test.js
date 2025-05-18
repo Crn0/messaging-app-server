@@ -83,7 +83,6 @@ beforeAll(async () => {
 describe("Metadata", () => {
   let highestRoleLevelId;
   let adminRoleId;
-  let roleManagerId;
   let lowestRoleId;
   let defaultRoleId;
 
@@ -254,7 +253,6 @@ describe("Metadata", () => {
 
     highestRoleLevelId = highestRoleLevel.id;
     adminRoleId = adminRole.id;
-    roleManagerId = roleManager.id;
     lowestRoleId = lowestRole.id;
     defaultRoleId = defaultRole.id;
   });
@@ -383,7 +381,8 @@ describe("Metadata", () => {
       {
         scenario: "equal-ranked member updating permissions",
         data: {
-          payload: { permissionIds: [idGenerator()] },
+          payload: { permissions: ["admin"] },
+
           token: user2AccessToken,
           includeAuth: true,
         },
@@ -423,7 +422,7 @@ describe("Metadata", () => {
         scenario: "lower-ranked member updating higher role permissions",
         data: {
           roleId: highestRoleLevelId,
-          payload: { permissionIds: [idGenerator()] },
+          payload: { permissions: ["admin"] },
           token: user5AccessToken,
           includeAuth: true,
         },
@@ -437,7 +436,7 @@ describe("Metadata", () => {
         scenario:
           "higher-role lacks permission, lower-role has it — update permissions attempt",
         data: {
-          payload: { permissionIds: [idGenerator()] },
+          payload: { permissions: ["admin"] },
           token: user5AccessToken,
           includeAuth: true,
         },
@@ -500,7 +499,7 @@ describe("Metadata", () => {
   });
 
   describe("Validation Errors", () => {
-    const duplicateId = idGenerator();
+    const duplicateName = "admin";
 
     it.each([
       {
@@ -547,25 +546,25 @@ describe("Metadata", () => {
         expectedError: { path: ["name"], code: "too_big" },
       },
       {
-        scenario: "permission ID at index 0 has an invalid string",
+        scenario: "permission at index 0 has an invalid string",
         data: {
           payload: {
-            permissionIds: ["invalid_id_format", idGenerator()],
+            permissions: ["invalid_id_format", "admin"],
           },
           token: user2AccessToken,
         },
-        expectedError: { path: ["permissionIds", 0], code: "invalid_string" },
+        expectedError: { path: ["permissions", 0], code: "invalid_enum_value" },
       },
       {
         scenario: "duplicate permission ID in the array",
 
         data: {
           payload: {
-            permissionIds: [duplicateId, duplicateId, idGenerator()],
+            permissions: [duplicateName, duplicateName],
           },
           token: user2AccessToken,
         },
-        expectedError: { path: ["permissionIds"], code: "custom" },
+        expectedError: { path: ["permissions"], code: "custom" },
       },
     ])(
       "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
@@ -694,10 +693,10 @@ describe("Metadata", () => {
         where: {
           name: { in: ["kick_member", "manage_role"] },
         },
-        select: { id: true, name: true },
+        select: { name: true },
       });
 
-      const payload = { permissionIds: permissions.map(({ id }) => id) };
+      const payload = { permissions: permissions.map(({ name }) => name) };
 
       const res = await request.role.patch.metaData(
         groupChatId,
@@ -738,10 +737,10 @@ describe("Metadata", () => {
         where: {
           name: { in: ["kick_member", "manage_role", "send_message"] },
         },
-        select: { id: true, name: true },
+        select: { name: true },
       });
 
-      const payload = { permissionIds: permissions.map(({ id }) => id) };
+      const payload = { permissions: permissions.map(({ name }) => name) };
 
       const res = await request.role.patch.metaData(
         groupChatId,
@@ -785,10 +784,10 @@ describe("Metadata", () => {
         where: {
           name: { in: ["admin"] },
         },
-        select: { id: true, name: true },
+        select: { name: true },
       });
 
-      const payload = { permissionIds: permissions.map(({ id }) => id) };
+      const payload = { permissions: permissions.map(({ name }) => name) };
 
       const res = await request.role.patch.metaData(
         groupChatId,

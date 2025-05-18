@@ -490,9 +490,9 @@ const createCanUpdateRoleMetaData =
     user.roles = userRoles;
     const inputKeys = Object.keys(req.body);
 
-    const roleFields = ["name", "permissionIds"].reduce((result, key) => {
+    const roleFields = ["name", "permissions"].reduce((result, key) => {
       if (inputKeys.includes(key)) {
-        return result.concat(key === "permissionIds" ? "permissions" : key);
+        return result.concat(key);
       }
 
       return result;
