@@ -23,8 +23,6 @@ const {
     user4AccessToken,
     user6AccessToken: nonMemberAccessToken,
   },
-  invalidTokens: { user1InvalidToken },
-  expiredTokens: { user1ExpiredToken },
 } = await setupTestUsers(6);
 
 let groupChatId;
@@ -536,6 +534,7 @@ describe("Member update", () => {
             validForm,
             user4AccessToken
           );
+
           expect(res.status).toBe(204);
         });
       });
