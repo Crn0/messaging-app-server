@@ -158,7 +158,7 @@ const createUpdateChatRolesRoleLevel =
     const [_, roleList] = await Promise.all([
       chatService.getChatById(chatId),
       Promise.all(
-        DTO.rolesId.map((roleId) =>
+        DTO.roleIds.map((roleId) =>
           roleRepository.findChatRoleById(roleId, chatId)
         )
       ),
@@ -173,7 +173,7 @@ const createUpdateChatRolesRoleLevel =
       );
     }
     const data = {
-      rolesId: DTO.rolesId,
+      roleIds: DTO.roleIds,
     };
 
     const role = await roleRepository.updateChatRolesRoleLevel(chatId, data);
