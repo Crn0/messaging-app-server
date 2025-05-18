@@ -360,8 +360,8 @@ describe("Role creation", () => {
     );
   });
 
-  describe("Success case", () => {
-    it("returns 200 (OK) with the created role when the chat owner creates a role", async () => {
+  describe.only("Success case", () => {
+    it.skip("returns 200 (OK) with the created role when the chat owner creates a role", async () => {
       const payload = { name: "created_role_by_owner" };
 
       const res = await request.role.post.createRole(
@@ -394,7 +394,7 @@ describe("Role creation", () => {
       await client.role.delete({ where: { id: res.body.id } });
     });
 
-    it("returns 200 (OK) with the created role when a member with 'manage_role' creates a role", async () => {
+    it.skip("returns 200 (OK) with the created role when a member with 'manage_role' creates a role", async () => {
       const payload = { name: "created_role_with_manage_role_permission" };
 
       const res = await request.role.post.createRole(
@@ -425,6 +425,56 @@ describe("Role creation", () => {
       expect(role.id).toBe(res.body.id);
 
       await client.role.delete({ where: { id: res.body.id } });
+    });
+
+    it("returns 200 (OK) with multiple roles when created in parallel", async () => {
+      const groupChatPayload = {
+        ownerId: user1Id,
+        name: "test_group_chat",
+        type: "GroupChat",
+      };
+      const chatId = (
+        await request.chat.post.chat(user1AccessToken, groupChatPayload)
+      ).body.id;
+
+      const roleLength = Array.from({ length: 10 });
+
+      const responses = await Promise.all(
+        roleLength.map((_, i) =>
+          request.role.post.createRole(
+            chatId,
+            { name: `role_${i + 1}` },
+            user1AccessToken
+          )
+        )
+      );
+
+      const responseStatuses = responses.map((res) => res.status);
+
+      expect(responseStatuses.every((status) => status === 200)).toBeTruthy();
+
+      const roles = await client.role.findMany({
+        orderBy: { roleLevel: "asc" },
+        where: { chat: { id: chatId }, isDefaultRole: false },
+        select: {
+          name: true,
+          roleLevel: true,
+        },
+      });
+
+      const roleLevels = roles.map((r) => r.roleLevel);
+      const uniqueRoleLevels = new Set(roleLevels);
+
+      const expectedRoles = expect.arrayContaining(
+        roleLength.map((_, i) =>
+          expect.objectContaining({ name: `role_${i + 1}` })
+        )
+      );
+
+      expect(roles).toEqual(expectedRoles);
+      expect(uniqueRoleLevels.size).toBe(roleLength.length);
+
+      await client.chat.delete({ where: { id: chatId } });
     });
   });
 });

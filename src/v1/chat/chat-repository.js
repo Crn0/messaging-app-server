@@ -18,6 +18,10 @@ const insertDirectChat = async ({ chatId, memberIds }) => {
     data: insertData,
   });
 
+  await client.chatRoleCounter.create({
+    data: { chatPk: chat.pk, lastLevel: 0 },
+  });
+
   const insertReceiver = await client.chat.update({
     where: {
       id: chat.id,
@@ -48,6 +52,10 @@ const insertGroupChat = async ({
   const chat = await client.chat.create({
     data,
     include: field.default,
+  });
+
+  await client.chatRoleCounter.create({
+    data: { chatPk: chat.pk, lastLevel: 0 },
   });
 
   return toEntity("Chat", chat);
