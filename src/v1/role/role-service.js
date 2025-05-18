@@ -18,7 +18,7 @@ const createInsertRole =
       isDefaultRole: false,
     };
 
-    const role = await roleRepository.insert(data);
+    const role = await roleRepository.insertWithTransaction(data);
 
     return role;
   };

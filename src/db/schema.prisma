@@ -80,6 +80,7 @@ model Chat {
   messages    Message[]
   attachments Attachment[] @relation("ChatAttachment")
   ownerPk     Int?         @map("owner_pk") @db.Integer
+  chatRoleCounter ChatRoleCounter[]
 
   @@unique([pk, id])
   @@map("Chats")
@@ -106,6 +107,15 @@ model Role {
 
   @@unique([chatPk, roleLevel])
   @@map("Roles")
+}
+
+model ChatRoleCounter {
+  chatPk Int @id @map("chat_pk")
+  lastLevel Int @default(0) @map("last_level")
+
+  chat Chat @relation(fields: [chatPk], references: [pk], onDelete: Cascade)
+
+  @@map("ChatRoleCounters")
 }
 
 model Permission {
