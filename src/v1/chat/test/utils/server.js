@@ -34,7 +34,6 @@ app.use((err, req, res, _) => {
   }
 
   if (!ErrorHandler.isTrustedError(err)) {
-    console.log(err);
     return res.sendStatus(httpStatus.INTERNAL_SERVER);
   }
 
