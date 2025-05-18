@@ -461,7 +461,7 @@ describe("Chat creation", () => {
 
         const members = await client.userOnChat.findMany({
           where: {
-            chat: { id: res.id },
+            chat: { id: res.body.id },
           },
           select: {
             roles: {
