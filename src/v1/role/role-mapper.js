@@ -20,7 +20,7 @@ const toData = (action, DTO) => {
           },
         },
         permissions: {
-          connect: DTO.permissionIds?.map?.((id) => ({ id })),
+          connect: DTO.permissions?.map?.((perm) => ({ name: perm })),
         },
       };
     }
@@ -31,10 +31,11 @@ const toData = (action, DTO) => {
         data.name = DTO.name;
       }
 
-      if (Array.isArray(DTO.permissionIds) && DTO.permissionIds.length > 0) {
+      if (Array.isArray(DTO.permissions) && DTO.permissions.length > 0) {
         data.permissions = {
           set: [],
-          connect: DTO.permissionIds.map((id) => ({ id })),
+
+          connect: DTO.permissions?.map?.((perm) => ({ name: perm })),
         };
       }
 

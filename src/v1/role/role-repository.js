@@ -2,7 +2,7 @@ import client from "../../db/client.js";
 import field from "./include.js";
 import { toData, toEntity } from "./role-mapper.js";
 
-const insert = async ({ chatId, name, isDefaultRole, permissionIds }) => {
+const insert = async ({ chatId, name, isDefaultRole, permissions }) => {
   const roleLevel =
     (await client.role.count({
       where: { isDefaultRole: false, chat: { id: chatId } },
@@ -13,7 +13,7 @@ const insert = async ({ chatId, name, isDefaultRole, permissionIds }) => {
     name,
     roleLevel,
     isDefaultRole,
-    permissionIds,
+    permissions,
   });
 
   const role = await client.role.create({
@@ -28,7 +28,7 @@ const insertWithTransaction = async ({
   chatId,
   name,
   isDefaultRole,
-  permissionIds,
+  permissions,
 }) => {
   const transaction = await client.$transaction(async (tx) => {
     const chat = await tx.chat.findUnique({
@@ -50,7 +50,7 @@ const insertWithTransaction = async ({
       name,
       roleLevel,
       isDefaultRole,
-      permissionIds,
+      permissions,
     });
 
     const role = await client.role.create({
@@ -112,8 +112,8 @@ const findUserRolesById = async (chatId, userId) => {
   return user?.roles?.map?.(toEntity) ?? [];
 };
 
-const updateChatRoleMetaData = async (roleId, { name, permissionIds }) => {
-  const data = toData("update:metaData", { name, permissionIds });
+const updateChatRoleMetaData = async (roleId, { name, permissions }) => {
+  const data = toData("update:metaData", { name, permissions });
 
   const role = await client.role.update({
     data,

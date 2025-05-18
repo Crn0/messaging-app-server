@@ -5,7 +5,7 @@ import userFactory from "../utils/user-factory.js";
 import roleRepository from "../../role-repository.js";
 import permissionNames from "../data/permissions.js";
 
-let permissionIds;
+const permissions = permissionNames;
 
 const User = userFactory();
 
@@ -46,20 +46,19 @@ beforeAll(async () => {
         },
       },
     }),
+    client.permission.createMany({
+      data: permissions.map((perm) => ({ name: perm })),
+      skipDuplicates: true,
+    }),
   ]);
-
-  const permissions = await client.permission.createManyAndReturn({
-    data: permissionNames.map((name) => ({ name })),
-    select: { id: true },
-  });
-
-  permissionIds = permissions.map(({ id }) => id);
 
   return async () => {
     await client.$transaction([
       client.user.delete({ where: { id: userId } }),
       client.chat.delete({ where: { id: chatId } }),
-      client.permission.deleteMany({ where: { id: { in: permissionIds } } }),
+      client.permission.deleteMany({
+        where: { name: { in: permissionNames } },
+      }),
     ]);
   };
 });
@@ -92,10 +91,16 @@ describe("Role creation", () => {
   it("creates a default role with permissions and returns the created object", async () => {
     const data = {
       chatId,
-      permissionIds,
+      permissions,
       name: "create_role_with_permissions",
       isDefaultRole: true,
     };
+    console.log(
+      await client.permission.findMany({
+        where: { name: { in: permissions } },
+      }),
+      permissions
+    );
 
     const role = await roleRepository.insert(data);
 
@@ -109,7 +114,7 @@ describe("Role creation", () => {
     };
 
     const toEqual = expect.arrayContaining(
-      permissionIds.map((id) => expect.objectContaining({ id }))
+      permissions.map((perm) => expect.objectContaining({ name: perm }))
     );
 
     expect(role).toMatchObject(toMatchObject);
@@ -213,7 +218,7 @@ describe("Role detail", () => {
   it("returns a list of default roles by chat ID", async () => {
     const data = {
       chatId,
-      permissionIds,
+      permissions,
       name: "default_role_with_permissions",
       isDefaultRole: true,
     };
@@ -495,7 +500,7 @@ describe("Role update", () => {
       });
 
       const updatedRole = await roleRepository.updateChatRoleMetaData(role.id, {
-        permissionIds,
+        permissions,
       });
 
       const toMatchObject = {
@@ -510,7 +515,7 @@ describe("Role update", () => {
       };
 
       const toEqual = expect.arrayContaining(
-        permissionIds.map((id) => expect.objectContaining({ id }))
+        permissions.map((perm) => expect.objectContaining({ name: perm }))
       );
 
       expect(updatedRole).not.toHaveProperty("pk");
@@ -584,7 +589,7 @@ describe("Role update", () => {
       );
     });
 
-    it.skip("reorders role levels using input [100, 1], shifting 100 to 1 and adjusting adjacent levels", async () => {
+    it("reorders role levels using input [100, 1], shifting 100 to 1 and adjusting adjacent levels", async () => {
       const rolesToUpdate = await client.role.findMany({
         orderBy: {
           roleLevel: "desc",
@@ -766,7 +771,7 @@ describe("Role update", () => {
       ).toEqual(outOfRangeRoles);
     });
 
-    it.skip("reorders role levels using input [86, 55], adjusting adjacent levels and skipping roles out of range", async () => {
+    it("reorders role levels using input [86, 55], adjusting adjacent levels and skipping roles out of range", async () => {
       const rolesToUpdate = await client.role.findMany({
         orderBy: {
           roleLevel: "desc",
@@ -857,7 +862,7 @@ describe("Role update", () => {
       ).toEqual(outOfRangeRoles);
     });
 
-    it.skip("reorders role levels using input [100, 99, 98, 97, 1] and adjusts adjacent levels", async () => {
+    it("reorders role levels using input [100, 99, 98, 97, 1] and adjusts adjacent levels", async () => {
       const rolesToUpdate = await client.role.findMany({
         orderBy: {
           roleLevel: "desc",
