@@ -193,7 +193,7 @@ const updateChatRoleMembers = async (roleId, chatId, { memberIds }) => {
   return toEntity(role);
 };
 
-const updateChatRolesRoleLevel = async (chatId, { roleIds }) => {
+const updateChatRoleRoleLevels = async (chatId, { roleIds }) => {
   let oldRoles;
   let rolesToUpdate;
 
@@ -343,7 +343,7 @@ export default {
   updateChatRoleMetaData,
   updateChatRoleMember,
   updateChatRoleMembers,
-  updateChatRolesRoleLevel,
+  updateChatRoleRoleLevels,
   deleteChatRoleMemberById,
   deleteChatRoleById,
 };
