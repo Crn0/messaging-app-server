@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { attachments, avatar } from "../data/index.js";
-import { idGenerator } from "../../utils.js";
-import client from "../../../../db/client.js";
-import chatRepository from "../../chat-repository.js";
-import userFactory from "../utils/user-factory.js";
+import { attachments, avatar } from "../../data/index.js";
+import { idGenerator } from "../../../utils.js";
+import client from "../../../../../db/client.js";
+import chatRepository from "../../../chat-repository.js";
+import userFactory from "../../utils/user-factory.js";
 
 let messageId;
 let replyId;
