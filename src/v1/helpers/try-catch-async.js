@@ -1,13 +1,8 @@
-/**
- * TODO:
- * Allow an optional callback (e.g. onFinally) to run after the promise settles
- * for cleanup, logging, or other side effects.
- *
- * Example usage:
- * const { error, data } = await tryCatchAsync(() => fetchData(), () => console.log("done"));
- */
-
-const tryCatchAsync = async (promise) => {
+const tryCatchAsync = async (
+  promise,
+  onFinally = () => {},
+  debug = () => {}
+) => {
   const thing = typeof promise === "function" ? promise() : promise;
 
   try {
@@ -16,6 +11,8 @@ const tryCatchAsync = async (promise) => {
     return { data, error: null };
   } catch (e) {
     return { data: null, error: e };
+  } finally {
+    await Promise.resolve(onFinally()).catch(debug);
   }
 };
 
