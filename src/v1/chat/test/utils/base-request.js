@@ -384,7 +384,23 @@ const ROLE = ({ request, baseUrl }) => {
         .type("json");
     };
 
-    return Object.freeze({ metaData, members });
+    const roleLevels = async (chatId, payload, token, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/${chatId}/roles/role-levels`;
+
+      if (!options.includeAuth) {
+        return request.patch(url).send(payload).accept("json").type("json");
+      }
+
+      return request
+        .patch(url)
+        .send(payload)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    return Object.freeze({ metaData, members, roleLevels });
   };
 
   const DELETE = () => {
@@ -403,7 +419,22 @@ const ROLE = ({ request, baseUrl }) => {
         .type("json");
     };
 
-    return Object.freeze({ member });
+    const role = async (chatId, roleId, token, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/${chatId}/roles/${roleId}`;
+
+      if (!options.includeAuth) {
+        return request.delete(url).accept("json").type("json");
+      }
+
+      return request
+        .delete(url)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    return Object.freeze({ member, role });
   };
 
   return Object.freeze({
