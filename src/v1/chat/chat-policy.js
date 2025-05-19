@@ -214,6 +214,33 @@ const checkRoleUpdateMembersPermission = (user, chat, { targetRole }) => {
   return success(reason);
 };
 
+const checkRoleUpdateRolelevelsPermission = (user, chat, { targetRoles }) => {
+  const { allowed, code, reason } = executePolicyCheck(user, chat, {
+    resource: "role",
+    action: "update",
+    field: "roleLevel",
+    context: { targetRoles },
+  });
+
+  if (!allowed)
+    return code === "forbidden" ? forbidden(reason) : notFound(reason);
+
+  return success(reason);
+};
+
+const checkDeleteRolePermission = (user, chat, { targetRole }) => {
+  const { allowed, code, reason } = executePolicyCheck(user, chat, {
+    resource: "role",
+    action: "delete",
+    context: { targetRole },
+  });
+
+  if (!allowed)
+    return code === "forbidden" ? forbidden(reason) : notFound(reason);
+
+  return success(reason);
+};
+
 export default {
   chat: {
     checkCreate: checkChatCreation,
@@ -235,5 +262,7 @@ export default {
     checkView: checkRoleViewPermission,
     checkUpdateMetaData: checkRoleUpdateMetaDataPermission,
     checkUpdateMembers: checkRoleUpdateMembersPermission,
+    checkUpdateRoleLevels: checkRoleUpdateRolelevelsPermission,
+    checkDelete: checkDeleteRolePermission,
   },
 };

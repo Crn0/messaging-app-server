@@ -318,17 +318,55 @@ const deleteChatRoleMemberById = async (roleId, chatId, memberId) => {
 };
 
 const deleteChatRoleById = async (roleId, chatId) => {
-  const role = await client.role.delete({
-    where: {
-      id: roleId,
-      chat: {
-        id: chatId,
+  const transaction = await client.$transaction(async (tx) => {
+    const chat = await tx.chat.findUnique({
+      where: { id: chatId },
+      select: { pk: true },
+    });
+
+    const deletedRole = await tx.role.delete({
+      where: {
+        id: roleId,
+        chat: {
+          id: chatId,
+        },
       },
-    },
-    include: field.default,
+      include: field.default,
+    });
+
+    const remainingRoles = await tx.role.findMany({
+      orderBy: { roleLevel: "asc" },
+      where: {
+        chat: { id: chatId },
+        isDefaultRole: false,
+        NOT: { id: deletedRole.id },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (remainingRoles.length) {
+      await Promise.all(
+        remainingRoles.map(async (r, i) =>
+          tx.role.update({
+            where: { id: r.id },
+            data: { roleLevel: i + 1 },
+          })
+        )
+      );
+    }
+
+    await tx.$queryRawUnsafe(
+      'UPDATE "ChatRoleCounters" SET last_level = $2 WHERE chat_pk = $1 RETURNING last_level',
+      chat.pk,
+      remainingRoles.length
+    );
+
+    return toEntity(deletedRole);
   });
 
-  return toEntity(role);
+  return transaction;
 };
 
 export default {
