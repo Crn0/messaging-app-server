@@ -877,6 +877,154 @@ const PERMISSION_POLICIES = {
           reason: "Update permission granted",
         };
       },
+      roleLevel: (user, chat, { targetRoles }) => {
+        const isUserMember = chat.members.includes(user.id);
+
+        if (!isUserMember) {
+          return {
+            allowed: false,
+            code: chat.isPrivate ? "not_found" : "forbidden",
+            reason: chat.isPrivate
+              ? "Chat not found"
+              : "You must be a chat member to update roles",
+          };
+        }
+
+        const hasDefaultRole = targetRoles.some((role) => role.isDefaultRole);
+        const isUserOwner = chat.ownerId === user.id;
+
+        if (hasDefaultRole) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason:
+              "You are not allowed to modify the role level of a default role",
+          };
+        }
+
+        if (isUserOwner) {
+          return {
+            allowed: true,
+            code: "ok",
+            reason: "Chat owner can update roles",
+          };
+        }
+
+        const requiredPermissions = PERMISSIONS.role.update;
+        const filteredRoles = getRolesWithRequiredPermissions(
+          user,
+          requiredPermissions
+        );
+
+        const highestPermittedLevel = getHighestRoleLevel({
+          roles: filteredRoles,
+        });
+
+        const hasPermission = executePermissionCheck(
+          user,
+          chat,
+          requiredPermissions
+        );
+
+        if (!hasPermission) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+          };
+        }
+
+        const highestPermittedLevelIsLowerOrEqualRank = targetRoles.some(
+          (targetRole) => highestPermittedLevel >= targetRole?.roleLevel
+        );
+
+        if (highestPermittedLevelIsLowerOrEqualRank) {
+          return {
+            allowed: false,
+            code: "forbidden",
+            reason: `You cannot update the role level of a higher or equal role level`,
+          };
+        }
+
+        return {
+          allowed: true,
+          code: "ok",
+          reason: "Update permission granted",
+        };
+      },
+    },
+    delete: (user, chat, { targetRole }) => {
+      const { isDefaultRole } = targetRole;
+      const isUserMember = chat.members.includes(user.id);
+
+      if (!isUserMember) {
+        return {
+          allowed: false,
+          code: chat.isPrivate ? "not_found" : "forbidden",
+          reason: chat.isPrivate
+            ? "Chat not found"
+            : "You must be a chat member to update roles",
+        };
+      }
+
+      if (isDefaultRole) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: "You are not allowed to delete a default role",
+        };
+      }
+
+      const isUserOwner = user.id === chat.ownerId;
+
+      if (isUserOwner) {
+        return {
+          allowed: true,
+          code: "ok",
+          reason: "Chat owner can delete roles",
+        };
+      }
+
+      const requiredPermissions = PERMISSIONS.role.update;
+      const filteredRoles = getRolesWithRequiredPermissions(
+        user,
+        requiredPermissions
+      );
+
+      const highestPermittedLevel = getHighestRoleLevel({
+        roles: filteredRoles,
+      });
+
+      const hasPermission = executePermissionCheck(
+        user,
+        chat,
+        requiredPermissions
+      );
+
+      if (!hasPermission) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+        };
+      }
+
+      const highestPermittedLevelIsLowerOrEqualRank =
+        highestPermittedLevel >= targetRole?.roleLevel;
+
+      if (highestPermittedLevelIsLowerOrEqualRank) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: `You cannot delete a higher or equal role level`,
+        };
+      }
+
+      return {
+        allowed: true,
+        code: "ok",
+        reason: "Delete permission granted",
+      };
     },
   },
 };

@@ -555,6 +555,96 @@ const createCanUpdateRoleMembers =
     return next();
   };
 
+const createCanUpdateRoleLevels =
+  ({ chatService, roleService, chatPolicy }) =>
+  async (req, _, next) => {
+    const { chatId } = req.params;
+    const { roleIds } = req.body;
+    const user = { id: req.user.id };
+
+    const targetRoleResults = await Promise.all(
+      roleIds?.map?.((id) =>
+        tryCatchAsync(() => roleService.getChatRoleById(id, chatId))
+      )
+    );
+
+    const [chatResult, chatRolesResult, userRolesResult] = await Promise.all([
+      tryCatchAsync(() => chatService.getChatById(chatId)),
+      tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+      tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+    ]);
+
+    const targetRoleErrors = targetRoleResults.find((r) => r.error)?.error;
+    const targetRoles = targetRoleResults.map((r) => r.data);
+
+    const { error: chatError, data: chat } = chatResult;
+
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+
+    const { error: userRolesError, data: userRoles } = userRolesResult;
+
+    if (chatError || chatRolesError || userRolesError || targetRoleErrors) {
+      return next(
+        chatError || chatRolesError || userRolesError || targetRoleErrors
+      );
+    }
+
+    chat.roles = chatRoles;
+    user.roles = userRoles;
+
+    const { success, code, message } = chatPolicy.role.checkUpdateRoleLevels(
+      user,
+      chat,
+      {
+        targetRoles,
+      }
+    );
+
+    if (!success) {
+      return next(new APIError(message, code));
+    }
+
+    return next();
+  };
+
+const createCanDeleteRole =
+  ({ chatService, roleService, chatPolicy }) =>
+  async (req, _, next) => {
+    const { chatId, roleId } = req.params;
+    const user = { id: req.user.id };
+
+    const [
+      { error: chatError, data: chat },
+      { error: chatRolesError, data: chatRoles },
+      { error: userRolesError, data: userRoles },
+      { error: targetRoleError, data: targetRole },
+    ] = await Promise.all([
+      tryCatchAsync(() => chatService.getChatById(chatId)),
+      tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+      tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+      tryCatchAsync(() => roleService.getChatRoleById(roleId, chatId)),
+    ]);
+
+    if (chatError || chatRolesError || userRolesError || targetRoleError) {
+      return next(
+        chatError || chatRolesError || userRolesError || targetRoleError
+      );
+    }
+
+    chat.roles = chatRoles;
+    user.roles = userRoles;
+
+    const { success, code, message } = chatPolicy.role.checkDelete(user, chat, {
+      targetRole,
+    });
+
+    if (!success) {
+      return next(new APIError(message, code));
+    }
+
+    return next();
+  };
+
 // =================
 // MESSAGE MIDDLEWARE
 // =================
@@ -586,6 +676,9 @@ export default (dependencies) => {
 
   const canUpdateRoleMetaData = createCanUpdateRoleMetaData(dependencies);
   const canUpdateRoleMembers = createCanUpdateRoleMembers(dependencies);
+  const canUpdateRoleLevels = createCanUpdateRoleLevels(dependencies);
+
+  const canDeleteRole = createCanDeleteRole(dependencies);
 
   return Object.freeze({
     uploader,
@@ -603,5 +696,7 @@ export default (dependencies) => {
     canViewRole,
     canUpdateRoleMetaData,
     canUpdateRoleMembers,
+    canUpdateRoleLevels,
+    canDeleteRole,
   });
 };

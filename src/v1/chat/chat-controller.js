@@ -305,6 +305,20 @@ const createUpdateRoleMembers =
     return res.sendStatus(httpStatus.NO_CONTENT);
   };
 
+const createUpdateRoleLevels =
+  ({ roleService }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+
+    const { error } = await tryCatchAsync(() =>
+      roleService.updateChatRoleRoleLevels(chatId, req.body)
+    );
+
+    if (error) return next(error);
+
+    return res.sendStatus(httpStatus.NO_CONTENT);
+  };
+
 const createDeleteRoleMember =
   ({ roleService }) =>
   async (req, res, next) => {
@@ -312,6 +326,20 @@ const createDeleteRoleMember =
 
     const { error } = await tryCatchAsync(() =>
       roleService.deleteChatRoleMemberById(chatId, roleId, memberId)
+    );
+
+    if (error) return next(error);
+
+    return res.sendStatus(httpStatus.NO_CONTENT);
+  };
+
+const createDeleteRole =
+  ({ roleService }) =>
+  async (req, res, next) => {
+    const { roleId, chatId } = req.params;
+
+    const { error } = await tryCatchAsync(() =>
+      roleService.deleteChatRoleById(roleId, chatId)
     );
 
     if (error) return next(error);
@@ -347,8 +375,10 @@ export default (dependencies) => {
 
   const updateRoleMetaData = createUpdateRoleMetaData(dependencies);
   const updateRoleMembers = createUpdateRoleMembers(dependencies);
+  const updateRoleLevels = createUpdateRoleLevels(dependencies);
 
   const deleteRoleMember = createDeleteRoleMember(dependencies);
+  const deleteRole = createDeleteRole(dependencies);
 
   return Object.freeze({
     createChat,
@@ -369,6 +399,8 @@ export default (dependencies) => {
     getRole,
     updateRoleMetaData,
     updateRoleMembers,
+    updateRoleLevels,
     deleteRoleMember,
+    deleteRole,
   });
 };

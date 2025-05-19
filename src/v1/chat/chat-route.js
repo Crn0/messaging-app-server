@@ -258,7 +258,13 @@ router.post(
   chatController.createRole
 );
 
-router.patch("/:chatId/roles/role-levels");
+router.patch(
+  "/:chatId/roles/role-levels",
+  ZodparamValidator(schema.chatParamSchema),
+  ZodbodyValidator(schema.patchRoleLevelsSchema),
+  chatMiddleware.canUpdateRoleLevels,
+  chatController.updateRoleLevels
+);
 
 router.patch(
   "/:chatId/roles/:roleId",
@@ -276,7 +282,12 @@ router.patch(
   chatController.updateRoleMembers
 );
 
-router.delete("/:chatId/roles/:roleId");
+router.delete(
+  "/:chatId/roles/:roleId",
+  ZodparamValidator(schema.roleParamSchema),
+  chatMiddleware.canDeleteRole,
+  chatController.deleteRole
+);
 
 router.delete(
   "/:chatId/roles/:roleId/members/:memberId",
