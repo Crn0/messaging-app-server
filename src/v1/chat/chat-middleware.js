@@ -43,15 +43,16 @@ const createCanCreateChat =
     const user = { id: req.user.id };
     const targetUser = {};
 
-    const [
-      { error: chatsError, data: chats },
-      { data: chatById },
-      { data: chatByMembersId },
-    ] = await Promise.all([
-      tryCatchAsync(() => chatService.getChatsByMemberId(user.id)),
-      tryCatchAsync(() => chatService.getChatById(chatId)),
-      tryCatchAsync(() => chatService.getDirectChatByMembersId(memberIds)),
-    ]);
+    const [chatsResult, chatByIdResult, chatByMembersIdResult] =
+      await Promise.all([
+        tryCatchAsync(() => chatService.getChatsByMemberId(user.id)),
+        tryCatchAsync(() => chatService.getChatById(chatId)),
+        tryCatchAsync(() => chatService.getDirectChatByMembersId(memberIds)),
+      ]);
+
+    const { error: chatsError, data: chats } = chatsResult;
+    const { data: chatById } = chatByIdResult;
+    const { data: chatByMembersId } = chatByMembersIdResult;
 
     if (chatsError) {
       return next(chatsError);
@@ -62,13 +63,16 @@ const createCanCreateChat =
         user.id !== id ? id : nextId
       );
 
-      const [
-        { error: userBlockListError, data: userBlockList },
-        { error: targetUserBlockListError, data: targetUserBlockList },
-      ] = await Promise.all([
-        tryCatchAsync(() => blockUserService.getUserBlockList(user.id)),
-        tryCatchAsync(() => blockUserService.getUserBlockList(targetUser.id)),
-      ]);
+      const [userBlockListResult, targetUserBlockListResult] =
+        await Promise.all([
+          tryCatchAsync(() => blockUserService.getUserBlockList(user.id)),
+          tryCatchAsync(() => blockUserService.getUserBlockList(targetUser.id)),
+        ]);
+
+      const { error: userBlockListError, data: userBlockList } =
+        userBlockListResult;
+      const { error: targetUserBlockListError, data: targetUserBlockList } =
+        targetUserBlockListResult;
 
       if (userBlockListError || targetUserBlockListError) {
         return next(userBlockListError || targetUserBlockListError);
@@ -99,15 +103,16 @@ const createCanViewChat =
   async (req, _, next) => {
     const { chatId } = req.params;
     const user = { id: req.user.id };
-    const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-    ] = await Promise.all([
+
+    const [chatResult, chatRolesResult, userRolesResult] = await Promise.all([
       tryCatchAsync(() => chatService.getChatById(chatId)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
     ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
 
     if (chatError || chatRolesError || userRolesError) {
       return next(chatError || chatRolesError || userRolesError);
@@ -136,15 +141,15 @@ const createCanUpdateChatName =
     const { chatId } = req.params;
     const user = { id: req.user.id };
 
-    const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-    ] = await Promise.all([
+    const [chatResult, chatRolesResult, userRolesResult] = await Promise.all([
       tryCatchAsync(() => chatService.getChatById(chatId)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
     ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
 
     if (chatError || chatRolesError || userRolesError) {
       return next(chatError || chatRolesError || userRolesError);
@@ -170,15 +175,15 @@ const createCanUpdateChatAvatar =
     const { chatId } = req.params;
     const user = { id: req.user.id };
 
-    const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-    ] = await Promise.all([
+    const [chatResult, chatRolesResult, userRolesResult] = await Promise.all([
       tryCatchAsync(() => chatService.getChatById(chatId)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
     ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
 
     if (chatError || chatRolesError || userRolesError) {
       return next(chatError || chatRolesError || userRolesError);
@@ -203,16 +208,15 @@ const createCanDeleteChat =
   async (req, _, next) => {
     const { chatId } = req.params;
     const user = { id: req.user.id };
-
-    const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-    ] = await Promise.all([
+    const [chatResult, chatRolesResult, userRolesResult] = await Promise.all([
       tryCatchAsync(() => chatService.getChatById(chatId)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
     ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
 
     if (chatError || chatRolesError || userRolesError) {
       return next(chatError || chatRolesError || userRolesError);
@@ -291,16 +295,22 @@ const createCanMuteMember =
     const targetUser = { id: memberId };
 
     const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-      { error: targetUserRolesError, data: targetUserRoles },
+      chatResult,
+      chatRolesResult,
+      userRolesResult,
+      targetUserRolesResult,
     ] = await Promise.all([
       tryCatchAsync(() => chatService.getChatById(chatId)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, targetUser.id)),
     ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
+    const { error: targetUserRolesError, data: targetUserRoles } =
+      targetUserRolesResult;
 
     if (chatError || chatRolesError || userRolesError || targetUserRolesError) {
       return next(
@@ -360,16 +370,22 @@ const createCanKickMember =
     const targetUser = { id: memberId };
 
     const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-      { error: targetUserRolesError, data: targetUserRoles },
+      chatResult,
+      chatRolesResult,
+      userRolesResult,
+      targetUserRolesResult,
     ] = await Promise.all([
       tryCatchAsync(() => chatService.getChatById(chatId)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, targetUser.id)),
     ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
+    const { error: targetUserRolesError, data: targetUserRoles } =
+      targetUserRolesResult;
 
     if (chatError || chatRolesError || userRolesError || targetUserRolesError) {
       return next(
@@ -436,15 +452,15 @@ const createCanViewRole =
     const { chatId } = req.params;
     const user = { id: req.user.id };
 
-    const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-    ] = await Promise.all([
+    const [chatResult, chatRolesResult, userRolesResult] = await Promise.all([
       tryCatchAsync(() => chatService.getChatById(chatId)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
     ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
 
     if (chatError || chatRolesError || userRolesError) {
       return next(chatError || chatRolesError || userRolesError);
@@ -468,17 +484,18 @@ const createCanUpdateRoleMetaData =
     const { chatId, roleId } = req.params;
     const user = { id: req.user.id };
 
-    const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-      { error: targetRoleError, data: targetRole },
-    ] = await Promise.all([
-      tryCatchAsync(() => chatService.getChatById(chatId)),
-      tryCatchAsync(() => roleService.getChatRolesById(chatId)),
-      tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
-      tryCatchAsync(() => roleService.getChatRoleById(roleId, chatId)),
-    ]);
+    const [chatResult, chatRolesResult, userRolesResult, targetRoleResult] =
+      await Promise.all([
+        tryCatchAsync(() => chatService.getChatById(chatId)),
+        tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+        tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+        tryCatchAsync(() => roleService.getChatRoleById(roleId, chatId)),
+      ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
+    const { error: targetRoleError, data: targetRole } = targetRoleResult;
 
     if (chatError || chatRolesError || userRolesError || targetRoleError) {
       return next(
@@ -488,6 +505,7 @@ const createCanUpdateRoleMetaData =
 
     chat.roles = chatRoles;
     user.roles = userRoles;
+
     const inputKeys = Object.keys(req.body);
 
     const roleFields = ["name", "permissions"].reduce((result, key) => {
@@ -520,17 +538,18 @@ const createCanUpdateRoleMembers =
     const { chatId, roleId } = req.params;
     const user = { id: req.user.id };
 
-    const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-      { error: targetRoleError, data: targetRole },
-    ] = await Promise.all([
-      tryCatchAsync(() => chatService.getChatById(chatId)),
-      tryCatchAsync(() => roleService.getChatRolesById(chatId)),
-      tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
-      tryCatchAsync(() => roleService.getChatRoleById(roleId, chatId)),
-    ]);
+    const [chatResult, chatRolesResult, userRolesResult, targetRoleResult] =
+      await Promise.all([
+        tryCatchAsync(() => chatService.getChatById(chatId)),
+        tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+        tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+        tryCatchAsync(() => roleService.getChatRoleById(roleId, chatId)),
+      ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
+    const { error: targetRoleError, data: targetRole } = targetRoleResult;
 
     if (chatError || chatRolesError || userRolesError || targetRoleError) {
       return next(
@@ -613,17 +632,18 @@ const createCanDeleteRole =
     const { chatId, roleId } = req.params;
     const user = { id: req.user.id };
 
-    const [
-      { error: chatError, data: chat },
-      { error: chatRolesError, data: chatRoles },
-      { error: userRolesError, data: userRoles },
-      { error: targetRoleError, data: targetRole },
-    ] = await Promise.all([
-      tryCatchAsync(() => chatService.getChatById(chatId)),
-      tryCatchAsync(() => roleService.getChatRolesById(chatId)),
-      tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
-      tryCatchAsync(() => roleService.getChatRoleById(roleId, chatId)),
-    ]);
+    const [chatResult, chatRolesResult, userRolesResult, targetRoleResult] =
+      await Promise.all([
+        tryCatchAsync(() => chatService.getChatById(chatId)),
+        tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+        tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+        tryCatchAsync(() => roleService.getChatRoleById(roleId, chatId)),
+      ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
+    const { error: targetRoleError, data: targetRole } = targetRoleResult;
 
     if (chatError || chatRolesError || userRolesError || targetRoleError) {
       return next(
