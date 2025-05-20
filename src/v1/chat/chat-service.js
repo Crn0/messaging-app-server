@@ -725,17 +725,6 @@ const createDeleteGroupChatById =
       debug("Error deleting assets", e);
     }
 
-    await Promise.all([
-      storage.destroyFolder(chatAvatarPath),
-      storage.destroyFolder(messageAssetPath),
-    ])
-      .then((res) => {
-        debug("Successfully deleted assets", res);
-      })
-      .catch((e) => {
-        debug("Error deleting assets", e);
-      });
-
     return chatRepository.deleteChatById(id);
   };
 
