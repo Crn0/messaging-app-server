@@ -24,6 +24,8 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret";
 
+const TEST_UPLOAD = process.env?.TEST_UPLOAD ?? false;
+
 export default {
   NODE_ENV,
   GOOGLE_CLIENT_ID,
@@ -41,4 +43,5 @@ export default {
   SERVER_URL,
   CLIENT_URL,
   JWT_SECRET,
+  TEST_UPLOAD,
 };
