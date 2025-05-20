@@ -14,7 +14,8 @@ const debug = Debug.extend("controller");
 const createCreateChat =
   ({ chatService }) =>
   async (req, res, next) => {
-    const { type, chatId, ownerId, memberIds, name, avatar: file } = req.body;
+    const { type, chatId, memberIds, name, avatar: file } = req.body;
+    const ownerId = req.user.id;
 
     const { error, data } = await tryCatchAsync(() => {
       if (type === "DirectChat") {

@@ -71,13 +71,11 @@ describe("Chat creation", () => {
   };
 
   const groupChatForm = {
-    ownerId: user1Id,
     name: "test_group_chat",
     type: "GroupChat",
   };
 
   const groupChatWithAvatarForm = {
-    ownerId: user1Id,
     name: "test_group_chat_with_avatar",
     avatar: attachment.avatar,
     type: "GroupChat",
@@ -393,17 +391,8 @@ describe("Chat creation", () => {
           expectedError: { path: ["type"], code: "invalid_enum_value" },
         },
         {
-          scenario: "owner ID field is not in UUID format",
-          payload: {
-            ownerId: "",
-            type: "GroupChat",
-          },
-          expectedError: { path: ["ownerId"], code: "invalid_string" },
-        },
-        {
           scenario: "name is over 100 characters",
           payload: {
-            ownerId: user1Id,
             name: Array.from({ length: 100 }, () => "foo").join(""),
             type: "GroupChat",
           },
@@ -412,7 +401,6 @@ describe("Chat creation", () => {
         {
           scenario: "avatar invalid mimetype",
           payload: {
-            ownerId: user1Id,
             name: "test",
             avatar: attachment.catGif,
             type: "GroupChat",

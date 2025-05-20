@@ -109,34 +109,11 @@ const directChatCreationCondition = (data, ctx) => {
 };
 
 const groupChatCreationCondition = (data, ctx) => {
-  const ownerIdIsUndefined = typeof data.ownerId === "undefined";
-  const ownerIdInvalidFormat =
-    z.string().uuid().safeParse(data.ownerId).success === false;
-
   const nameIsOverHundredCharacters =
     z
       .string()
       .max(100)
       .safeParse(data.name ?? "").success === false;
-
-  if (ownerIdIsUndefined) {
-    ctx.addIssue({
-      code: "invalid_type",
-      expected: "string",
-      received: "undefined",
-      path: ["ownerId"],
-      message: "Owner ID is required",
-    });
-  }
-
-  if (ownerIdInvalidFormat) {
-    ctx.addIssue({
-      validation: "uuid",
-      code: "invalid_string",
-      message: "The provided ID is not a valid UUID format",
-      path: ["ownerId"],
-    });
-  }
 
   if (nameIsOverHundredCharacters) {
     ctx.addIssue({
@@ -226,7 +203,6 @@ const directChatCreationSchema = z.object({
 });
 
 const groupChatCreationSchema = z.object({
-  ownerId: z.string().optional(),
   type: chatType,
   name: z.string().optional(),
   avatar: multerAvatarSchema.optional(),

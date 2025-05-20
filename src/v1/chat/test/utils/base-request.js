@@ -69,7 +69,6 @@ const CHAT = ({ request, baseUrl }) => {
         return request
           .post(url)
           .set("Authorization", `Bearer ${token}`)
-          .field({ ownerId: payload.ownerId })
           .field({ name: payload.name })
           .field({ type: payload.type })
           .attach("avatar", payload.avatar);
