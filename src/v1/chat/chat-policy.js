@@ -1,268 +1,212 @@
-import { success, forbidden, notFound, conflict } from "./http-responce.js";
-import { PERMISSION_POLICIES } from "./permission-policies.js";
-import { executePolicy } from "./utils.js";
-
-const executePolicyCheck = executePolicy(PERMISSION_POLICIES);
-
-// ========================
-// CHAT MANAGEMENT POLICIES
-// ========================
-
-const checkChatCreation = (user, chat, context) => {
-  const { type } = context;
-
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    context,
-    resource: "chat",
-    action: "create",
-    field: type === "DirectChat" ? "direct" : "group",
-  });
-
-  if (type === "DirectChat") {
-    if (!allowed) {
-      return code === "forbidden" ? forbidden(reason) : conflict(reason);
-    }
-
-    return success(reason);
-  }
-
-  if (type === "GroupChat") {
-    if (!allowed) {
-      return forbidden(reason);
-    }
-
-    return success(reason);
-  }
-
-  throw new Error(`Invalid type of chat: ${type}`);
-};
-
-const checkViewChatPermission = (user, chat) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "chat",
-    action: "view",
-    field: chat.type === "DirectChat" ? "direct" : "group",
-  });
-
-  if (!allowed) {
-    return code === "not_found" ? notFound(reason) : forbidden(reason);
-  }
-
-  return success(reason);
-};
-
-const checkUpdateChatPermission = (user, chat, { field }) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    field,
-    resource: "chat",
-    action: "update",
-    context: { field },
-  });
-
-  if (!allowed) {
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-  }
-
-  return success(reason);
-};
-
-const checkDeleteChatPermission = (user, chat) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "chat",
-    action: "delete",
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-// ===========================
-// MEMBERS MANAGEMENT POLICIES
-// ===========================
-
-const checkMemberJoinPermission = (user, chat) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "member",
-    action: "create",
-    field: "self",
-  });
-
-  if (!allowed) {
-    return code === "conflict" ? conflict(reason) : notFound(reason);
-  }
-
-  return success(reason);
-};
-
-const checkMemberViewPermission = (user, chat) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "member",
-    action: "view",
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-const checkMuteMemberPermission = (user, chat, targetUser, fieldType) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "member",
-    action: "update",
-    field: fieldType === "unmute" ? "mutedUntil:unmute" : "mutedUntil:mute",
-    context: { targetUser },
-  });
-
-  if (!allowed) {
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-  }
-
-  return success(reason);
-};
-
-const checkLeaveChatPermission = (user, chat) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "member",
-    action: "delete",
-    field: "self",
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-const checkKickMemberPermission = (user, chat, targetUser) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "member",
-    action: "delete",
-    field: "kick",
-    context: { targetUser },
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-// ============================
-// MESSAGES MANAGEMENT POLICIES
-// ============================
-
-// =========================
-// ROLES MANAGEMENT POLICIES
-// =========================
-
-const checkRoleCreatePermission = (user, chat) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "role",
-    action: "create",
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-const checkRoleViewPermission = (user, chat) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "role",
-    action: "view",
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-const checkRoleUpdateMetaDataPermission = (
-  user,
-  chat,
-  { fields, targetRole }
-) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "role",
-    action: "update",
-    field: "metaData",
-    context: { fields, targetRole },
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-const checkRoleUpdateMembersPermission = (user, chat, { targetRole }) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "role",
-    action: "update",
-    field: "member",
-    context: { targetRole },
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-const checkRoleUpdateRolelevelsPermission = (user, chat, { targetRoles }) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "role",
-    action: "update",
-    field: "roleLevel",
-    context: { targetRoles },
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
-
-const checkDeleteRolePermission = (user, chat, { targetRole }) => {
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    resource: "role",
-    action: "delete",
-    context: { targetRole },
-  });
-
-  if (!allowed)
-    return code === "forbidden" ? forbidden(reason) : notFound(reason);
-
-  return success(reason);
-};
+import { PERMISSIONS, CHAT_LIMITS } from "./permissions.js";
+import { executePermissionCheck } from "./utils.js";
 
 export default {
-  chat: {
-    checkCreate: checkChatCreation,
-    checkView: checkViewChatPermission,
-    checkUpdate: checkUpdateChatPermission,
-    checkDelete: checkDeleteChatPermission,
+  create: {
+    direct: (user, existingChat, { targetUser }) => {
+      if (existingChat) {
+        return {
+          allow: false,
+          code: "conflict",
+          reason: "Direct chat already exists",
+        };
+      }
+
+      const directCount =
+        user.chats?.filter((chat) => chat.type === "DirectChat").length || 0;
+
+      const maxDirectChatsLimitReached =
+        directCount >= CHAT_LIMITS.maxDirectChats;
+
+      if (maxDirectChatsLimitReached) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: `Maximum ${CHAT_LIMITS.maxDirectChats} direct chats allowed`,
+        };
+      }
+
+      const userBlockedTargetUser = user.blockedUsers.some(
+        (blockedUser) => blockedUser.id === targetUser.id
+      );
+
+      const targetUserBlockedUser = user.blockedUsers.some(
+        (blockedUser) => blockedUser.id === user.id
+      );
+
+      if (userBlockedTargetUser || targetUserBlockedUser) {
+        return {
+          allow: false,
+          code: "forbidden",
+          reason:
+            "Action not allowed because one of the users has blocked the other",
+        };
+      }
+
+      return {
+        allowed: true,
+        code: "ok",
+        reason: "Create permission granted",
+      };
+    },
+    group: (user) => {
+      const groupCount =
+        user.chats?.filter((chat) => chat.type === "GroupChat").length || 0;
+
+      const maxGroupChatsLimitReached = groupCount >= CHAT_LIMITS.maxGroupChats;
+
+      if (maxGroupChatsLimitReached) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: `Maximum ${CHAT_LIMITS.maxGroupChats} group chats allowed`,
+        };
+      }
+
+      return {
+        allowed: true,
+        code: "ok",
+        reason: "Create permission granted",
+      };
+    },
   },
 
-  member: {
-    checkJoin: checkMemberJoinPermission,
-    checkView: checkMemberViewPermission,
-    checkMute: checkMuteMemberPermission,
-    checkLeave: checkLeaveChatPermission,
-    checkKick: checkKickMemberPermission,
+  view: {
+    direct: (user, chat) => {
+      const isMember = chat.members.includes(user.id);
+
+      if (!isMember) {
+        return {
+          allowed: false,
+          code: "not_found",
+          reason: "Chat not found",
+        };
+      }
+
+      return { allowed: true, code: "ok", reason: "View permission granted" };
+    },
+    group: (user, chat) => {
+      if (user.id === chat.ownerId)
+        return { allowed: true, reason: "View permission granted" };
+
+      const isMember = chat.members.includes(user.id);
+      const { isPrivate } = chat;
+
+      if (!isMember && isPrivate) {
+        return {
+          allowed: false,
+          code: "not_found",
+          reason: "Chat not found",
+        };
+      }
+
+      if (!isMember) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: "View permission denied",
+        };
+      }
+
+      return { allowed: true, code: "ok", reason: "View permission granted" };
+    },
   },
-  message: {},
-  role: {
-    checkCreate: checkRoleCreatePermission,
-    checkView: checkRoleViewPermission,
-    checkUpdateMetaData: checkRoleUpdateMetaDataPermission,
-    checkUpdateMembers: checkRoleUpdateMembersPermission,
-    checkUpdateRoleLevels: checkRoleUpdateRolelevelsPermission,
-    checkDelete: checkDeleteRolePermission,
+
+  update: (user, chat, { field }) => {
+    if (user.id === chat?.ownerId)
+      return {
+        allowed: true,
+        code: "ok",
+        reason: "Update permission granted",
+      };
+
+    const { isPrivate } = chat;
+    const isMember = chat.members.includes(user.id);
+    const isGroupChat = chat.type === "GroupChat";
+
+    if (isMember && !isGroupChat) {
+      return {
+        allowed: false,
+        code: "forbidden",
+        reason: "Direct chat cannot be modified",
+      };
+    }
+
+    if (isPrivate && isGroupChat && !isMember) {
+      return {
+        allowed: false,
+        code: "not_found",
+        reason: "Chat not found",
+      };
+    }
+
+    if (!isMember) {
+      return {
+        allowed: false,
+        code: "forbidden",
+        reason: `You must be a chat member to modify ${field}`,
+      };
+    }
+
+    const requiredPermissions = PERMISSIONS.chat.update.name;
+
+    const hasPermission = executePermissionCheck(
+      user,
+      chat,
+      requiredPermissions
+    );
+
+    if (!hasPermission) {
+      return {
+        allowed: false,
+        code: "forbidden",
+        reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+      };
+    }
+
+    return {
+      allowed: true,
+      code: "ok",
+      reason: "Update permission granted",
+    };
+  },
+  delete: (user, chat) => {
+    const isOwner = user.id === chat.ownerId;
+    const isMember = chat.members.includes(user.id);
+    const isGroupChat = chat.type === "GroupChat";
+    const isPrivateChat = chat.isPrivate;
+
+    const isDirectChatMember = isMember && !isGroupChat;
+    const isInvisiblePrivateChat = isPrivateChat && !isMember;
+
+    if (isDirectChatMember) {
+      return {
+        allowed: false,
+        code: "forbidden",
+        reason: "Direct chat cannot be deleted",
+      };
+    }
+
+    if (isInvisiblePrivateChat) {
+      return {
+        allowed: false,
+        code: "not_found",
+        reason: "Chat not found",
+      };
+    }
+
+    if (!isOwner) {
+      return {
+        allowed: false,
+        code: "forbidden",
+        reason: "Must be owner to delete chat",
+      };
+    }
+
+    return {
+      allowed: true,
+      code: "OK",
+      reason: "Delete permission granted",
+    };
   },
 };
