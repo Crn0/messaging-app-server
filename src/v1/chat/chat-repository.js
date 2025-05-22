@@ -206,12 +206,12 @@ const findChatMessageById = async (chatId, messageId) => {
 };
 
 const findChatMemberById = async (chatId, userId) => {
-  const members = await client.userOnChat.findMany({
+  const member = await client.userOnChat.findFirst({
     where: { chat: { id: chatId }, user: { id: userId } },
     include: field.userOnChat,
   });
 
-  return members?.map?.((member) => toEntity("Member", member))[0] ?? null;
+  return toEntity("Member", member);
 };
 
 const findChats = async (filter) => {
