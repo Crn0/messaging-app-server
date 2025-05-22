@@ -107,9 +107,9 @@ const insertMessage = async ({ chatId, senderId, content, attachments }) => {
         });
       })
     );
-  }
 
-  message.attachments = files;
+    message.attachments = files;
+  }
 
   return toEntity("Message", message);
 };
@@ -418,37 +418,53 @@ const revokeMembership = async ({ chatId, memberId, type }) => {
   return toEntity("Chat", chat);
 };
 
-const deleteMessageById = async (chatId, messageId) => {
-  const message = await client.message.delete({
-    where: {
-      id: messageId,
-      chat: {
-        id: chatId,
+const deleteMessageById = async (messageId) => {
+  const [message, deletedUser] = await client.$transaction([
+    client.message.delete({
+      where: {
+        id: messageId,
       },
-    },
-    include: field.message,
-  });
+      include: field.message,
+    }),
+    client.user.upsert({
+      where: { username: "DELETED USER" },
+      update: {},
+      create: { username: "DELETED USER" },
+    }),
+  ]);
 
   const replyIds = message.replies.map((reply) => reply.id);
 
-  const globalMessage = await client.message.findFirst({
-    where: {
-      user: {
-        username: "DELETED USER",
+  await client.$transaction(async (tx) => {
+    let msg = await tx.message.findFirst({
+      where: {
+        userPk: deletedUser.pk,
+        content: "Original message was deleted",
       },
-    },
-    select: {
-      pk: true,
-    },
-  });
+      select: { pk: true },
+    });
 
-  await client.message.updateMany({
-    where: {
-      id: { in: replyIds },
-    },
-    data: {
-      replyToPk: globalMessage.pk,
-    },
+    if (!msg) {
+      msg = await tx.message.create({
+        data: {
+          content: "Original message was deleted",
+          userPk: deletedUser.pk,
+          deletedAt: new Date(),
+        },
+        select: { pk: true },
+      });
+    }
+
+    await tx.message.updateMany({
+      where: {
+        id: { in: replyIds },
+      },
+      data: {
+        replyToPk: msg.pk,
+      },
+    });
+
+    return msg;
   });
 
   return toEntity("Message", message);

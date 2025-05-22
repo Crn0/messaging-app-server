@@ -714,7 +714,7 @@ describe("Message deletion", () => {
     const message = await client.message.create({
       data: {
         userPk: deletedUser.pk,
-        content: "Original comment was deleted",
+        content: "Original message was deleted",
         deletedAt: new Date(),
       },
     });
@@ -735,18 +735,17 @@ describe("Message deletion", () => {
     };
   });
 
-  it("flag the message as deleted, replace the content with 'Original comment was deleted' and delete the attachements", async () => {
+  it("flag the message as deleted, replace the content with 'Original message was deleted' and delete the attachements", async () => {
     const data = {
       messageId,
-      chatId: directChatId,
-      content: "Original comment was deleted",
+      content: "Original message was deleted",
     };
 
     const message = await chatRepository.updateMessageDeletedAt(data);
 
     const toMatchObject = {
       id: messageId,
-      content: "Original comment was deleted",
+      content: "Original message was deleted",
       deletedAt: expect.any(Date),
       attachments: [],
     };
@@ -755,10 +754,7 @@ describe("Message deletion", () => {
   });
 
   it("deletes the message and update the replyTo relation of the replies to the global message", async () => {
-    const message = await chatRepository.deleteMessageById(
-      directChatId,
-      replyId
-    );
+    const message = await chatRepository.deleteMessageById(replyId);
 
     const toMatchObject = {
       id: replyId,

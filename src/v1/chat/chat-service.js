@@ -784,7 +784,7 @@ const createDeleteMessageById =
       );
     }
 
-    return chatRepository.deleteMessageById(chatId, messageId);
+    return chatRepository.deleteMessageById(messageId);
   };
 
 export default (dependencies) => {
