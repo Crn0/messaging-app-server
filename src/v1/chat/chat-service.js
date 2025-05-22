@@ -200,7 +200,7 @@ const createInsertMember =
 const createInsertMessage =
   ({ chatRepository, userService, storage }) =>
   async (DTO) => {
-    await userService.getUserById(DTO.ownerId);
+    await userService.getUserById(DTO.senderId);
 
     const chatExist = await chatRepository.findChatById(DTO.chatId);
 
