@@ -101,6 +101,15 @@ export default {
         user: {
           select: {
             id: true,
+            profile: {
+              select: {
+                avatar: {
+                  include: {
+                    images: { select: { url: true, format: true, size: true } },
+                  },
+                },
+              },
+            },
           },
         },
         chat: {
