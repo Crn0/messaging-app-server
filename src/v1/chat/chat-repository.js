@@ -151,9 +151,9 @@ const insertReply = async ({
         });
       })
     );
-  }
 
-  message.attachments = files;
+    message.attachments = files;
+  }
 
   return toEntity("Message", message);
 };
