@@ -255,7 +255,7 @@ const messagesAction = (action, DTO) => {
       const images = assets?.map((asset) => ({
         url: asset.url,
         format: asset.format,
-        size: asset?.bytes,
+        size: asset?.size,
       }));
 
       return {
@@ -364,6 +364,8 @@ const toMessage = (entity) => {
 };
 
 const toMember = (entity) => {
+  if (entity === null) return null;
+
   const { user, mutedUntil, joinedAt, roles } = entity;
 
   return {

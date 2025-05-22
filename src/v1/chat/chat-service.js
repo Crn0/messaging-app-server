@@ -248,11 +248,11 @@ const createInsertMessage =
         )
       );
     }
-
     const attachments = assets?.map?.((asset) => ({
       id: asset?.public_id,
       name: asset?.original_filename,
       url: asset?.secure_url,
+      size: asset?.bytes,
       images: asset?.eager?.map?.(({ url: imageUrl, format, bytes }) => ({
         format,
         url: imageUrl,
