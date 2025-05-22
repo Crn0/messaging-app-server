@@ -237,7 +237,7 @@ const createInsertMessage =
     ];
 
     if (DTO?.files?.length) {
-      assets = await Promise.all([
+      assets = await Promise.all(
         DTO.files.map((file) =>
           storage.upload(
             folder,
@@ -245,8 +245,8 @@ const createInsertMessage =
             file.mimetype,
             attachmentEagerOptions
           )
-        ),
-      ]);
+        )
+      );
     }
 
     const attachments = assets?.map?.((asset) => ({
