@@ -3,21 +3,6 @@ import { env, httpStatus } from "../../constants/index.js";
 import APIError from "../../errors/api-error.js";
 import StorageError from "../../errors/storage-error.js";
 
-/**
- * TODO:
- * Validate the pagination cursor before using it in queries.
- *
- * Example:
- * const { cursor, take, skip, direction } = pagination({ before, after, pageSize });
- *
- * if (cursor) {
- *   const cursorItem = await client.chat.findUnique({ where: { id: cursor.id } });
- *   if (!cursorItem) throw BadRequestError;
- * }
- *
- * Ensures that invalid or stale cursors don't break pagination behavior.
- */
-
 const debug = Debug.extend("service");
 
 const CHATS_PAGE_SIZE = env.NODE_ENV === "test" ? 2 : 10;
@@ -282,6 +267,15 @@ const createInsertReply =
       throw new APIError("Chat not found", httpStatus.NOT_FOUND);
     }
 
+    const messageExist = await chatRepository.findChatMessageById(
+      DTO.chatId,
+      DTO.messageId
+    );
+
+    if (!messageExist) {
+      throw new APIError("Message not found", httpStatus.NOT_FOUND);
+    }
+
     let assets;
     const folder = `${env.CLOUDINARY_ROOT_NAME}/messages/${DTO.chatId}`;
     const attachmentEagerOptions = [
@@ -443,6 +437,14 @@ const createGetPublicGroupChats =
       pageSize,
     });
 
+    if (cursor?.id) {
+      const cursorItem = await chatRepository.findChatById(cursor.id);
+
+      if (!cursorItem) {
+        throw new APIError("Invalid cursor", httpStatus.BAD_REQUEST);
+      }
+    }
+
     const filter = {
       take,
       skip,
@@ -493,6 +495,17 @@ const createGetChatMembersById =
       pageSize,
     });
 
+    if (cursor?.id) {
+      const cursorItem = await chatRepository.findChatMemberById(
+        chatId,
+        cursor.id
+      );
+
+      if (!cursorItem) {
+        throw new APIError("Invalid cursor", httpStatus.BAD_REQUEST);
+      }
+    }
+
     const filter = {
       take,
       skip,
@@ -529,6 +542,17 @@ const createGetChatMessagesById =
       after,
       pageSize,
     });
+
+    if (cursor?.id) {
+      const cursorItem = await chatRepository.findChatMessageById(
+        chatId,
+        cursor.id
+      );
+
+      if (!cursorItem) {
+        throw new APIError("Invalid cursor", httpStatus.BAD_REQUEST);
+      }
+    }
 
     const filter = {
       take,
