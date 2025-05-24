@@ -754,7 +754,10 @@ describe("Message deletion", () => {
   });
 
   it("deletes the message and update the replyTo relation of the replies to the global message", async () => {
-    const message = await chatRepository.deleteMessageById(replyId);
+    const message = await chatRepository.deleteMessageById(
+      directChatId,
+      replyId
+    );
 
     const toMatchObject = {
       id: replyId,

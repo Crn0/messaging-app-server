@@ -418,11 +418,17 @@ const revokeMembership = async ({ chatId, memberId, type }) => {
   return toEntity("Chat", chat);
 };
 
-const deleteMessageById = async (messageId) => {
+const deleteMessageById = async (chatId, messageId) => {
+  const chat = await client.chat.findUnique({
+    where: { id: chatId },
+    select: { pk: true },
+  });
+
   const [message, deletedUser] = await client.$transaction([
     client.message.delete({
       where: {
         id: messageId,
+        chatPk: chat.pk,
       },
       include: field.message,
     }),
