@@ -192,12 +192,15 @@ const findChatById = async (id) => {
 };
 
 const findChatMessageById = async (chatId, messageId) => {
+  const chat = await client.chat.findUnique({
+    where: { id: chatId },
+    select: { pk: true },
+  });
+
   const message = await client.message.findUnique({
     where: {
       id: messageId,
-      chat: {
-        id: chatId,
-      },
+      chatPk: chat.pk,
     },
     include: field.message,
   });

@@ -112,7 +112,6 @@ const groupChatData = (action, DTO) => {
           },
         },
       };
-      ca;
     case GROUP_CHAT_ACTIONS.UPDATE_NAME: {
       return {
         name: DTO.name,
@@ -321,9 +320,10 @@ const toImage = (entity) => {
 const toAttachment = (entity) => {
   if (!entity) return null;
 
-  const { name, url, size, createdAt, updatedAt, images } = entity;
+  const { id, name, url, size, createdAt, updatedAt, images } = entity;
 
   return {
+    id,
     name,
     url,
     size,
