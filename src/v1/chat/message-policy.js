@@ -79,6 +79,7 @@ export default {
       const { mutedUntil } = user.serverProfile;
 
       const isMuted = mutedUntil && Date.now() < new Date(mutedUntil).getTime();
+
       if (isMuted) {
         return {
           allowed: false,
@@ -107,5 +108,80 @@ export default {
         reason: "Create permission granted",
       };
     },
+  },
+  view: (user, chat) => {
+    if (user.id === chat.ownerId)
+      return { allowed: true, code: "ok", reason: "View permission granted" };
+
+    const { isPrivate } = chat;
+    const isMember = chat.members.includes(user.id);
+
+    if (!isMember) {
+      return {
+        allowed: false,
+        code: isPrivate ? "not_found" : "forbidden",
+        reason: isPrivate
+          ? "Chat not found"
+          : "You must be a chat member to view chat messages",
+      };
+    }
+
+    return { allowed: true, code: "ok", reason: "View permission granted" };
+  },
+  delete: (user, chat, { targetMessage }) => {
+    if (user.id === chat.ownerId) {
+      return { allowed: true, code: "ok", reason: "Delete permission granted" };
+    }
+
+    if (user.id === targetMessage.user.id) {
+      return { allowed: true, code: "ok", reason: "Delete permission granted" };
+    }
+
+    const { isPrivate } = chat;
+    const isMember = chat.members.includes(user.id);
+
+    if (!isMember) {
+      return {
+        allowed: false,
+        code: isPrivate ? "not_found" : "forbidden",
+        reason: isPrivate
+          ? "Chat not found"
+          : "You must be a chat member to delete messages",
+      };
+    }
+
+    const isAdmin = user.roles
+      .flatMap((r) => r.permissions)
+      .some((p) => p.name === "admin");
+
+    if (isAdmin) {
+      return {
+        allowed: true,
+        code: "ok",
+        reason: "Admin permission granted",
+      };
+    }
+
+    const requiredPermissions = PERMISSIONS.message.destroy;
+
+    const hasPermission = executePermissionCheck(
+      user,
+      chat,
+      requiredPermissions
+    );
+
+    if (!hasPermission) {
+      return {
+        allowed: false,
+        code: "forbidden",
+        reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+      };
+    }
+
+    return {
+      allowed: true,
+      code: "ok",
+      reason: "Delete permission granted",
+    };
   },
 };

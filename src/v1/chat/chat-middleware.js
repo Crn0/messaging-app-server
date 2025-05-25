@@ -2,15 +2,13 @@ import { tryCatchAsync } from "../helpers/index.js";
 import APIError from "../../errors/api-error.js";
 import ValidationError from "../../errors/validation-error.js";
 
-const createUploader =
-  ({ multer, MulterError }) =>
-  (field) =>
-  (req, res, next) =>
+const createUploader = ({ multer, MulterError }) => ({
+  single: (field) => (req, res, next) =>
     multer.single(field)(req, res, (err) => {
       if (err instanceof MulterError) {
         const { code } = err;
 
-        if (code === "LIMIT_UNEXPECTED_FILE") {
+        if (code === "LIMIT_UNEXPECTED_FILE" || code === "LIMIT_FILE_COUNT") {
           return next(
             new ValidationError("Validation Error", [
               {
@@ -30,12 +28,38 @@ const createUploader =
       }
 
       return next();
-    });
+    }),
+  array: (field, maxCount) => (req, res, next) =>
+    multer.array(field, maxCount)(req, res, (err) => {
+      if (err instanceof MulterError) {
+        const { code } = err;
+
+        if (code === "LIMIT_UNEXPECTED_FILE" || code === "LIMIT_FILE_COUNT") {
+          return next(
+            new ValidationError("Validation Error", [
+              {
+                code: "custom",
+                message: `No more than ${maxCount} attachments are allowed`,
+                path: [field],
+              },
+            ])
+          );
+        }
+
+        return next(err);
+      }
+
+      if (err) {
+        return next(err);
+      }
+
+      return next();
+    }),
+});
 
 // ===============
 // CHAT MIDDLEWARE
 // ===============
-
 const createCanCreateChat =
   ({ chatService, blockUserService, chatPolicy }) =>
   async (req, _, next) => {
@@ -669,6 +693,142 @@ const createCanDeleteRole =
 // MESSAGE MIDDLEWARE
 // =================
 
+const createCanSendMessage =
+  ({ chatService, roleService, blockUserService, chatPolicy }) =>
+  async (req, _, next) => {
+    const { chatId } = req.params;
+    const userId = req.user.id;
+    const targetUser = {};
+
+    const [chatResult, userResult, chatRolesResult, userRolesResult] =
+      await Promise.all([
+        tryCatchAsync(() => chatService.getChatById(chatId)),
+        tryCatchAsync(() => chatService.getMemberById(chatId, userId)),
+        tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+        tryCatchAsync(() => roleService.getUserRolesById(chatId, userId)),
+      ]);
+
+    let { data: user } = userResult;
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
+
+    if (chatError || chatRolesError || userRolesError) {
+      return next(chatError || chatRolesError || userRolesError);
+    }
+
+    if (user === null) {
+      user = { id: userId, roles: [], blockedUsers: [] };
+    }
+
+    chat.roles = chatRoles;
+    user.roles = userRoles;
+
+    if (chat?.type === "DirectChat") {
+      const targetUserId = chat.members.find((id) => id !== user.id);
+
+      targetUser.id = targetUserId;
+
+      const [userBlockListResult, targetUserBlockListResult] =
+        await Promise.all([
+          tryCatchAsync(() => blockUserService.getUserBlockList(user.id)),
+          tryCatchAsync(() => blockUserService.getUserBlockList(targetUser.id)),
+        ]);
+
+      const { data: userBlockList } = userBlockListResult;
+      const { data: targetUserBlockList } = targetUserBlockListResult;
+
+      if (userBlockListResult.error || targetUserBlockListResult.error) {
+        return next(
+          userBlockListResult.error || targetUserBlockListResult.error
+        );
+      }
+
+      user.blockedUsers = userBlockList;
+      targetUser.blockedUsers = targetUserBlockList;
+    }
+
+    const { success, code, message } = chatPolicy.message.checkSend(
+      user,
+      chat,
+      { targetUser }
+    );
+
+    if (!success) {
+      return next(new APIError(message, code));
+    }
+
+    return next();
+  };
+
+const createCanViewMessage =
+  ({ chatService, chatPolicy }) =>
+  async (req, _, next) => {
+    const { chatId } = req.params;
+    const user = { id: req.user.id };
+
+    const { error: chatError, data: chat } = await tryCatchAsync(() =>
+      chatService.getChatById(chatId)
+    );
+
+    if (chatError) {
+      return next(chatError);
+    }
+
+    const { success, code, message } = chatPolicy.message.checkView(user, chat);
+
+    if (!success) {
+      return next(new APIError(message, code));
+    }
+
+    return next();
+  };
+
+const createCanDeleteMessage =
+  ({ chatService, roleService, chatPolicy }) =>
+  async (req, _, next) => {
+    const { chatId, messageId } = req.params;
+    const user = { id: req.user.id };
+
+    const [chatResult, chatRolesResult, userRolesResult, targetMessageResult] =
+      await Promise.all([
+        tryCatchAsync(() => chatService.getChatById(chatId)),
+        tryCatchAsync(() => roleService.getChatRolesById(chatId)),
+        tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
+        tryCatchAsync(() => chatService.getMessageById(chatId, messageId)),
+      ]);
+
+    const { error: chatError, data: chat } = chatResult;
+    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
+    const { error: userRolesError, data: userRoles } = userRolesResult;
+    let { data: targetMessage } = targetMessageResult;
+
+    if (chatError || chatRolesError || userRolesError) {
+      return next(chatError || chatRolesError || userRolesError);
+    }
+
+    if (targetMessage === null) {
+      targetMessage = { user: { id: null } };
+    }
+
+    chat.roles = chatRoles;
+    user.roles = userRoles;
+
+    const { success, code, message } = chatPolicy.message.checkDelete(
+      user,
+      chat,
+      {
+        targetMessage,
+      }
+    );
+
+    if (!success) {
+      return next(new APIError(message, code));
+    }
+
+    return next();
+  };
+
 export default (dependencies) => {
   const uploader = createUploader(dependencies);
 
@@ -700,6 +860,12 @@ export default (dependencies) => {
 
   const canDeleteRole = createCanDeleteRole(dependencies);
 
+  const canViewMessage = createCanViewMessage(dependencies);
+
+  const canSendMessage = createCanSendMessage(dependencies);
+
+  const canDeleteMessage = createCanDeleteMessage(dependencies);
+
   return Object.freeze({
     uploader,
     canCreateChat,
@@ -718,5 +884,8 @@ export default (dependencies) => {
     canUpdateRoleMembers,
     canUpdateRoleLevels,
     canDeleteRole,
+    canViewMessage,
+    canSendMessage,
+    canDeleteMessage,
   });
 };

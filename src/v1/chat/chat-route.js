@@ -18,7 +18,7 @@ import initBlockUserService from "../user/block-user/block-user-service.js";
 import initJwtUtils from "../auth/jwt.js";
 import initChatController from "./chat-controller.js";
 import initChatMiddleware from "./chat-middleware.js";
-import chatPolicy from "./chat-policy.js";
+import chatPolicy from "./policy.js";
 import * as schema from "./chat-schema.js";
 import { createGetUserById } from "../user/user-service.js";
 import {
@@ -29,9 +29,8 @@ import {
   ZodbodyValidator,
   ZodqueryValidator,
   ZodparamValidator,
-  ZodfileValidator,
 } from "../middleware/index.js";
-import { idGenerator, removeFields } from "./utils.js";
+import { idGenerator, removeFields, removeTempImages } from "./utils.js";
 
 const dirname = import.meta?.dirname;
 
@@ -46,7 +45,7 @@ const router = Router();
 const { multer, MulterError } = initMulter({
   path: uploadTempPath,
   limits: {
-    files: 2,
+    files: 5,
   },
 });
 
@@ -104,6 +103,9 @@ const chatController = initChatController({
   roleService,
   utils: {
     removeFields,
+    cleanup: () => {
+      removeTempImages(uploadTempPath);
+    },
   },
 });
 
@@ -137,7 +139,7 @@ router.get("/", chatController.getChats);
 
 router.get(
   "/public",
-  ZodqueryValidator(schema.publicChatQuerySchema),
+  ZodqueryValidator(schema.paginationQuerySchema),
   chatController.getPublicChats
 );
 
@@ -150,7 +152,7 @@ router.get(
 
 router.post(
   "/",
-  chatMiddleware.uploader("avatar"),
+  chatMiddleware.uploader.single("avatar"),
   ZodbodyValidator(schema.chatFormSchema),
   chatMiddleware.canCreateChat,
   chatController.createChat
@@ -166,7 +168,7 @@ router.patch(
 
 router.patch(
   "/:chatId/avatar",
-  chatMiddleware.uploader("avatar"),
+  chatMiddleware.uploader.single("avatar"),
   ZodparamValidator(schema.chatParamSchema),
   ZodbodyValidator(schema.patchChatAvatarSchema),
   chatMiddleware.canUpdateChatAvatar,
@@ -230,11 +232,6 @@ router.delete(
 // =================
 // CHAT ROLE ROUTE
 // =================
-
-/**
- * TODO
- * - implement route
- */
 
 router.get(
   "/:chatId/roles",
@@ -300,9 +297,37 @@ router.delete(
 // CHAT MESSAGE ROUTE
 // =================
 
-/**
- * TODO
- * - implement route
- */
+router.get(
+  "/:chatId/messages",
+  ZodparamValidator(schema.chatParamSchema),
+  ZodqueryValidator(schema.paginationQuerySchema),
+  chatMiddleware.canViewMessage,
+  chatController.getMessages
+);
+
+router.post(
+  "/:chatId/messages",
+  chatMiddleware.uploader.array("attachments", 5),
+  ZodparamValidator(schema.chatParamSchema),
+  ZodbodyValidator(schema.messageFormSchema),
+  chatMiddleware.canSendMessage,
+  chatController.sendMessage
+);
+
+router.post(
+  "/:chatId/messages/:messageId/replies",
+  chatMiddleware.uploader.array("attachments", 5),
+  ZodparamValidator(schema.messageParamSchema),
+  ZodbodyValidator(schema.messageFormSchema),
+  chatMiddleware.canSendMessage,
+  chatController.sendReply
+);
+
+router.delete(
+  "/:chatId/messages/:messageId",
+  ZodparamValidator(schema.messageParamSchema),
+  chatMiddleware.canDeleteMessage,
+  chatController.deleteMessage
+);
 
 export default router;

@@ -255,6 +255,31 @@ const checkSendMessagePermission = (user, chat, { targetUser }) => {
   return success(reason);
 };
 
+const checkCanViewMessagePermission = (user, chat) => {
+  const { allowed, code, reason } = executePolicyCheck(user, chat, {
+    resource: "message",
+    action: "view",
+  });
+
+  if (!allowed)
+    return code === "forbidden" ? forbidden(reason) : notFound(reason);
+
+  return success(reason);
+};
+
+const checkCanDeleteMessagePermission = (user, chat, { targetMessage }) => {
+  const { allowed, code, reason } = executePolicyCheck(user, chat, {
+    resource: "message",
+    action: "delete",
+    context: { targetMessage },
+  });
+
+  if (!allowed)
+    return code === "forbidden" ? forbidden(reason) : notFound(reason);
+
+  return success(reason);
+};
+
 export default {
   chat: {
     checkCreate: checkChatCreation,
@@ -280,5 +305,7 @@ export default {
   },
   message: {
     checkSend: checkSendMessagePermission,
+    checkView: checkCanViewMessagePermission,
+    checkDelete: checkCanDeleteMessagePermission,
   },
 };

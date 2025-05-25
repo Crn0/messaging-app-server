@@ -228,7 +228,7 @@ const roleMemberParamSchema = z.object({
   memberId: idSchema,
 });
 
-const publicChatQuerySchema = z.object({
+const paginationQuerySchema = z.object({
   before: idSchema.optional(),
   after: idSchema.optional(),
 });
@@ -237,6 +237,11 @@ const memberListParamSchema = z.object({
   chatId: idSchema,
   before: idSchema.optional(),
   after: idSchema.optional(),
+});
+
+const messageParamSchema = z.object({
+  chatId: idSchema,
+  messageId: idSchema,
 });
 
 const chatFormSchema = directChatCreationSchema
@@ -251,6 +256,14 @@ const chatFormSchema = directChatCreationSchema
 
 const roleFormSchema = z.object({
   name: nameSchema,
+});
+
+const messageFormSchema = z.object({
+  content: contentSchema.optional(),
+  attachments: z
+    .array(multerAttachmentSchema)
+    .max(5, { message: "No more than 5 attachments are allowed" })
+    .optional(),
 });
 
 const patchChatNameSchema = z.object({
@@ -322,10 +335,12 @@ export {
   memberParamSchema,
   roleParamSchema,
   roleMemberParamSchema,
-  publicChatQuerySchema,
+  paginationQuerySchema,
   memberListParamSchema,
+  messageParamSchema,
   chatFormSchema,
   roleFormSchema,
+  messageFormSchema,
   patchChatNameSchema,
   patchChatAvatarSchema,
   patchMemberMuteSchema,

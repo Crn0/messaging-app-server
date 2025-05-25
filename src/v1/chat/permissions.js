@@ -26,6 +26,7 @@ const PERMISSIONS = {
   },
   message: {
     create: ["admin", "send_message", "manage_message"],
+    destroy: ["admin", "manage_message"],
   },
 };
 

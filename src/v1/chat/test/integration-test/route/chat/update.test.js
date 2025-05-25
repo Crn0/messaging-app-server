@@ -7,9 +7,10 @@ import userFactory from "../../../utils/user-factory.js";
 import initSetupUsers from "../../../utils/setup-users.js";
 import baseRequest from "../../../utils/base-request.js";
 import attachment from "../../../data/file-upload.js";
+import { env } from "../../../../../../constants/index.js";
 import { idGenerator } from "../../../../utils.js";
 
-const TEST_UPLOAD = false;
+const { TEST_UPLOAD } = env;
 
 const request = baseRequest({ request: req(app), url: "/api/v1" });
 
