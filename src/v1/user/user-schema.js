@@ -115,10 +115,6 @@ const includeSchema = z
   )
   .optional();
 
-const userIdParamSchema = z.object({
-  userId: idSchema,
-});
-
 const tokenParamSchema = z.object({
   token: jwtSchema,
 });
@@ -134,7 +130,6 @@ const friendParamSchema = z.object({
 });
 
 const unBlockUserParamSchema = z.object({
-  userId: idSchema,
   unBlockId: idSchema,
 });
 
@@ -230,7 +225,6 @@ const passwordResetQueryTokenSchema = z.object({
 });
 
 export {
-  userIdParamSchema,
   tokenParamSchema,
   friendRequestParamSchema,
   friendParamSchema,
