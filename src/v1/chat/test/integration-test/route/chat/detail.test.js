@@ -26,10 +26,6 @@ let directChatId;
 
 beforeAll(async () => {
   const groupChatPayload = {
-<<<<<<< HEAD
-=======
-    ownerId: user1Id,
->>>>>>> 6537b6048b2d3aae98e20e51ec6f862d05b1f4ab
     name: "test_group_chat",
     type: "GroupChat",
   };

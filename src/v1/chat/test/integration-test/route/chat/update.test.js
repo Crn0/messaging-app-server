@@ -7,16 +7,10 @@ import userFactory from "../../../utils/user-factory.js";
 import initSetupUsers from "../../../utils/setup-users.js";
 import baseRequest from "../../../utils/base-request.js";
 import attachment from "../../../data/file-upload.js";
-<<<<<<< HEAD
 import { env } from "../../../../../../constants/index.js";
 import { idGenerator } from "../../../../utils.js";
 
 const { TEST_UPLOAD } = env;
-=======
-import { idGenerator } from "../../../../utils.js";
-
-const TEST_UPLOAD = false;
->>>>>>> 6537b6048b2d3aae98e20e51ec6f862d05b1f4ab
 
 const request = baseRequest({ request: req(app), url: "/api/v1" });
 
@@ -38,10 +32,6 @@ const directChatId = idGenerator();
 
 beforeAll(async () => {
   const groupChatPayload = {
-<<<<<<< HEAD
-=======
-    ownerId: user1Id,
->>>>>>> 6537b6048b2d3aae98e20e51ec6f862d05b1f4ab
     name: "test_group_chat",
     type: "GroupChat",
   };
