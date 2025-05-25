@@ -38,10 +38,17 @@ const permissions = [
 let teardownHappened = false;
 
 export default async () => {
-  await client.permission.createMany({
-    data: permissions.map((name) => ({ name })),
-    skipDuplicates: true,
-  });
+  await client.$transaction([
+    client.permission.createMany({
+      data: permissions.map((name) => ({ name })),
+      skipDuplicates: true,
+    }),
+    client.user.create({
+      data: {
+        username: "DELETED USER",
+      },
+    }),
+  ]);
 
   return async () => {
     if (teardownHappened) {

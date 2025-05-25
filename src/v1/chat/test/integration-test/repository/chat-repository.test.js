@@ -21,7 +21,6 @@ const { id: user2Id } = user2Data;
 
 const directChatId = idGenerator();
 const groupChatId = idGenerator();
-const deletedUserId = idGenerator();
 
 beforeAll(async () => {
   await client.$transaction([
@@ -48,7 +47,7 @@ beforeAll(async () => {
 
     await client.$transaction([
       client.user.deleteMany({
-        where: { id: { in: [user1Id, user2Id, deletedUserId] } },
+        where: { id: { in: [user1Id, user2Id] } },
       }),
       client.chat.deleteMany({
         where: { id: { in: [directChatId, groupChatId] } },
@@ -704,9 +703,8 @@ describe("Message deletion", () => {
   let deletedUserMessageId;
 
   beforeAll(async () => {
-    const deletedUser = await client.user.create({
-      data: {
-        id: deletedUserId,
+    const deletedUser = await client.user.findUnique({
+      where: {
         username: "DELETED USER",
       },
     });
