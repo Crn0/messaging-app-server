@@ -109,34 +109,11 @@ const directChatCreationCondition = (data, ctx) => {
 };
 
 const groupChatCreationCondition = (data, ctx) => {
-  const ownerIdIsUndefined = typeof data.ownerId === "undefined";
-  const ownerIdInvalidFormat =
-    z.string().uuid().safeParse(data.ownerId).success === false;
-
   const nameIsOverHundredCharacters =
     z
       .string()
       .max(100)
       .safeParse(data.name ?? "").success === false;
-
-  if (ownerIdIsUndefined) {
-    ctx.addIssue({
-      code: "invalid_type",
-      expected: "string",
-      received: "undefined",
-      path: ["ownerId"],
-      message: "Owner ID is required",
-    });
-  }
-
-  if (ownerIdInvalidFormat) {
-    ctx.addIssue({
-      validation: "uuid",
-      code: "invalid_string",
-      message: "The provided ID is not a valid UUID format",
-      path: ["ownerId"],
-    });
-  }
 
   if (nameIsOverHundredCharacters) {
     ctx.addIssue({
@@ -226,7 +203,6 @@ const directChatCreationSchema = z.object({
 });
 
 const groupChatCreationSchema = z.object({
-  ownerId: z.string().optional(),
   type: chatType,
   name: z.string().optional(),
   avatar: multerAvatarSchema.optional(),
@@ -252,7 +228,7 @@ const roleMemberParamSchema = z.object({
   memberId: idSchema,
 });
 
-const publicChatQuerySchema = z.object({
+const paginationQuerySchema = z.object({
   before: idSchema.optional(),
   after: idSchema.optional(),
 });
@@ -261,6 +237,11 @@ const memberListParamSchema = z.object({
   chatId: idSchema,
   before: idSchema.optional(),
   after: idSchema.optional(),
+});
+
+const messageParamSchema = z.object({
+  chatId: idSchema,
+  messageId: idSchema,
 });
 
 const chatFormSchema = directChatCreationSchema
@@ -275,6 +256,14 @@ const chatFormSchema = directChatCreationSchema
 
 const roleFormSchema = z.object({
   name: nameSchema,
+});
+
+const messageFormSchema = z.object({
+  content: contentSchema.optional(),
+  attachments: z
+    .array(multerAttachmentSchema)
+    .max(5, { message: "No more than 5 attachments are allowed" })
+    .optional(),
 });
 
 const patchChatNameSchema = z.object({
@@ -346,10 +335,12 @@ export {
   memberParamSchema,
   roleParamSchema,
   roleMemberParamSchema,
-  publicChatQuerySchema,
+  paginationQuerySchema,
   memberListParamSchema,
+  messageParamSchema,
   chatFormSchema,
   roleFormSchema,
+  messageFormSchema,
   patchChatNameSchema,
   patchChatAvatarSchema,
   patchMemberMuteSchema,

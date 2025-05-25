@@ -7,9 +7,10 @@ import userFactory from "../../../utils/user-factory.js";
 import initSetupUsers from "../../../utils/setup-users.js";
 import baseRequest from "../../../utils/base-request.js";
 import attachment from "../../../data/file-upload.js";
+import { env } from "../../../../../../constants/index.js";
 import { idGenerator } from "../../../../utils.js";
 
-const TEST_UPLOAD = false;
+const { TEST_UPLOAD } = env;
 
 const request = baseRequest({ request: req(app), url: "/api/v1" });
 
@@ -71,13 +72,11 @@ describe("Chat creation", () => {
   };
 
   const groupChatForm = {
-    ownerId: user1Id,
     name: "test_group_chat",
     type: "GroupChat",
   };
 
   const groupChatWithAvatarForm = {
-    ownerId: user1Id,
     name: "test_group_chat_with_avatar",
     avatar: attachment.avatar,
     type: "GroupChat",
@@ -393,17 +392,8 @@ describe("Chat creation", () => {
           expectedError: { path: ["type"], code: "invalid_enum_value" },
         },
         {
-          scenario: "owner ID field is not in UUID format",
-          payload: {
-            ownerId: "",
-            type: "GroupChat",
-          },
-          expectedError: { path: ["ownerId"], code: "invalid_string" },
-        },
-        {
           scenario: "name is over 100 characters",
           payload: {
-            ownerId: user1Id,
             name: Array.from({ length: 100 }, () => "foo").join(""),
             type: "GroupChat",
           },
@@ -412,7 +402,6 @@ describe("Chat creation", () => {
         {
           scenario: "avatar invalid mimetype",
           payload: {
-            ownerId: user1Id,
             name: "test",
             avatar: attachment.catGif,
             type: "GroupChat",

@@ -1,5 +1,6 @@
 export default {
   metaData: {},
+
   default: {
     owner: {
       select: {
@@ -62,6 +63,7 @@ export default {
       },
     },
   },
+
   message: {
     user: {
       select: {
@@ -82,6 +84,8 @@ export default {
         id: true,
       },
     },
+    attachments: { include: { images: { orderBy: { size: "asc" } } } },
+
     replies: {
       include: {
         user: {
@@ -101,6 +105,15 @@ export default {
         user: {
           select: {
             id: true,
+            profile: {
+              select: {
+                avatar: {
+                  include: {
+                    images: { select: { url: true, format: true, size: true } },
+                  },
+                },
+              },
+            },
           },
         },
         chat: {

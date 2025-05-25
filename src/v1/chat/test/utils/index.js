@@ -5,6 +5,7 @@ import baseRequest from "./base-request.js";
 import createRole from "./create-role.js";
 import findUserOnChat from "./find-user-on-chat.js";
 import assignRolesToUser from "./asign-role.js";
+import createCursorManager from "./cursor-manager.js";
 
 export {
   server,
@@ -14,4 +15,5 @@ export {
   createRole,
   findUserOnChat,
   assignRolesToUser,
+  createCursorManager,
 };

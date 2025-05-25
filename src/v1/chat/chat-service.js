@@ -3,21 +3,6 @@ import { env, httpStatus } from "../../constants/index.js";
 import APIError from "../../errors/api-error.js";
 import StorageError from "../../errors/storage-error.js";
 
-/**
- * TODO:
- * Validate the pagination cursor before using it in queries.
- *
- * Example:
- * const { cursor, take, skip, direction } = pagination({ before, after, pageSize });
- *
- * if (cursor) {
- *   const cursorItem = await client.chat.findUnique({ where: { id: cursor.id } });
- *   if (!cursorItem) throw BadRequestError;
- * }
- *
- * Ensures that invalid or stale cursors don't break pagination behavior.
- */
-
 const debug = Debug.extend("service");
 
 const CHATS_PAGE_SIZE = env.NODE_ENV === "test" ? 2 : 10;
@@ -200,7 +185,7 @@ const createInsertMember =
 const createInsertMessage =
   ({ chatRepository, userService, storage }) =>
   async (DTO) => {
-    await userService.getUserById(DTO.ownerId);
+    await userService.getUserById(DTO.senderId);
 
     const chatExist = await chatRepository.findChatById(DTO.chatId);
 
@@ -237,7 +222,7 @@ const createInsertMessage =
     ];
 
     if (DTO?.files?.length) {
-      assets = await Promise.all([
+      assets = await Promise.all(
         DTO.files.map((file) =>
           storage.upload(
             folder,
@@ -245,14 +230,15 @@ const createInsertMessage =
             file.mimetype,
             attachmentEagerOptions
           )
-        ),
-      ]);
+        )
+      );
     }
 
     const attachments = assets?.map?.((asset) => ({
       id: asset?.public_id,
       name: asset?.original_filename,
       url: asset?.secure_url,
+      size: asset?.bytes,
       images: asset?.eager?.map?.(({ url: imageUrl, format, bytes }) => ({
         format,
         url: imageUrl,
@@ -273,12 +259,21 @@ const createInsertMessage =
 const createInsertReply =
   ({ chatRepository, userService, storage }) =>
   async (DTO) => {
-    await userService.getUserById(DTO.ownerId);
+    await userService.getUserById(DTO.senderId);
 
     const chatExist = await chatRepository.findChatById(DTO.chatId);
 
     if (!chatExist) {
       throw new APIError("Chat not found", httpStatus.NOT_FOUND);
+    }
+
+    const messageExist = await chatRepository.findChatMessageById(
+      DTO.chatId,
+      DTO.messageId
+    );
+
+    if (!messageExist) {
+      throw new APIError("Message not found", httpStatus.NOT_FOUND);
     }
 
     let assets;
@@ -310,7 +305,7 @@ const createInsertReply =
     ];
 
     if (DTO?.files?.length) {
-      assets = await Promise.all([
+      assets = await Promise.all(
         DTO.files.map((file) =>
           storage.upload(
             folder,
@@ -318,14 +313,15 @@ const createInsertReply =
             file.mimetype,
             attachmentEagerOptions
           )
-        ),
-      ]);
+        )
+      );
     }
 
     const attachments = assets?.map?.((asset) => ({
       id: asset?.public_id,
       name: asset?.original_filename,
       url: asset?.secure_url,
+      size: asset?.bytes,
       images: asset?.eager?.map?.(({ url: imageUrl, format, bytes }) => ({
         format,
         url: imageUrl,
@@ -441,6 +437,14 @@ const createGetPublicGroupChats =
       pageSize,
     });
 
+    if (cursor?.id) {
+      const cursorItem = await chatRepository.findChatById(cursor.id);
+
+      if (!cursorItem) {
+        throw new APIError("Invalid cursor", httpStatus.BAD_REQUEST);
+      }
+    }
+
     const filter = {
       take,
       skip,
@@ -491,6 +495,17 @@ const createGetChatMembersById =
       pageSize,
     });
 
+    if (cursor?.id) {
+      const cursorItem = await chatRepository.findChatMemberById(
+        chatId,
+        cursor.id
+      );
+
+      if (!cursorItem) {
+        throw new APIError("Invalid cursor", httpStatus.BAD_REQUEST);
+      }
+    }
+
     const filter = {
       take,
       skip,
@@ -527,6 +542,17 @@ const createGetChatMessagesById =
       after,
       pageSize,
     });
+
+    if (cursor?.id) {
+      const cursorItem = await chatRepository.findChatMessageById(
+        chatId,
+        cursor.id
+      );
+
+      if (!cursorItem) {
+        throw new APIError("Invalid cursor", httpStatus.BAD_REQUEST);
+      }
+    }
 
     const filter = {
       take,
@@ -724,17 +750,6 @@ const createDeleteGroupChatById =
 
       debug("Error deleting assets", e);
     }
-
-    await Promise.all([
-      storage.destroyFolder(chatAvatarPath),
-      storage.destroyFolder(messageAssetPath),
-    ])
-      .then((res) => {
-        debug("Successfully deleted assets", res);
-      })
-      .catch((e) => {
-        debug("Error deleting assets", e);
-      });
 
     return chatRepository.deleteChatById(id);
   };

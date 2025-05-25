@@ -21,7 +21,6 @@ const { id: user2Id } = user2Data;
 
 const directChatId = idGenerator();
 const groupChatId = idGenerator();
-const deletedUserId = idGenerator();
 
 beforeAll(async () => {
   await client.$transaction([
@@ -48,7 +47,7 @@ beforeAll(async () => {
 
     await client.$transaction([
       client.user.deleteMany({
-        where: { id: { in: [user1Id, user2Id, deletedUserId] } },
+        where: { id: { in: [user1Id, user2Id] } },
       }),
       client.chat.deleteMany({
         where: { id: { in: [directChatId, groupChatId] } },
@@ -704,9 +703,8 @@ describe("Message deletion", () => {
   let deletedUserMessageId;
 
   beforeAll(async () => {
-    const deletedUser = await client.user.create({
-      data: {
-        id: deletedUserId,
+    const deletedUser = await client.user.findUnique({
+      where: {
         username: "DELETED USER",
       },
     });
@@ -714,7 +712,7 @@ describe("Message deletion", () => {
     const message = await client.message.create({
       data: {
         userPk: deletedUser.pk,
-        content: "Original comment was deleted",
+        content: "Original message was deleted",
         deletedAt: new Date(),
       },
     });
@@ -735,18 +733,17 @@ describe("Message deletion", () => {
     };
   });
 
-  it("flag the message as deleted, replace the content with 'Original comment was deleted' and delete the attachements", async () => {
+  it("flag the message as deleted, replace the content with 'Original message was deleted' and delete the attachements", async () => {
     const data = {
       messageId,
-      chatId: directChatId,
-      content: "Original comment was deleted",
+      content: "Original message was deleted",
     };
 
     const message = await chatRepository.updateMessageDeletedAt(data);
 
     const toMatchObject = {
       id: messageId,
-      content: "Original comment was deleted",
+      content: "Original message was deleted",
       deletedAt: expect.any(Date),
       attachments: [],
     };

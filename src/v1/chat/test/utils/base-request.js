@@ -69,7 +69,6 @@ const CHAT = ({ request, baseUrl }) => {
         return request
           .post(url)
           .set("Authorization", `Bearer ${token}`)
-          .field({ ownerId: payload.ownerId })
           .field({ name: payload.name })
           .field({ type: payload.type })
           .attach("avatar", payload.avatar);
@@ -445,6 +444,128 @@ const ROLE = ({ request, baseUrl }) => {
   });
 };
 
+const MESSAGE = ({ request, baseUrl }) => {
+  const path = `${baseUrl}/chats`;
+
+  const GET = () => {
+    const messageList = async (chatId, token, ops) => {
+      const options = { includeAuth: true, before: null, after: null, ...ops };
+      const { before, after } = options;
+      let url = `${path}/${chatId}/messages`;
+
+      if (before) {
+        url = `${url}?before=${before}`;
+      }
+
+      if (after) {
+        url = `${url}?after=${after}`;
+      }
+
+      if (before && after) {
+        url = `${url}?before=${before}&after=${after}`;
+      }
+
+      if (!options.includeAuth) {
+        return request.get(url).accept("json").type("json");
+      }
+
+      return request
+        .get(url)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    return Object.freeze({ messageList });
+  };
+
+  const POST = () => {
+    const createMessage = async (chatId, payload, token, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/${chatId}/messages`;
+
+      if (!options.includeAuth) {
+        return request.post(url).send(payload).accept("json").type("json");
+      }
+
+      if (payload.attachments?.length) {
+        const req = request
+          .post(url)
+          .set("Authorization", `Bearer ${token}`)
+          .field({ content: payload.content });
+
+        payload.attachments.forEach((file) => req.attach("attachments", file));
+
+        return req;
+      }
+
+      return request
+        .post(url)
+        .send(payload)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    const sendReply = async (chatId, messageId, payload, token, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/${chatId}/messages/${messageId}/replies`;
+
+      if (!options.includeAuth) {
+        return request.post(url).send(payload).accept("json").type("json");
+      }
+
+      if (payload.attachments?.length) {
+        const req = request
+          .post(url)
+          .set("Authorization", `Bearer ${token}`)
+          .field({ content: payload.content });
+
+        payload.attachments.forEach((file) => req.attach("attachments", file));
+
+        return req;
+      }
+
+      return request
+        .post(url)
+        .send(payload)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    return Object.freeze({ createMessage, sendReply });
+  };
+
+  const PATCH = () => {};
+
+  const DELETE = () => {
+    const message = async (chatId, messageId, token, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/${chatId}/messages/${messageId}`;
+
+      if (!options.includeAuth) {
+        return request.delete(url).accept("json").type("json");
+      }
+
+      return request
+        .delete(url)
+        .set("Authorization", `Bearer ${token}`)
+        .accept("json")
+        .type("json");
+    };
+
+    return Object.freeze({ message });
+  };
+
+  return Object.freeze({
+    get: GET(),
+    post: POST(),
+    patch: PATCH(),
+    delete: DELETE(),
+  });
+};
+
 const baseRequest = ({ request, url }) => {
   const baseUrl = url || "/api/v1";
 
@@ -452,6 +573,7 @@ const baseRequest = ({ request, url }) => {
     chat: CHAT({ request, baseUrl }),
     member: MEMBER({ request, baseUrl }),
     role: ROLE({ request, baseUrl }),
+    message: MESSAGE({ request, baseUrl }),
   });
 };
 

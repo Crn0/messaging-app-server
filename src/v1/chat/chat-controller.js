@@ -7,6 +7,18 @@ import APIError from "../../errors/api-error.js";
 
 const debug = Debug.extend("controller");
 
+const cleanFiles = async (files) => {
+  if (files?.length > 0) {
+    return Promise.allSettled(files.map((file) => unlink(file.path)));
+  }
+
+  if (!Array.isArray(files) && typeof files === "object" && files !== null) {
+    return unlink(files.path);
+  }
+
+  return Promise.resolve();
+};
+
 // ===============
 // CHAT CONTROLLER
 // ===============
@@ -14,7 +26,8 @@ const debug = Debug.extend("controller");
 const createCreateChat =
   ({ chatService }) =>
   async (req, res, next) => {
-    const { type, chatId, ownerId, memberIds, name, avatar: file } = req.body;
+    const { type, chatId, memberIds, name, avatar: file } = req.body;
+    const ownerId = req.user.id;
 
     const { error, data } = await tryCatchAsync(() => {
       if (type === "DirectChat") {
@@ -347,6 +360,94 @@ const createDeleteRole =
     return res.sendStatus(httpStatus.NO_CONTENT);
   };
 
+// ===================
+// MESSAGE CONTROLLER
+// ===================
+
+const createGetMessages =
+  ({ chatService }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+    const { before, after } = req.query;
+
+    const { error, data } = await tryCatchAsync(
+      chatService.getMessagesById(chatId, { before, after })
+    );
+
+    if (error) return next(error);
+
+    const { messages, prevHref, nextHref } = data;
+
+    return res
+      .status(httpStatus.OK)
+      .json({ messages, pagination: { prevHref, nextHref } });
+  };
+
+const createSendMessage =
+  ({ chatService }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+    const { content } = req.body;
+    const senderId = req.user.id;
+    const files = req?.files;
+
+    const data = {
+      chatId,
+      senderId,
+      content,
+      files,
+    };
+
+    const { error, data: message } = await tryCatchAsync(
+      () => chatService.sendMessage(data),
+      () => cleanFiles(files)
+    );
+
+    if (error) return next(error);
+
+    return res.status(httpStatus.OK).json(message);
+  };
+
+const createSendReply =
+  ({ chatService }) =>
+  async (req, res, next) => {
+    const { chatId, messageId } = req.params;
+    const { content } = req.body;
+    const senderId = req.user.id;
+    const files = req?.files;
+
+    const data = {
+      chatId,
+      messageId,
+      senderId,
+      content,
+      files,
+    };
+
+    const { error, data: message } = await tryCatchAsync(
+      () => chatService.sendReply(data),
+      () => cleanFiles(files)
+    );
+
+    if (error) return next(error);
+
+    return res.status(httpStatus.OK).json(message);
+  };
+
+const createDeleteMessage =
+  ({ chatService }) =>
+  async (req, res, next) => {
+    const { chatId, messageId } = req.params;
+
+    const { error, data: message } = await tryCatchAsync(() =>
+      chatService.deleteMessageById(chatId, messageId)
+    );
+
+    if (error) return next(error);
+
+    return res.sendStatus(httpStatus.NO_CONTENT);
+  };
+
 export default (dependencies) => {
   const createChat = createCreateChat(dependencies);
 
@@ -380,6 +481,13 @@ export default (dependencies) => {
   const deleteRoleMember = createDeleteRoleMember(dependencies);
   const deleteRole = createDeleteRole(dependencies);
 
+  const getMessages = createGetMessages(dependencies);
+
+  const sendMessage = createSendMessage(dependencies);
+  const sendReply = createSendReply(dependencies);
+
+  const deleteMessage = createDeleteMessage(dependencies);
+
   return Object.freeze({
     createChat,
     getChat,
@@ -402,5 +510,9 @@ export default (dependencies) => {
     updateRoleLevels,
     deleteRoleMember,
     deleteRole,
+    getMessages,
+    sendMessage,
+    sendReply,
+    deleteMessage,
   });
 };

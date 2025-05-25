@@ -1,4 +1,22 @@
+import { join } from "path";
+import { readdir, unlink } from "fs/promises";
 import client from "../../src/db/client.js";
+
+const dirname = import.meta?.dirname;
+
+const removeTempImages = async (path) => {
+  const dir = await readdir(path);
+
+  await Promise.all(
+    dir.map(async (fileName) => {
+      const filePath = `${path}/${fileName}`;
+
+      if (fileName === ".gitkeep") return;
+
+      await unlink(filePath);
+    })
+  );
+};
 
 const permissions = [
   // GENERAL SERVER PERMISSIONS
@@ -20,10 +38,17 @@ const permissions = [
 let teardownHappened = false;
 
 export default async () => {
-  await client.permission.createMany({
-    data: permissions.map((name) => ({ name })),
-    skipDuplicates: true,
-  });
+  await client.$transaction([
+    client.permission.createMany({
+      data: permissions.map((name) => ({ name })),
+      skipDuplicates: true,
+    }),
+    client.user.create({
+      data: {
+        username: "DELETED USER",
+      },
+    }),
+  ]);
 
   return async () => {
     if (teardownHappened) {
@@ -32,7 +57,11 @@ export default async () => {
 
     teardownHappened = true;
 
-    client.$transaction([
+    const uploadPath = join(dirname, "..", "..", "src", "temp", "upload");
+
+    await removeTempImages(uploadPath);
+
+    await client.$transaction([
       client.permission.deleteMany(),
       client.message.deleteMany(),
       client.attachment.deleteMany(),

@@ -58,6 +58,19 @@ const update = async (path, publicId, eagerOptions) => {
   }
 };
 
+const getFile = async (publicId) => {
+  try {
+    const res = await cloudinary.api.resource(publicId);
+
+    return res;
+  } catch (e) {
+    throw new StorageError(
+      e.message ?? e.error.message,
+      e.http_code ?? e.error.http_code
+    );
+  }
+};
+
 const destroyFolder = async (path) => {
   try {
     await cloudinary.api.delete_resources_by_prefix(path);
@@ -90,4 +103,12 @@ const destroyFile = async (publicId, resourceType) => {
   }
 };
 
-export default { url, usage, upload, update, destroyFile, destroyFolder };
+export default {
+  url,
+  usage,
+  upload,
+  update,
+  getFile,
+  destroyFile,
+  destroyFolder,
+};

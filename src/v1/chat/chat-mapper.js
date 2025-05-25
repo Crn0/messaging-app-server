@@ -112,7 +112,6 @@ const groupChatData = (action, DTO) => {
           },
         },
       };
-      ca;
     case GROUP_CHAT_ACTIONS.UPDATE_NAME: {
       return {
         name: DTO.name,
@@ -255,7 +254,7 @@ const messagesAction = (action, DTO) => {
       const images = assets?.map((asset) => ({
         url: asset.url,
         format: asset.format,
-        size: asset?.bytes,
+        size: asset?.size,
       }));
 
       return {
@@ -321,9 +320,10 @@ const toImage = (entity) => {
 const toAttachment = (entity) => {
   if (!entity) return null;
 
-  const { name, url, size, createdAt, updatedAt, images } = entity;
+  const { id, name, url, size, createdAt, updatedAt, images } = entity;
 
   return {
+    id,
     name,
     url,
     size,
@@ -333,7 +333,7 @@ const toAttachment = (entity) => {
   };
 };
 
-const toMessage = (entity) => {
+const toMessage = (entity, depth = 0) => {
   if (!entity) return null;
 
   const {
@@ -349,6 +349,21 @@ const toMessage = (entity) => {
     attachments,
   } = entity;
 
+  if (depth > 0) {
+    return {
+      id,
+      content,
+      createdAt,
+      updatedAt,
+      user,
+      deletedAt,
+      chatId: chat?.id,
+      attachments: attachments?.map?.(toAttachment) ?? [],
+    };
+  }
+
+  const parentMessage = toMessage(replyTo, depth + 1);
+
   return {
     id,
     content,
@@ -357,13 +372,15 @@ const toMessage = (entity) => {
     user,
     deletedAt,
     replies: replies?.map?.(toMessage) ?? [],
-    replyTo: toMessage(replyTo),
+    replyTo: parentMessage,
     chatId: chat?.id,
     attachments: attachments?.map?.(toAttachment) ?? [],
   };
 };
 
 const toMember = (entity) => {
+  if (entity === null) return null;
+
   const { user, mutedUntil, joinedAt, roles } = entity;
 
   return {

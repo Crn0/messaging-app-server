@@ -61,10 +61,34 @@ const executePolicy =
     });
   };
 
+const executePermissionCheck = (subject, data, requiredPermissions) =>
+  subject.roles.some(
+    (role) =>
+      data.roles.some((dataRole) => dataRole.id === role.id) &&
+      role.permissions.some((p) => requiredPermissions.includes(p.name))
+  );
+
+const getRolesWithRequiredPermissions = (subject, requiredPermissions) =>
+  subject.roles.filter((role) =>
+    role.permissions.some((p) => requiredPermissions.includes(p.name))
+  );
+
+const getHighestRoleLevel = (user) =>
+  Math.min(
+    ...(user?.roles?.reduce?.((arr, r) => {
+      if (r.isDefaultRole) return arr;
+
+      return arr.concat(r.roleLevel);
+    }, []) ?? [])
+  );
+
 export {
   removeTempImages,
   idGenerator,
   removeFields,
   determineAccessPolicy,
   executePolicy,
+  executePermissionCheck,
+  getRolesWithRequiredPermissions,
+  getHighestRoleLevel,
 };

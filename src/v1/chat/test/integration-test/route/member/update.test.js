@@ -215,30 +215,30 @@ describe("Member update", () => {
       };
     });
 
-    const notFoundScenarios = [
-      {
-        scenario: "chat does not exist",
-        data: {
-          chatId: idGenerator(),
-          memberId: user2Id,
-          token: user1AccessToken,
-          payload: { mutedUntil: null },
-        },
-        expectedError: { code: 404, message: "Chat not found" },
-      },
-      {
-        scenario: "member does not exist",
-        data: {
-          memberId: nonMemberId,
-          token: user1AccessToken,
-          payload: { mutedUntil: null },
-        },
-        expectedError: { code: 404, message: "Member not found" },
-      },
-    ];
-
     describe("Not Found Errors", () => {
-      it.each(notFoundScenarios)(
+      const scenarios = [
+        {
+          scenario: "chat does not exist",
+          data: {
+            chatId: idGenerator(),
+            memberId: user2Id,
+            token: user1AccessToken,
+            payload: { mutedUntil: null },
+          },
+          expectedError: { code: 404, message: "Chat not found" },
+        },
+        {
+          scenario: "member does not exist",
+          data: {
+            memberId: nonMemberId,
+            token: user1AccessToken,
+            payload: { mutedUntil: null },
+          },
+          expectedError: { code: 404, message: "Member not found" },
+        },
+      ];
+
+      it.each(scenarios)(
         "fails with 404 for $scenario",
         async ({ data, expectedError }) => {
           const { chatId, memberId, payload, token } = data;
@@ -256,69 +256,69 @@ describe("Member update", () => {
       );
     });
 
-    const validationErrorScenarios = [
-      {
-        scenario: "chat ID invalid format",
-        data: {
-          chatId: "invalid_id_format",
-          memberId: user2Id,
-          token: user1AccessToken,
-          payload: {
-            mutedUntil: null,
-          },
-        },
-        expectedError: { path: ["chatId"], code: "invalid_string" },
-      },
-      {
-        scenario: "member ID invalid format",
-        data: {
-          token: user1AccessToken,
-          memberId: "invalid_id_format",
-          payload: {
-            mutedUntil: null,
-          },
-        },
-        expectedError: { path: ["memberId"], code: "invalid_string" },
-      },
-      {
-        scenario: "mutedUntil is not a datetime",
-        data: {
-          token: user1AccessToken,
-          memberId: user2Id,
-          payload: {
-            mutedUntil: "",
-          },
-        },
-        expectedError: { path: ["mutedUntil"], code: "invalid_string" },
-      },
-      {
-        scenario: "mutedUntil is less than a minute",
-        data: {
-          token: user1AccessToken,
-          memberId: user2Id,
-          payload: {
-            mutedUntil: new Date(Date.now() + 59 * 1000).toISOString(),
-          },
-        },
-        expectedError: { path: ["mutedUntil"], code: "custom" },
-      },
-      {
-        scenario: "mutedUntil is greater than seven days",
-        data: {
-          token: user1AccessToken,
-          memberId: user2Id,
-          payload: {
-            mutedUntil: new Date(
-              Date.now() + 10 * 24 * 60 * 60 * 1000
-            ).toISOString(),
-          },
-        },
-        expectedError: { path: ["mutedUntil"], code: "custom" },
-      },
-    ];
-
     describe("Validation Errors", () => {
-      it.each(validationErrorScenarios)(
+      const scenarios = [
+        {
+          scenario: "chat ID invalid format",
+          data: {
+            chatId: "invalid_id_format",
+            memberId: user2Id,
+            token: user1AccessToken,
+            payload: {
+              mutedUntil: null,
+            },
+          },
+          expectedError: { path: ["chatId"], code: "invalid_string" },
+        },
+        {
+          scenario: "member ID invalid format",
+          data: {
+            token: user1AccessToken,
+            memberId: "invalid_id_format",
+            payload: {
+              mutedUntil: null,
+            },
+          },
+          expectedError: { path: ["memberId"], code: "invalid_string" },
+        },
+        {
+          scenario: "mutedUntil is not a datetime",
+          data: {
+            token: user1AccessToken,
+            memberId: user2Id,
+            payload: {
+              mutedUntil: "",
+            },
+          },
+          expectedError: { path: ["mutedUntil"], code: "invalid_string" },
+        },
+        {
+          scenario: "mutedUntil is less than a minute",
+          data: {
+            token: user1AccessToken,
+            memberId: user2Id,
+            payload: {
+              mutedUntil: new Date(Date.now() + 59 * 1000).toISOString(),
+            },
+          },
+          expectedError: { path: ["mutedUntil"], code: "custom" },
+        },
+        {
+          scenario: "mutedUntil is greater than seven days",
+          data: {
+            token: user1AccessToken,
+            memberId: user2Id,
+            payload: {
+              mutedUntil: new Date(
+                Date.now() + 10 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+            },
+          },
+          expectedError: { path: ["mutedUntil"], code: "custom" },
+        },
+      ];
+
+      it.each(scenarios)(
         "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
         async ({ data, expectedError }) => {
           const { chatId, memberId, payload, token } = data;
@@ -338,93 +338,93 @@ describe("Member update", () => {
       );
     });
 
-    const forbiddenMuteScenarios = [
-      {
-        scenario: "a non-member tries to mute a chat member",
-        data: {
-          memberId: user2Id,
-          token: nonMemberAccessToken,
-          includeAuth: true,
-          payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
-        },
-        expectedError: {
-          code: 403,
-          message: "You must be a chat member to mute others",
-        },
-      },
-      {
-        scenario: "member role without permission attempts to mute user",
-        data: {
-          memberId: user4Id,
-          token: user4AccessToken,
-          includeAuth: true,
-          payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
-        },
-        expectedError: {
-          code: 403,
-          message: "Missing permission: admin or mute_member",
-        },
-      },
-      {
-        scenario:
-          "member role with permission equal to target user role level attempts to mute user",
-        data: {
-          memberId: user3Id,
-          token: user3AccessToken,
-          includeAuth: true,
-          payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
-        },
-        expectedError: {
-          code: 403,
-          message: "You cannot mute a member with higher or equal role level",
-        },
-      },
-      {
-        scenario: "a owner trying to mute a user that has admin permission",
-        data: {
-          memberId: user2Id,
-          token: user1AccessToken,
-          includeAuth: true,
-          payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
-        },
-        expectedError: {
-          code: 403,
-          message: "You cannot mute an admin member",
-        },
-      },
-      {
-        scenario: "a user trying to mute the chat owner",
-        data: {
-          memberId: user1Id,
-          token: user2AccessToken,
-          includeAuth: true,
-          payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
-        },
-        expectedError: {
-          code: 403,
-          message: "You cannot mute the chat owner",
-        },
-      },
-      {
-        scenario: "a user trying to mute a higher ranked member",
-        data: {
-          memberId: user3Id,
-          token: user2AccessToken,
-          includeAuth: true,
-          payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
-        },
-        expectedError: {
-          code: 403,
-          message: "You cannot mute a member with higher role level",
-        },
-      },
-    ];
-
     describe("Mute member", () => {
       const validForm = { mutedUntil: new Date(Date.now() + 71 * 1000) };
 
+      const scenarios = [
+        {
+          scenario: "a non-member tries to mute a chat member",
+          data: {
+            memberId: user2Id,
+            token: nonMemberAccessToken,
+            includeAuth: true,
+            payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
+          },
+          expectedError: {
+            code: 403,
+            message: "You must be a chat member to mute others",
+          },
+        },
+        {
+          scenario: "member role without permission attempts to mute user",
+          data: {
+            memberId: user4Id,
+            token: user4AccessToken,
+            includeAuth: true,
+            payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
+          },
+          expectedError: {
+            code: 403,
+            message: "Missing permission: admin or mute_member",
+          },
+        },
+        {
+          scenario:
+            "member role with permission equal to target user role level attempts to mute user",
+          data: {
+            memberId: user3Id,
+            token: user3AccessToken,
+            includeAuth: true,
+            payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
+          },
+          expectedError: {
+            code: 403,
+            message: "You cannot mute a member with higher or equal role level",
+          },
+        },
+        {
+          scenario: "a owner trying to mute a user that has admin permission",
+          data: {
+            memberId: user2Id,
+            token: user1AccessToken,
+            includeAuth: true,
+            payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
+          },
+          expectedError: {
+            code: 403,
+            message: "You cannot mute an admin member",
+          },
+        },
+        {
+          scenario: "a user trying to mute the chat owner",
+          data: {
+            memberId: user1Id,
+            token: user2AccessToken,
+            includeAuth: true,
+            payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
+          },
+          expectedError: {
+            code: 403,
+            message: "You cannot mute the chat owner",
+          },
+        },
+        {
+          scenario: "a user trying to mute a higher ranked member",
+          data: {
+            memberId: user3Id,
+            token: user2AccessToken,
+            includeAuth: true,
+            payload: { mutedUntil: new Date(Date.now() + 71 * 1000) },
+          },
+          expectedError: {
+            code: 403,
+            message: "You cannot mute a member with higher role level",
+          },
+        },
+      ];
+
       describe("Forbidden Errors", () => {
-        it.each(forbiddenMuteScenarios)(
+        it.each(scenarios)(
           "fails with 403 when $scenario",
           async ({ data, expectedError }) => {
             const { chatId, memberId, payload, token } = data;
