@@ -40,18 +40,11 @@ const createGetUserBlockList =
 
 const createUnBlockUserById =
   ({ blockUserRepository, userService }) =>
-  async ({ requesterId, receiverId, requesterBlockList }) => {
+  async ({ requesterId, receiverId }) => {
     await Promise.all([
       userService.getUserById(requesterId),
       userService.getUserById(receiverId),
     ]);
-
-    const isNotBlocked =
-      requesterBlockList.some((block) => block.id === receiverId) === false;
-
-    if (isNotBlocked) {
-      throw new APIError("You have not blocked this user", httpStatus.CONFLICT);
-    }
 
     const user = await blockUserRepository.unBlockUserById({
       requesterId,
