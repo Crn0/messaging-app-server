@@ -32,7 +32,6 @@ const createCreateChat =
     const { error, data } = await tryCatchAsync(() => {
       if (type === "DirectChat") {
         return chatService.createDirectChat({ chatId, memberIds });
-        return chatService.createDirectChat({ chatId, memberIds });
       }
 
       return chatService.createGroupChat({ ownerId, name, file });
