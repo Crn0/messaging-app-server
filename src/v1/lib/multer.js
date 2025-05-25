@@ -1,6 +1,6 @@
 import multer, { MulterError } from "multer";
 import { extname } from "path";
-import * as crypto from "node:crypto";
+import { v4 as uuidv4 } from "uuid";
 import ValidationError from "../../errors/validation-error.js";
 
 const fileExtension = (mimeType) => {
@@ -54,7 +54,7 @@ const storage = {
     cb(null, path);
   },
   filename: (req, file, cb) => {
-    const name = `${file.fieldname}-${crypto.randomBytes(10).toString("hex")}${fileExtension(file.mimetype)}`;
+    const name = `${file.fieldname}-${uuidv4()}${fileExtension(file.mimetype)}`;
     cb(null, name);
   },
 };
