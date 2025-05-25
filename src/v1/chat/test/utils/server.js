@@ -40,20 +40,4 @@ app.use((err, req, res, _) => {
   return ErrorHandler.handleError(err, res);
 });
 
-[`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `uncaughtException`, `SIGTERM`].map(
-  (eventType) =>
-    process.on(eventType, async () => {
-      const path = join(dirname, "..", "..", "..", "..", "temp", "upload");
-
-      try {
-        await removeTempImages(path);
-        return process.exit(0);
-      } catch (error) {
-        await removeTempImages(path);
-
-        return process.exit(1);
-      }
-    })
-);
-
 export default app;
