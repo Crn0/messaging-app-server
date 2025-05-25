@@ -6,10 +6,6 @@ import userFactory from "../utils/user-factory.js";
 import baseRequest from "../utils/base-request.js";
 
 const userReq = baseRequest({ request: request.agent(app), url: "/api/v1" });
-const demoUserReq = baseRequest({
-  request: request.agent(app),
-  url: "/api/v1",
-});
 
 const User = userFactory();
 
@@ -72,7 +68,6 @@ describe("Update user's username", () => {
       {
         scenario: "invalid token",
         data: {
-          userId: id,
           token: invalidToken,
           payload: form,
           includeAuth: true,
@@ -82,7 +77,6 @@ describe("Update user's username", () => {
       {
         scenario: "expired token",
         data: {
-          userId: id,
           token: expiredToken,
           payload: form,
           includeAuth: true,
@@ -92,7 +86,6 @@ describe("Update user's username", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          userId: id,
           token: accessToken,
           payload: form,
           includeAuth: false,
@@ -105,61 +98,13 @@ describe("Update user's username", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.user.patch.username(userId, token, payload, {
+        const res = await userReq.user.patch.username(token, payload, {
           includeAuth,
         });
 
         expect(res.status).toBe(401);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          authReq: userReq,
-          userId: id,
-          token: unAuthorizedAccessToken,
-          payload: form,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-      {
-        scenario: "when demo user is updating its' password",
-        data: {
-          authReq: demoUserReq,
-          userId: demoUserId,
-          token: demoUserAccessToken,
-          payload: {
-            ...form,
-            username: form.username,
-          },
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { authReq, userId, token, payload, includeAuth } = data;
-
-        const res = await authReq.user.patch.username(userId, token, payload, {
-          includeAuth,
-        });
-
-        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -170,7 +115,6 @@ describe("Update user's username", () => {
       {
         scenario: "weak username",
         data: {
-          userId: id,
           token: accessToken,
           payload: {
             username: invalidForm.username,
@@ -182,9 +126,9 @@ describe("Update user's username", () => {
     ])(
       "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.user.patch.username(userId, token, payload, {
+        const res = await userReq.user.patch.username(token, payload, {
           includeAuth,
         });
 
@@ -198,7 +142,7 @@ describe("Update user's username", () => {
 
   describe("Success Case", () => {
     it("returns 200 (OK) with user's id and updated username", async () => {
-      const res = await userReq.user.patch.username(id, accessToken, form);
+      const res = await userReq.user.patch.username(accessToken, form);
 
       logInForm.username = res.body.username;
 
@@ -229,7 +173,6 @@ describe("Update user's password", () => {
       {
         scenario: "invalid token",
         data: {
-          userId: id,
           token: invalidToken,
           payload: form,
           includeAuth: true,
@@ -239,7 +182,6 @@ describe("Update user's password", () => {
       {
         scenario: "expired token",
         data: {
-          userId: id,
           token: expiredToken,
           payload: form,
           includeAuth: true,
@@ -249,7 +191,6 @@ describe("Update user's password", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          userId: id,
           token: accessToken,
           payload: form,
           includeAuth: false,
@@ -262,61 +203,13 @@ describe("Update user's password", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.user.patch.password(userId, token, payload, {
+        const res = await userReq.user.patch.password(token, payload, {
           includeAuth,
         });
 
         expect(res.status).toBe(401);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          authReq: userReq,
-          userId: id,
-          token: unAuthorizedAccessToken,
-          payload: form,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-      {
-        scenario: "when demo user is updating its' password",
-        data: {
-          authReq: demoUserReq,
-          userId: demoUserId,
-          token: demoUserAccessToken,
-          payload: {
-            ...form,
-            oldPassword: demoUser.data.password,
-          },
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { authReq, userId, token, payload, includeAuth } = data;
-
-        const res = await authReq.user.patch.password(userId, token, payload, {
-          includeAuth,
-        });
-
-        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -327,7 +220,6 @@ describe("Update user's password", () => {
       {
         scenario: "weak password",
         data: {
-          userId: id,
           token: accessToken,
           payload: {
             oldPassword: form.oldPassword,
@@ -341,7 +233,6 @@ describe("Update user's password", () => {
       {
         scenario: "password does not match",
         data: {
-          userId: id,
           token: accessToken,
           payload: {
             oldPassword: form.oldPassword,
@@ -355,9 +246,9 @@ describe("Update user's password", () => {
     ])(
       "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.user.patch.password(userId, token, payload, {
+        const res = await userReq.user.patch.password(token, payload, {
           includeAuth,
         });
 
@@ -373,7 +264,7 @@ describe("Update user's password", () => {
     it("returns 205 (NO_CONTENT_REFRESH) and logout the user", async () => {
       await userReq.auth.post.logIn(logInForm);
 
-      const res = await userReq.user.patch.password(id, accessToken, form);
+      const res = await userReq.user.patch.password(accessToken, form);
 
       const cookies = res.headers["set-cookie"];
 

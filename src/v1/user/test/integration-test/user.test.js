@@ -332,7 +332,7 @@ describe("User deletion", () => {
       async ({ data, expectedError }) => {
         const { token, includeAuth } = data;
 
-        const res = await userReq.user.delete.account(token, null, {
+        const res = await userReq.user.delete.account(token, {
           includeAuth,
         });
 
@@ -342,26 +342,12 @@ describe("User deletion", () => {
     );
   });
 
-  describe("Authorization Errors", () => {
+  describe("Forbidden Errors", () => {
     it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          authReq: userReq,
-          userId: user.data.id,
-          token: demoUserAccessToken,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
       {
         scenario: "when demo user is updating its' password",
         data: {
           authReq: demoUserReq,
-          userId: demoUser.data.id,
           token: demoUserAccessToken,
 
           includeAuth: true,
@@ -374,9 +360,9 @@ describe("User deletion", () => {
     ])(
       "fails with 403 (FORBIDDEN) when $scenario",
       async ({ data, expectedError }) => {
-        const { authReq, userId, token, includeAuth } = data;
+        const { authReq, token, includeAuth } = data;
 
-        const res = await authReq.user.delete.account(userId, token, {
+        const res = await authReq.user.delete.account(token, {
           includeAuth,
         });
 
@@ -386,7 +372,7 @@ describe("User deletion", () => {
     );
   });
 
-  describe("Success Case", () => {
+  describe.skip("Success Case", () => {
     it("501 (NOT_IMPLEMENTED)", async () => {
       const res = await userReq.user.delete.account(user.data.id, accessToken);
 

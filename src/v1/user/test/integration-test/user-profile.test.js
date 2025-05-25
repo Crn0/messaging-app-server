@@ -7,6 +7,9 @@ import Storage from "../../../storage/index.js";
 import userFactory from "../utils/user-factory.js";
 import baseRequest from "../utils/base-request.js";
 import attachment from "../data/attachment.js";
+import { env } from "../../../../constants/index.js";
+
+const { TEST_UPLOAD } = env;
 
 const storage = Storage();
 
@@ -29,10 +32,14 @@ beforeAll(async () => {
   return async () => {
     const attachmentPath = `${process.env.CLOUDINARY_ROOT_NAME}/avatars/${id}`;
 
-    await Promise.all([
-      client.user.delete({ where: { id } }),
-      storage.destroyFolder(attachmentPath),
-    ]);
+    if (TEST_UPLOAD) {
+      storage
+        .destroyFolder(attachmentPath)
+        .then(console.log)
+        .catch(console.log);
+    }
+
+    await client.user.delete({ where: { id } });
   };
 });
 
@@ -44,7 +51,6 @@ describe("Update displayName", () => {
       {
         scenario: "invalid token",
         data: {
-          userId: id,
           token: invalidToken,
           payload: { ...form },
           includeAuth: true,
@@ -54,7 +60,6 @@ describe("Update displayName", () => {
       {
         scenario: "expired token",
         data: {
-          userId: id,
           token: expiredToken,
           payload: { ...form },
           includeAuth: true,
@@ -64,7 +69,6 @@ describe("Update displayName", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          userId: id,
           token: accessToken,
           payload: { ...form },
           includeAuth: false,
@@ -77,51 +81,13 @@ describe("Update displayName", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.profile.patch.displayName(
-          userId,
-          token,
-          payload,
-          { includeAuth }
-        );
+        const res = await userReq.profile.patch.displayName(token, payload, {
+          includeAuth,
+        });
 
         expect(res.status).toBe(401);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          userId: id,
-          token: unAuthorizedAccessToken,
-          payload: form,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
-
-        const res = await userReq.profile.patch.displayName(
-          userId,
-          token,
-          payload,
-          {
-            includeAuth,
-          }
-        );
-
-        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -132,7 +98,6 @@ describe("Update displayName", () => {
       {
         scenario: "maxium character reached",
         data: {
-          userId: id,
           token: accessToken,
           payload: {
             displayName: Array.from({ length: 40 }, () => "str").join(""),
@@ -144,7 +109,6 @@ describe("Update displayName", () => {
       {
         scenario: "displayName is undefined",
         data: {
-          userId: id,
           token: accessToken,
           payload: {},
           includeAuth: true,
@@ -154,16 +118,11 @@ describe("Update displayName", () => {
     ])(
       "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.profile.patch.displayName(
-          userId,
-          token,
-          payload,
-          {
-            includeAuth,
-          }
-        );
+        const res = await userReq.profile.patch.displayName(token, payload, {
+          includeAuth,
+        });
 
         expect(res.status).toBe(422);
         expect(res.body.errors).toContainEqual(
@@ -175,11 +134,7 @@ describe("Update displayName", () => {
 
   describe("Success Case", () => {
     it("returns 200 (OK) and the user id with the updated display name", async () => {
-      const res = await userReq.profile.patch.displayName(
-        id,
-        accessToken,
-        form
-      );
+      const res = await userReq.profile.patch.displayName(accessToken, form);
 
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
@@ -205,7 +160,6 @@ describe("Update aboutMe", () => {
       {
         scenario: "invalid token",
         data: {
-          userId: id,
           token: invalidToken,
           payload: { ...form },
           includeAuth: true,
@@ -215,7 +169,6 @@ describe("Update aboutMe", () => {
       {
         scenario: "expired token",
         data: {
-          userId: id,
           token: expiredToken,
           payload: { ...form },
           includeAuth: true,
@@ -225,7 +178,6 @@ describe("Update aboutMe", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          userId: id,
           token: accessToken,
           payload: { ...form },
           includeAuth: false,
@@ -238,51 +190,13 @@ describe("Update aboutMe", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.profile.patch.aboutMe(
-          userId,
-          token,
-          payload,
-          { includeAuth }
-        );
+        const res = await userReq.profile.patch.aboutMe(token, payload, {
+          includeAuth,
+        });
 
         expect(res.status).toBe(401);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          userId: id,
-          token: unAuthorizedAccessToken,
-          payload: form,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
-
-        const res = await userReq.profile.patch.aboutMe(
-          userId,
-          token,
-          payload,
-          {
-            includeAuth,
-          }
-        );
-
-        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -293,7 +207,6 @@ describe("Update aboutMe", () => {
       {
         scenario: "maxium character reached",
         data: {
-          userId: id,
           token: accessToken,
           payload: {
             aboutMe: Array.from({ length: 200 }, () => "str").join(""),
@@ -305,7 +218,6 @@ describe("Update aboutMe", () => {
       {
         scenario: "aboutMe is undefined",
         data: {
-          userId: id,
           token: accessToken,
           payload: {},
           includeAuth: true,
@@ -315,16 +227,11 @@ describe("Update aboutMe", () => {
     ])(
       "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.profile.patch.aboutMe(
-          userId,
-          token,
-          payload,
-          {
-            includeAuth,
-          }
-        );
+        const res = await userReq.profile.patch.aboutMe(token, payload, {
+          includeAuth,
+        });
 
         expect(res.status).toBe(422);
         expect(res.body.errors).toContainEqual(
@@ -336,7 +243,7 @@ describe("Update aboutMe", () => {
 
   describe("Success Case", () => {
     it("returns 200 (OK) and the user id with the updated about me", async () => {
-      const res = await userReq.profile.patch.aboutMe(id, accessToken, form);
+      const res = await userReq.profile.patch.aboutMe(accessToken, form);
 
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
@@ -354,7 +261,7 @@ describe("Update aboutMe", () => {
   });
 });
 
-describe("Update avatar", () => {
+describe.skipIf(TEST_UPLOAD === false)("Update avatar", () => {
   const file = attachment.avatar;
   const invalidFile = attachment.catGif;
 
@@ -363,7 +270,6 @@ describe("Update avatar", () => {
       {
         scenario: "invalid token",
         data: {
-          userId: id,
           token: invalidToken,
           payload: file,
           includeAuth: true,
@@ -373,7 +279,6 @@ describe("Update avatar", () => {
       {
         scenario: "expired token",
         data: {
-          userId: id,
           token: expiredToken,
           payload: file,
           includeAuth: true,
@@ -383,7 +288,6 @@ describe("Update avatar", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          userId: id,
           token: accessToken,
           payload: file,
           includeAuth: false,
@@ -396,43 +300,13 @@ describe("Update avatar", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.profile.patch.avatar(userId, token, payload, {
+        const res = await userReq.profile.patch.avatar(token, payload, {
           includeAuth,
         });
 
         expect(res.status).toBe(401);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          userId: id,
-          token: unAuthorizedAccessToken,
-          payload: file,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
-
-        const res = await userReq.profile.patch.avatar(userId, token, payload, {
-          includeAuth,
-        });
-
-        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -443,7 +317,6 @@ describe("Update avatar", () => {
       {
         scenario: "not accepted mimetype",
         data: {
-          userId: id,
           token: accessToken,
           payload: invalidFile,
           includeAuth: true,
@@ -453,7 +326,6 @@ describe("Update avatar", () => {
       {
         scenario: "undefined payload",
         data: {
-          userId: id,
           token: accessToken,
           includeAuth: true,
         },
@@ -462,9 +334,9 @@ describe("Update avatar", () => {
     ])(
       "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
-        const res = await userReq.profile.patch.avatar(userId, token, payload, {
+        const res = await userReq.profile.patch.avatar(token, payload, {
           includeAuth,
         });
 
@@ -478,7 +350,7 @@ describe("Update avatar", () => {
 
   describe("Success Case", () => {
     it("it returns 204 (NO_CONTENT)", async () => {
-      const res = await userReq.profile.patch.avatar(id, accessToken, file);
+      const res = await userReq.profile.patch.avatar(accessToken, file);
 
       expect(res.status).toBe(204);
 
@@ -492,7 +364,7 @@ describe("Update avatar", () => {
   });
 });
 
-describe("Update backgroundAvatar", () => {
+describe.skipIf(TEST_UPLOAD === false)("Update backgroundAvatar", () => {
   const file = attachment.backgroundAvatar;
   const invalidFile = attachment.catGif;
 
@@ -501,7 +373,6 @@ describe("Update backgroundAvatar", () => {
       {
         scenario: "invalid token",
         data: {
-          userId: id,
           token: invalidToken,
           payload: file,
           includeAuth: true,
@@ -511,7 +382,6 @@ describe("Update backgroundAvatar", () => {
       {
         scenario: "expired token",
         data: {
-          userId: id,
           token: expiredToken,
           payload: file,
           includeAuth: true,
@@ -521,7 +391,6 @@ describe("Update backgroundAvatar", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          userId: id,
           token: accessToken,
           payload: file,
           includeAuth: false,
@@ -534,10 +403,9 @@ describe("Update backgroundAvatar", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
         const res = await userReq.profile.patch.backgroundAvatar(
-          userId,
           token,
           payload,
           {
@@ -551,47 +419,11 @@ describe("Update backgroundAvatar", () => {
     );
   });
 
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          userId: id,
-          token: unAuthorizedAccessToken,
-          payload: file,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
-
-        const res = await userReq.profile.patch.backgroundAvatar(
-          userId,
-          token,
-          payload,
-          {
-            includeAuth,
-          }
-        );
-
-        expect(res.status).toBe(403);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
   describe("Validation Errors", () => {
     it.each([
       {
         scenario: "not accepted mimetype",
         data: {
-          userId: id,
           token: accessToken,
           payload: invalidFile,
           includeAuth: true,
@@ -604,7 +436,6 @@ describe("Update backgroundAvatar", () => {
       {
         scenario: "undefined payload",
         data: {
-          userId: id,
           token: accessToken,
           includeAuth: true,
         },
@@ -613,10 +444,9 @@ describe("Update backgroundAvatar", () => {
     ])(
       "fails with 422 (UNPROCESSABLE_ENTITY) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, payload, includeAuth } = data;
+        const { token, payload, includeAuth } = data;
 
         const res = await userReq.profile.patch.backgroundAvatar(
-          userId,
           token,
           payload,
           {
@@ -635,7 +465,6 @@ describe("Update backgroundAvatar", () => {
   describe("Success Case", () => {
     it("it returns 204 (NO_CONTENT)", async () => {
       const res = await userReq.profile.patch.backgroundAvatar(
-        id,
         accessToken,
         file
       );
@@ -652,13 +481,12 @@ describe("Update backgroundAvatar", () => {
   });
 });
 
-describe("Delete avatar", () => {
+describe.skipIf(TEST_UPLOAD === false)("Delete avatar", () => {
   describe("Authentication Errors", () => {
     it.each([
       {
         scenario: "invalid token",
         data: {
-          userId: id,
           token: invalidToken,
           includeAuth: true,
         },
@@ -667,7 +495,6 @@ describe("Delete avatar", () => {
       {
         scenario: "expired token",
         data: {
-          userId: id,
           token: expiredToken,
           includeAuth: true,
         },
@@ -676,7 +503,6 @@ describe("Delete avatar", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          userId: id,
           token: accessToken,
           includeAuth: false,
         },
@@ -688,9 +514,9 @@ describe("Delete avatar", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, includeAuth } = data;
+        const { token, includeAuth } = data;
 
-        const res = await userReq.profile.delete.avatar(userId, token, {
+        const res = await userReq.profile.delete.avatar(token, {
           includeAuth,
         });
 
@@ -700,38 +526,9 @@ describe("Delete avatar", () => {
     );
   });
 
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          userId: id,
-          token: unAuthorizedAccessToken,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { userId, token, includeAuth } = data;
-
-        const res = await userReq.profile.delete.avatar(userId, token, {
-          includeAuth,
-        });
-
-        expect(res.status).toBe(403);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
   describe("Success Case", () => {
     it("it returns 204 (NO_CONTENT)", async () => {
-      const res = await userReq.profile.delete.avatar(id, accessToken);
+      const res = await userReq.profile.delete.avatar(accessToken);
 
       expect(res.status).toBe(204);
 
@@ -751,7 +548,6 @@ describe("Delete backgroundAvatar", () => {
       {
         scenario: "invalid token",
         data: {
-          userId: id,
           token: invalidToken,
           includeAuth: true,
         },
@@ -760,7 +556,6 @@ describe("Delete backgroundAvatar", () => {
       {
         scenario: "expired token",
         data: {
-          userId: id,
           token: expiredToken,
           includeAuth: true,
         },
@@ -769,7 +564,6 @@ describe("Delete backgroundAvatar", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          userId: id,
           token: accessToken,
           includeAuth: false,
         },
@@ -781,15 +575,11 @@ describe("Delete backgroundAvatar", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { userId, token, includeAuth } = data;
+        const { token, includeAuth } = data;
 
-        const res = await userReq.profile.delete.backgroundAvatar(
-          userId,
-          token,
-          {
-            includeAuth,
-          }
-        );
+        const res = await userReq.profile.delete.backgroundAvatar(token, {
+          includeAuth,
+        });
 
         expect(res.status).toBe(401);
         expect(res.body).toMatchObject(expectedError);
@@ -797,45 +587,9 @@ describe("Delete backgroundAvatar", () => {
     );
   });
 
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          userId: id,
-          token: unAuthorizedAccessToken,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { userId, token, includeAuth } = data;
-
-        const res = await userReq.profile.delete.backgroundAvatar(
-          userId,
-          token,
-          {
-            includeAuth,
-          }
-        );
-
-        expect(res.status).toBe(403);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Success Case", () => {
+  describe.skipIf(TEST_UPLOAD === false)("Success Case", () => {
     it("it returns 204 (NO_CONTENT)", async () => {
-      const res = await userReq.profile.delete.backgroundAvatar(
-        id,
-        accessToken
-      );
+      const res = await userReq.profile.delete.backgroundAvatar(accessToken);
 
       expect(res.status).toBe(204);
 

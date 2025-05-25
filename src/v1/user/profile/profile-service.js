@@ -202,6 +202,10 @@ const createDeleteProfileAvatarByUserId =
 
     const profile = await profileRepository.findProfileByUserPk(userPk);
 
+    if (profile.avatar === null) {
+      throw new APIError("No avatar found", httpStatus.NOT_FOUND);
+    }
+
     await storage.destroyFile(profile.avatar.id, "Image");
 
     return profileRepository.deleteAvatarByUserPk(userPk);
@@ -218,7 +222,9 @@ const createDeleteBackgroundAvatarByUserId =
 
     const profile = await profileRepository.findProfileByUserPk(userPk);
 
-    await storage.destroyFile(profile.backgroundAvatar.id, "Image");
+    if (profile.backgroundAvatar === null) {
+      throw new APIError("No background avatar found", httpStatus.NOT_FOUND);
+    }
 
     await storage.destroyFile(profile.backgroundAvatar.id, "Image");
 

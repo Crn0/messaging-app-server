@@ -158,32 +158,26 @@ router.use(protectRoute("accessToken"));
 router.get("/me", ZodqueryValidator(schema.querySchema), userController.me);
 
 router.patch(
-  "/:userId/username",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/username",
   ZodbodyValidator(schema.updateUsernameSchema),
   userMiddleware.canUpdateUsername,
   userController.patchUsername
 );
 
 router.patch(
-  "/:userId/password",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/password",
   ZodbodyValidator(schema.updatePasswordSchema),
   userMiddleware.canUpdatePassword,
   userController.patchPassword,
   logOutController
 );
 
-router.delete(
-  "/:userId",
-  ZodparamValidator(schema.userIdParamSchema),
-  userMiddleware.canDeleteAccount,
-  (req, res) => res.sendStatus(501)
+router.delete("/me", userMiddleware.canDeleteAccount, (req, res) =>
+  res.sendStatus(501)
 );
 
 router.delete(
-  "/:userId/providers/google",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/providers/google",
   userMiddleware.canUnlinkGoogle,
   userController.unlinkGoogle
 );
@@ -193,15 +187,14 @@ router.delete(
  */
 
 router.post(
-  "/:userId/block-users",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/block-users",
   ZodbodyValidator(schema.blockUserBodySchema),
   userMiddleware.canBlockUser,
   userController.blockUser
 );
 
 router.delete(
-  "/:userId/block-users/:unBlockId",
+  "/me/block-users/:unBlockId",
   ZodparamValidator(schema.unBlockUserParamSchema),
   userMiddleware.canUnBlockUser,
   userController.unBlockUser
@@ -211,37 +204,31 @@ router.delete(
  * FRIEND REQUESTS ROUTE
  */
 
-router.get(
-  "/:userId/friend-requests",
-  ZodparamValidator(schema.userIdParamSchema),
-  userMiddleware.isUnauthorizedUser,
-  userController.getFriendRequestList
-);
+router.get("/me/friend-requests", userController.getFriendRequestList);
 
 router.post(
-  "/:userId/friend-requests",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/friend-requests",
   ZodbodyValidator(schema.friendRequestBodySchema),
   userMiddleware.canSendFriendRequest,
   userController.sendFriendRequest
 );
 
 router.patch(
-  "/:userId/friend-requests/:friendRequestId",
+  "/me/friend-requests/:friendRequestId",
   ZodparamValidator(schema.friendRequestParamSchema),
   userMiddleware.canAcceptFriendRequest,
   userController.acceptFriendRequest
 );
 
 router.delete(
-  "/:userId/friend-requests/:friendRequestId",
+  "/me/friend-requests/:friendRequestId",
   ZodparamValidator(schema.friendRequestParamSchema),
   userMiddleware.canDeleteFriendRequest,
   userController.deleteFriendRequest
 );
 
 router.delete(
-  "/:userId/friends/:friendId",
+  "/me/friends/:friendId",
   ZodparamValidator(schema.friendParamSchema),
   userMiddleware.canUnfriendUser,
   userController.unFriend
@@ -252,50 +239,35 @@ router.delete(
  */
 
 router.patch(
-  "/:userId/profile/display-name",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/profile/display-name",
   ZodbodyValidator(schema.updateDisplayNameSchema),
-  userMiddleware.canUpdateProfile,
   userController.patchDisplayName
 );
 
 router.patch(
-  "/:userId/profile/about-me",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/profile/about-me",
   ZodbodyValidator(schema.updateAboutMeSchema),
-  userMiddleware.canUpdateProfile,
   userController.patchAboutMe
 );
 
 router.patch(
-  "/:userId/profile/avatar",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/profile/avatar",
   userMiddleware.uploader("avatar"),
   ZodfileValidator(schema.updateProfileAvatarSchema, "avatar"),
-  userMiddleware.canUpdateProfile,
   userController.patchProfileAvatar
 );
 
 router.patch(
-  "/:userId/profile/background-avatar",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/profile/background-avatar",
   userMiddleware.uploader("backgroundAvatar"),
   ZodfileValidator(schema.updateBackgroundAvatarSchema, "backgroundAvatar"),
-  userMiddleware.canUpdateProfile,
   userController.patchBackgroundAvatar
 );
 
-router.delete(
-  "/:userId/profile/avatar",
-  ZodparamValidator(schema.userIdParamSchema),
-  userMiddleware.canUpdateProfile,
-  userController.deleteProfileAvatar
-);
+router.delete("/me/profile/avatar", userController.deleteProfileAvatar);
 
 router.delete(
-  "/:userId/profile/background-avatar",
-  ZodparamValidator(schema.userIdParamSchema),
-  userMiddleware.canUpdateProfile,
+  "/me/profile/background-avatar",
   userController.deleteBackgroundAvatar
 );
 

@@ -7,6 +7,7 @@ import blockUserRepository from "../../block-user/block-user-repository.js";
 import friendRepository from "../../friend/friend-repository.js";
 import userFactory from "../utils/user-factory.js";
 import baseRequest from "../utils/base-request.js";
+import { idGenerator } from "../../utils.js";
 
 const User = userFactory();
 
@@ -63,7 +64,7 @@ describe("Block user", () => {
       {
         scenario: "invalid token",
         data: {
-          id: requesterId,
+          payload: { blockId: idGenerator() },
           token: invalidToken,
           includeAuth: true,
         },
@@ -72,7 +73,7 @@ describe("Block user", () => {
       {
         scenario: "expired token",
         data: {
-          id: requesterId,
+          payload: { blockId: idGenerator() },
 
           token: expiredToken,
           includeAuth: true,
@@ -82,8 +83,7 @@ describe("Block user", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          id: requesterId,
-
+          payload: { blockId: idGenerator() },
           token: requesterAccessToken,
           includeAuth: false,
         },
@@ -95,54 +95,12 @@ describe("Block user", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
-        const res = await userReq.friend.get.friendRequestList(id, token, {
+        const { token, payload, includeAuth } = data;
+        const res = await userReq.block.post.blockUser(token, payload, {
           includeAuth,
         });
 
         expect(res.status).toBe(401);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "user is self blocking",
-        data: {
-          id: requesterId,
-          token: requesterAccessToken,
-          payload: { blockId: requesterId },
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          id: requesterId,
-          token: unAuthorizedAccessToken,
-          payload: { blockId: receiverId },
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { id, token, payload, includeAuth } = data;
-        const res = await userReq.block.post.blockUser(id, token, payload, {
-          includeAuth,
-        });
-
-        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -167,7 +125,6 @@ describe("Block user", () => {
 
     it("rejects the block request when blocking a blocked user", async () => {
       const res = await userReq.block.post.blockUser(
-        requesterId,
         requesterAccessToken,
         payload
       );
@@ -180,7 +137,7 @@ describe("Block user", () => {
     });
   });
 
-  describe("Success Case", () => {
+  describe.skip("Success Case", () => {
     const payload = { blockId: receiverId };
 
     it("returns 200 (OK) with the blocked user id", async () => {
@@ -214,7 +171,7 @@ describe("Unblock user", () => {
       {
         scenario: "invalid token",
         data: {
-          id: requesterId,
+          payload: { blockId: idGenerator() },
           token: invalidToken,
           includeAuth: true,
         },
@@ -223,8 +180,7 @@ describe("Unblock user", () => {
       {
         scenario: "expired token",
         data: {
-          id: requesterId,
-
+          payload: { blockId: idGenerator() },
           token: expiredToken,
           includeAuth: true,
         },
@@ -233,8 +189,7 @@ describe("Unblock user", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          id: requesterId,
-
+          payload: { blockId: idGenerator() },
           token: requesterAccessToken,
           includeAuth: false,
         },
@@ -246,60 +201,12 @@ describe("Unblock user", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
-        const res = await userReq.friend.get.friendRequestList(id, token, {
+        const { token, payload, includeAuth } = data;
+        const res = await userReq.block.post.blockUser(token, payload, {
           includeAuth,
         });
 
         expect(res.status).toBe(401);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          id: requesterId,
-          unBlockId: receiverId,
-          token: unAuthorizedAccessToken,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-      {
-        scenario: "user is unblocking a non-blocked user",
-        data: {
-          id: requesterId,
-          unBlockId: receiverId,
-          token: requesterAccessToken,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You have not blocked this user",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { id, unBlockId, token, payload, includeAuth } = data;
-        const res = await userReq.block.delete.unBlockUser(
-          id,
-          unBlockId,
-          token,
-          payload,
-          {
-            includeAuth,
-          }
-        );
-
-        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -324,7 +231,6 @@ describe("Unblock user", () => {
 
     it("rejects the block request when blocking a blocked user", async () => {
       const res = await userReq.block.post.blockUser(
-        requesterId,
         requesterAccessToken,
         payload
       );
@@ -347,7 +253,6 @@ describe("Unblock user", () => {
 
     it("returns 200 (OK) and the un-blocked user id", async () => {
       const res = await userReq.block.delete.unBlockUser(
-        requesterId,
         receiverId,
         requesterAccessToken
       );

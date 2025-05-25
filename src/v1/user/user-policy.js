@@ -29,18 +29,8 @@ const checkIsSamePerson = ({ currentUser, requester }) => {
   };
 };
 
-const checkUpdateUsernamePermission = ({ currentUser, requester }) => {
-  const invalidRequest =
-    !currentUser.id ||
-    Number.isNaN(Number(requester.accountLevel)) ||
-    !requester?.id;
-
-  if (invalidRequest) {
-    throw new AuthError("Invalid user data provided", httpStatus.BAD_REQUEST);
-  }
-
-  const isUnauthorizedUser =
-    currentUser.id !== requester?.id || requester.accountLevel <= 0;
+const checkUpdateUsernamePermission = (user) => {
+  const isUnauthorizedUser = user.accountLevel <= 0;
 
   if (isUnauthorizedUser) {
     throw new AuthError(
@@ -55,23 +45,8 @@ const checkUpdateUsernamePermission = ({ currentUser, requester }) => {
   };
 };
 
-const checkUpdateEmailPermission = ({ currentUser, requester }) => {
-  const invalidRequest =
-    !currentUser.id ||
-    Number.isNaN(Number(requester.accountLevel)) ||
-    !requester?.id;
-
-  if (invalidRequest) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser =
-    currentUser.id !== requester?.id || requester.accountLevel <= 0;
+const checkUpdateEmailPermission = (user) => {
+  const isUnauthorizedUser = user.accountLevel <= 0;
 
   if (isUnauthorizedUser) {
     throw new AuthError(
@@ -86,23 +61,8 @@ const checkUpdateEmailPermission = ({ currentUser, requester }) => {
   };
 };
 
-const checkUpdatePasswordPermission = ({ currentUser, requester }) => {
-  const invalidRequest =
-    !currentUser.id ||
-    Number.isNaN(Number(requester.accountLevel)) ||
-    !requester?.id;
-
-  if (invalidRequest) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser =
-    currentUser.id !== requester?.id || requester.accountLevel <= 0;
+const checkUpdatePasswordPermission = (user) => {
+  const isUnauthorizedUser = user.accountLevel <= 0;
 
   if (isUnauthorizedUser) {
     throw new AuthError(
@@ -144,57 +104,25 @@ const checkUpdateProfilePermission = ({ currentUser, requester }) => {
 };
 
 const checkSendFriendRequestPermission = ({
-  currentUser,
-  requester,
+  user,
   targetUser,
-  requesterBlockList,
+  userBlockList,
   targetUserBlockList,
   hasOngoingFriendRequest,
-  requesterFriends,
+  userFriends,
 }) => {
-  const isInvalidRequest =
-    !currentUser.id ||
-    !requester?.id ||
-    !targetUser?.id ||
-    !Array.isArray(requesterBlockList) ||
-    !Array.isArray(targetUserBlockList) ||
-    !Array.isArray(requesterFriends) ||
-    typeof hasOngoingFriendRequest !== "boolean";
-
-  if (isInvalidRequest) {
-    throw new ValidationError(
-      "Invalid user data provided",
-
-      null,
-
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser = currentUser.id !== requester.id;
-
-  if (isUnauthorizedUser) {
-    throw new AuthError(
+  if (user.id === targetUser.id)
+    throw new APIError(
       "You are not authorized to perform this action",
       httpStatus.FORBIDDEN
     );
-  }
 
-  const isSamePerson = requester.id === targetUser.id;
-
-  if (isSamePerson) {
-    throw new AuthError(
-      "You are not authorized to perform this action",
-      httpStatus.FORBIDDEN
-    );
-  }
-
-  const isTargetUserBlock = requesterBlockList.some(
+  const isTargetUserBlock = userBlockList.some(
     (block) => block.id === targetUser.id
   );
 
   const isRequesterBlock = targetUserBlockList.some(
-    (block) => block.id === requester.id
+    (block) => block.id === user.id
   );
 
   if (isTargetUserBlock) {
@@ -218,7 +146,7 @@ const checkSendFriendRequestPermission = ({
     );
   }
 
-  const isAlreadyFriend = requesterFriends.some(
+  const isAlreadyFriend = userFriends.some(
     (friend) => friend.id === targetUser.id
   );
 
@@ -235,38 +163,8 @@ const checkSendFriendRequestPermission = ({
   };
 };
 
-const checkAcceptFriendRequestPermission = ({
-  currentUser,
-  requester,
-  friendRequest,
-}) => {
-  const invalidFriendRequest = !friendRequest;
-
-  if (invalidFriendRequest) {
-    throw new APIError("Friend request does not exist", httpStatus.NOT_FOUND);
-  }
-
-  const hasMissingIds =
-    !currentUser.id || !requester?.id || !friendRequest.receiver?.id;
-
-  if (hasMissingIds) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser = currentUser.id !== requester.id;
-
-  if (isUnauthorizedUser) {
-    throw new AuthError(
-      "You are not authorized to perform this action",
-      httpStatus.FORBIDDEN
-    );
-  }
-
-  const isNotTheReceiver = requester.id !== friendRequest.receiver.id;
+const checkAcceptFriendRequestPermission = ({ user, friendRequest }) => {
+  const isNotTheReceiver = user.id !== friendRequest.receiver.id;
 
   if (isNotTheReceiver) {
     throw new AuthError(
@@ -281,43 +179,10 @@ const checkAcceptFriendRequestPermission = ({
   };
 };
 
-const checkDeleteFriendRequestPermission = ({
-  currentUser,
-  requester,
-  friendRequest,
-}) => {
-  const invalidFriendRequest = !friendRequest;
-
-  if (invalidFriendRequest) {
-    throw new APIError("Friend request does not exist", httpStatus.NOT_FOUND);
-  }
-
-  const hasMissingIds =
-    !currentUser.id ||
-    !requester?.id ||
-    !friendRequest.requester?.id ||
-    !friendRequest.receiver?.id;
-
-  if (hasMissingIds) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser = currentUser.id !== requester.id;
-
-  if (isUnauthorizedUser) {
-    throw new AuthError(
-      "You are not authorized to perform this action",
-      httpStatus.FORBIDDEN
-    );
-  }
-
+const checkDeleteFriendRequestPermission = ({ user, friendRequest }) => {
   const isNotTheRequesterOrReceiver =
-    requester.id !== friendRequest.requester.id &&
-    requester.id !== friendRequest.receiver.id;
+    user.id !== friendRequest.requester.id ||
+    user.id !== friendRequest.receiver.id;
 
   if (isNotTheRequesterOrReceiver) {
     throw new AuthError(
@@ -332,36 +197,7 @@ const checkDeleteFriendRequestPermission = ({
   };
 };
 
-const checkUnFriendPermission = ({
-  currentUser,
-  requester,
-  targetUser,
-  friends,
-}) => {
-  const isInvalidRequest =
-    !currentUser.id ||
-    !requester?.id ||
-    !targetUser.id ||
-    !Array.isArray(friends);
-
-  if (isInvalidRequest) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser = currentUser.id !== requester.id;
-
-  if (isUnauthorizedUser) {
-    throw new AuthError(
-      "You are not authorized to perform this action",
-      httpStatus.FORBIDDEN
-    );
-  }
-
+const checkUnFriendPermission = ({ targetUser, friends }) => {
   const isNotAFriend =
     friends.some((friend) => friend.id === targetUser.id) === false;
 
@@ -378,46 +214,8 @@ const checkUnFriendPermission = ({
   };
 };
 
-const checkBlockUserPermission = ({
-  currentUser,
-  requester,
-  targetUser,
-  requesterBlockList,
-}) => {
-  const invalidRequest =
-    !requester?.id ||
-    !targetUser?.id ||
-    !currentUser?.id ||
-    !Array.isArray(requesterBlockList);
-
-  if (invalidRequest) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser = currentUser.id !== requester.id;
-
-  if (isUnauthorizedUser) {
-    throw new AuthError(
-      "You are not authorized to perform this action",
-      httpStatus.FORBIDDEN
-    );
-  }
-
-  const isSamePerson = requester.id === targetUser.id;
-
-  if (isSamePerson) {
-    throw new AuthError(
-      "You are not authorized to perform this action",
-      httpStatus.FORBIDDEN
-    );
-  }
-
-  const isAlreadyBlocked = requesterBlockList.some(
+const checkBlockUserPermission = ({ targetUser, userBlockList }) => {
+  const isAlreadyBlocked = userBlockList.some(
     (block) => block.id === targetUser.id
   );
 
@@ -434,38 +232,9 @@ const checkBlockUserPermission = ({
   };
 };
 
-const checkUnBlockUserPermission = ({
-  currentUser,
-  requester,
-  targetUser,
-  requesterBlockList,
-}) => {
-  const invalidRequest =
-    !requester?.id ||
-    !targetUser?.id ||
-    !currentUser?.id ||
-    !Array.isArray(requesterBlockList);
-
-  if (invalidRequest) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser = currentUser.id !== requester.id;
-
-  if (isUnauthorizedUser) {
-    throw new AuthError(
-      "You are not authorized to perform this action",
-      httpStatus.FORBIDDEN
-    );
-  }
-
+const checkUnBlockUserPermission = ({ targetUser, userBlockList }) => {
   const isNotBlocked =
-    requesterBlockList.some((block) => block.id === targetUser.id) === false;
+    userBlockList.some((block) => block.id === targetUser.id) === false;
 
   if (isNotBlocked) {
     throw new AuthError("You have not blocked this user", httpStatus.FORBIDDEN);
@@ -477,38 +246,19 @@ const checkUnBlockUserPermission = ({
   };
 };
 
-const checkDeleteAccountPermission = ({
-  currentUser,
-  requester,
-  ownedChats,
-}) => {
-  const invalidRequest =
-    !currentUser.id ||
-    !requester?.id ||
-    Number.isNaN(Number(requester.accountLevel)) ||
-    !Array.isArray(ownedChats);
-
-  if (invalidRequest) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser =
-    currentUser.id !== requester?.id || requester.accountLevel <= 0;
-
-  if (isUnauthorizedUser) {
+const checkDeleteAccountPermission = ({ user, ownedChats }) => {
+  if (ownedChats.length) {
     throw new AuthError(
-      "You are not authorized to perform this action",
+      "Transfer your chats ownership before deleting your account",
       httpStatus.FORBIDDEN
     );
   }
 
-  if (ownedChats.length) {
-    throw new AuthError(
-      "Transfer your chats ownership before deleting your account",
+  const isDemoUser = user.accountLevel <= 0;
+
+  if (isDemoUser) {
+    throw new APIError(
+      "You are not authorized to perform this action",
       httpStatus.FORBIDDEN
     );
   }
@@ -519,31 +269,11 @@ const checkDeleteAccountPermission = ({
   };
 };
 
-const checkGoogleUnlinkPermissions = ({ currentUser, requester, openId }) => {
+const checkGoogleUnlinkPermissions = (user, openId) => {
   const hasNoGoogleAuth = !openId;
 
   if (hasNoGoogleAuth) {
     throw new AuthError("Google oauth does not exist", httpStatus.NOT_FOUND);
-  }
-
-  const hasMissingIds = !currentUser?.id || !requester?.id || !openId.user?.id;
-
-  if (hasMissingIds) {
-    throw new ValidationError(
-      "Invalid user data provided",
-      null,
-
-      httpStatus.BAD_REQUEST
-    );
-  }
-
-  const isUnauthorizedUser = currentUser.id !== requester.id;
-
-  if (isUnauthorizedUser) {
-    throw new AuthError(
-      "You are not authorized to perform this action",
-      httpStatus.FORBIDDEN
-    );
   }
 
   const noBackupLogin = !openId.user?.password;
