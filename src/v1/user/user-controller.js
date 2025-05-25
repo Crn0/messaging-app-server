@@ -159,13 +159,10 @@ const createPatchProfileAvatar =
 
     const data = { userId, file };
 
-    const { error } = await tryCatchAsync(async () =>
-      profileService.updateProfileAvatarByUserId(data)
+    const { error } = await tryCatchAsync(
+      async () => profileService.updateProfileAvatarByUserId(data),
+      () => unlink(file.path)
     );
-
-    if (process.env.NODE_ENV !== "test") {
-      unlink(file.path);
-    }
 
     if (error) {
       return next(error);
@@ -182,12 +179,9 @@ const createPatchBackgroundAvatar =
 
     const data = { userId, file };
 
-    if (process.env.NODE_ENV !== "test") {
-      unlink(file.path);
-    }
-
-    const { error } = await tryCatchAsync(async () =>
-      profileService.updateBackgroundAvatarByUserId(data)
+    const { error } = await tryCatchAsync(
+      async () => profileService.updateBackgroundAvatarByUserId(data),
+      () => unlink(file.path)
     );
 
     if (error) {
