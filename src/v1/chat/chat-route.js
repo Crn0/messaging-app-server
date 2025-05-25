@@ -293,6 +293,66 @@ router.delete(
   chatController.deleteRoleMember
 );
 
+router.get(
+  "/:chatId/roles",
+  ZodparamValidator(schema.chatParamSchema),
+  chatMiddleware.canViewRole,
+  chatController.getRoles
+);
+
+router.get(
+  "/:chatId/roles/:roleId",
+  ZodparamValidator(schema.roleParamSchema),
+  chatMiddleware.canViewRole,
+  chatController.getRole
+);
+
+router.post(
+  "/:chatId/roles",
+  ZodparamValidator(schema.chatParamSchema),
+  ZodbodyValidator(schema.roleFormSchema),
+  chatMiddleware.canCreateRole,
+  chatController.createRole
+);
+
+router.patch(
+  "/:chatId/roles/role-levels",
+  ZodparamValidator(schema.chatParamSchema),
+  ZodbodyValidator(schema.patchRoleLevelsSchema),
+  chatMiddleware.canUpdateRoleLevels,
+  chatController.updateRoleLevels
+);
+
+router.patch(
+  "/:chatId/roles/:roleId",
+  ZodparamValidator(schema.roleParamSchema),
+  ZodbodyValidator(schema.patchRoleMetaDataSchema),
+  chatMiddleware.canUpdateRoleMetaData,
+  chatController.updateRoleMetaData
+);
+
+router.patch(
+  "/:chatId/roles/:roleId/members",
+  ZodparamValidator(schema.roleParamSchema),
+  ZodbodyValidator(schema.patchRoleMembersSchema),
+  chatMiddleware.canUpdateRoleMembers,
+  chatController.updateRoleMembers
+);
+
+router.delete(
+  "/:chatId/roles/:roleId",
+  ZodparamValidator(schema.roleParamSchema),
+  chatMiddleware.canDeleteRole,
+  chatController.deleteRole
+);
+
+router.delete(
+  "/:chatId/roles/:roleId/members/:memberId",
+  ZodparamValidator(schema.roleMemberParamSchema),
+  chatMiddleware.canUpdateRoleMembers,
+  chatController.deleteRoleMember
+);
+
 // =================
 // CHAT MESSAGE ROUTE
 // =================

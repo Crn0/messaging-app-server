@@ -529,7 +529,6 @@ const createCanUpdateRoleMetaData =
 
     chat.roles = chatRoles;
     user.roles = userRoles;
-
     const inputKeys = Object.keys(req.body);
 
     const roleFields = ["name", "permissions"].reduce((result, key) => {
