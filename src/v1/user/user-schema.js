@@ -120,12 +120,10 @@ const tokenParamSchema = z.object({
 });
 
 const friendRequestParamSchema = z.object({
-  userId: idSchema,
   friendRequestId: idSchema,
 });
 
 const friendParamSchema = z.object({
-  userId: idSchema,
   friendId: idSchema,
 });
 
