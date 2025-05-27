@@ -4,7 +4,7 @@ import APIError from "../../../errors/api-error.js";
 const createInsertFriendRequest =
   ({ friendRequestRepository, userService }) =>
   async (data) => {
-    const { requesterId, receiverId, requesterFriends } = data;
+    const { requesterId, receiverId } = data;
 
     await Promise.all([
       userService.getUserById(requesterId),
@@ -15,34 +15,6 @@ const createInsertFriendRequest =
       userService.getUserPkById(requesterId),
       userService.getUserPkById(receiverId),
     ]);
-
-    if (!requesterPk || !receiverPk) {
-      throw new APIError("User does not exist", httpStatus.NOT_FOUND);
-    }
-
-    const isAlreadyFriend = requesterFriends.some(
-      (friend) => friend.id === receiverId
-    );
-
-    if (isAlreadyFriend) {
-      throw new APIError(
-        "You are already friend with this user",
-        httpStatus.CONFLICT
-      );
-    }
-
-    const isFriendRequestExist =
-      await friendRequestRepository.isFriendRequestExist({
-        requesterPk,
-        receiverPk,
-      });
-
-    if (isFriendRequestExist) {
-      throw new APIError(
-        "There's an ongoing friend request",
-        httpStatus.CONFLICT
-      );
-    }
 
     const friendRequest = await friendRequestRepository.createFriendRequest({
       requesterPk,
