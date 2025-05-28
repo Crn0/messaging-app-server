@@ -884,4 +884,5 @@ export {
   createGetChatMembersById,
   createGetChatMessagesById,
   createGetUserMessagesById,
+  createDeleteMessageById,
 };
