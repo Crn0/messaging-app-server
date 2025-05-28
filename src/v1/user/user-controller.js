@@ -10,10 +10,9 @@ const createMe =
   ({ userService, utils }) =>
   async (req, res, next) => {
     const userId = req.user.id;
-    const { include } = req.query;
 
     const { error, data: user } = await tryCatchAsync(async () =>
-      userService.meById(userId, include)
+      userService.meById(userId)
     );
 
     if (error) {

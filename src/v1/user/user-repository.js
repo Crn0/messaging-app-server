@@ -1,25 +1,6 @@
 import client from "../../db/client.js";
 import { toData, toEntity } from "./user-mapper.js";
-
-const defaulInclude = {
-  profile: {
-    select: {
-      displayName: true,
-      avatar: {
-        select: {
-          url: true,
-          images: { select: { url: true, format: true, size: true } },
-        },
-      },
-      backgroundAvatar: {
-        select: {
-          url: true,
-          images: { select: { url: true, format: true, size: true } },
-        },
-      },
-    },
-  },
-};
+import field from "./include.js";
 
 const createUser = async ({
   username,
@@ -35,19 +16,15 @@ const createUser = async ({
     password,
     accountLevel,
   });
-  const include = { ...defaulInclude };
+  const include = { ...field.default };
 
   const user = await client.user.create({ data, include });
 
   return toEntity(user);
 };
 
-const findMeById = async (id, query) => {
-  let include = { ...defaulInclude };
-
-  if (typeof query === "object") {
-    include = { ...include, ...query };
-  }
+const findMeById = async (id) => {
+  const include = { ...field.default };
 
   const user = await client.user.findUnique({
     include,
@@ -60,7 +37,7 @@ const findMeById = async (id, query) => {
 };
 
 const findUserById = async (id) => {
-  const include = { ...defaulInclude };
+  const include = { ...field.default };
 
   const user = await client.user.findUnique({
     include,
@@ -73,7 +50,7 @@ const findUserById = async (id) => {
 };
 
 const findUserByUsername = async (username) => {
-  const include = { ...defaulInclude };
+  const include = { ...field.default };
 
   const user = await client.user.findUnique({
     include,
@@ -86,7 +63,7 @@ const findUserByUsername = async (username) => {
 };
 
 const findUserByEmail = async (email) => {
-  const include = { ...defaulInclude };
+  const include = { ...field.default };
 
   const user = await client.user.findUnique({
     include,
@@ -134,7 +111,7 @@ const findUserOwnedChatsById = async (id) => {
 };
 
 const updateUsernameById = async (id, username) => {
-  const include = { ...defaulInclude };
+  const include = { ...field.default };
 
   const user = await client.user.update({
     include,
@@ -148,7 +125,7 @@ const updateUsernameById = async (id, username) => {
 };
 
 const updateEmailById = async (id, email) => {
-  const include = { ...defaulInclude };
+  const include = { ...field.default };
 
   const user = await client.user.update({
     include,
@@ -162,7 +139,7 @@ const updateEmailById = async (id, email) => {
 };
 
 const updatePasswordById = async (id, password) => {
-  const include = { ...defaulInclude };
+  const include = { ...field.default };
 
   const user = await client.user.update({
     include,
@@ -176,7 +153,7 @@ const updatePasswordById = async (id, password) => {
 };
 
 const deleteUserById = async (id) => {
-  const include = { ...defaulInclude };
+  const include = { ...field.default };
 
   const user = await client.user.delete({
     include,

@@ -21,65 +21,6 @@ const idGenerator = () => uuidv7();
 const randomUsername = ({ firstName, lastName }) =>
   faker.internet.username({ firstName, lastName });
 
-const buildIncludeQuery = (queries, value) => {
-  if (!Array.isArray(queries)) return null;
-
-  return queries.reduce((result, path) => {
-    const fields = path.split(".");
-
-    let temp = result;
-
-    fields.forEach((field, index) => {
-      const isRootField = index === 0 && !temp?.[field];
-      const isNestedField = index !== 0 && !temp?.select?.[field];
-
-      if (isRootField) {
-        temp[field] = {};
-        temp[field].select = {};
-      }
-
-      if (isNestedField) {
-        temp.select[field] =
-          index === fields.length - 1 ? value : { select: {} };
-      }
-
-      if (index === 0) {
-        temp = temp[field];
-
-        return;
-      }
-
-      temp = temp?.select[field];
-    });
-
-    return result;
-  }, {});
-};
-
-const normalizeInclude = (include) => {
-  if (typeof include !== "string") {
-    return null;
-  }
-
-  return include.split(",").map((field) => {
-    let clone = field;
-
-    if (clone.includes("avatar")) {
-      clone = clone.replace("avatar", "avatar.images.url");
-    }
-
-    if (clone.includes("chats")) {
-      clone = clone.replace("chats", "chats.chat");
-    }
-
-    if (clone.includes("members")) {
-      clone = clone.replace("members", "members.user");
-    }
-
-    return clone;
-  });
-};
-
 const removeFields = (obj, fieldsToRemove) => {
   if (!Array.isArray(fieldsToRemove)) {
     throw new Error(
@@ -94,11 +35,4 @@ const removeFields = (obj, fieldsToRemove) => {
   );
 };
 
-export {
-  removeTempImages,
-  idGenerator,
-  randomUsername,
-  buildIncludeQuery,
-  normalizeInclude,
-  removeFields,
-};
+export { removeTempImages, idGenerator, randomUsername, removeFields };

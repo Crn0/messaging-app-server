@@ -52,13 +52,9 @@ const createGetUserPkbyId =
   };
 
 const createMeById =
-  ({ userRepository, includeBuilder }) =>
-  async (id, include) => {
-    const normalizedInclude = includeBuilder.normalizeInclude(include);
-
-    const query = includeBuilder.buildIncludeQuery(normalizedInclude, true);
-
-    const user = await userRepository.findMeById(id, query);
+  ({ userRepository }) =>
+  async (id) => {
+    const user = await userRepository.findMeById(id);
 
     if (!user) throw new APIError("User not found", httpStatus.NOT_FOUND);
 

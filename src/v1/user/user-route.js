@@ -30,17 +30,11 @@ import {
 } from "../auth/auth-middleware.js";
 import {
   ZodbodyValidator,
-  ZodqueryValidator,
   ZodparamValidator,
   ZodfileValidator,
 } from "../middleware/index.js";
 import { obtuseEmail, verifyPassword, hashPassword } from "../helpers/index.js";
-import {
-  idGenerator,
-  buildIncludeQuery,
-  normalizeInclude,
-  removeFields,
-} from "./utils.js";
+import { idGenerator, removeFields } from "./utils.js";
 
 const dirname = import.meta?.dirname;
 
@@ -77,10 +71,6 @@ const jwtUtils = createJwtUtils({
 const userService = initUserService({
   userRepository,
   passwordManager: { verifyPassword, hashPassword },
-  includeBuilder: {
-    buildIncludeQuery,
-    normalizeInclude,
-  },
 });
 
 const profileService = initProfileService({
@@ -155,7 +145,7 @@ const readAcessToken = createAccessTokenMiddleware({ jwtUtils });
 router.use(readAcessToken);
 router.use(protectRoute("accessToken"));
 
-router.get("/me", ZodqueryValidator(schema.querySchema), userController.me);
+router.get("/me", userController.me);
 
 router.patch(
   "/me/username",
