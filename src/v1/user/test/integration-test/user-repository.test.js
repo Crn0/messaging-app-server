@@ -68,19 +68,6 @@ describe("User repository", () => {
   });
 
   describe("findMeById", () => {
-    it("finds the user by id and returns a user object with the included fields", async () => {
-      const { id } = normalUser1.data;
-      const include = {
-        friends: true,
-        chats: true,
-      };
-
-      const userMe = await userRepository.findMeById(id, include);
-
-      expect(userMe).toHaveProperty("friends");
-      expect(userMe).toHaveProperty("chats");
-    });
-
     it("should return null if the user does not exist", async () => {
       const userMe = await userRepository.findMeById(testId, {
         friends: true,

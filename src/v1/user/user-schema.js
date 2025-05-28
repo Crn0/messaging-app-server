@@ -13,21 +13,6 @@ const usernameRegex = /^[a-zA-Z0-9{_,.}]+$/;
 // https://regexr.com/8dm04
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
 
-const allowedParams = new Set([
-  "friends.id",
-  "friends.username",
-  "friends.profile.displayName",
-  "friends.profile.avatar",
-  "blockedUsers.id",
-  "chats.id",
-  "chats.name",
-  "chats.avatar",
-  "chats.type",
-  "chats.members.id",
-  "chats.members.username",
-  "chats.members.profile.avatar",
-]);
-
 const idSchema = z
   .string()
   .uuid({ message: "The provided ID is not a valid UUID format" });
@@ -82,50 +67,15 @@ const multerFileSchema = z.object(
   { message: "You must upload a file" }
 );
 
-const includeSchema = z
-  .string()
-  .transform((value) => value.replace(/\s+/g, ""))
-  .refine(
-    (data) => {
-      const params = data.split(",");
-
-      return params.every((param) => allowedParams.has(param));
-    },
-    {
-      message: `Invalid "include" query parameter. Allowed parameters are: ${[...allowedParams]}`,
-    }
-  )
-  .refine(
-    (data) => {
-      const includeMap = {};
-
-      return data.split(",").every((param) => {
-        if (includeMap[param]) {
-          return false;
-        }
-
-        includeMap[param] = true;
-
-        return true;
-      });
-    },
-    {
-      message: "Duplicate values found in 'include' query parameter.",
-    }
-  )
-  .optional();
-
 const tokenParamSchema = z.object({
   token: jwtSchema,
 });
 
 const friendRequestParamSchema = z.object({
-  userId: idSchema,
   friendRequestId: idSchema,
 });
 
 const friendParamSchema = z.object({
-  userId: idSchema,
   friendId: idSchema,
 });
 
@@ -216,10 +166,6 @@ const passwordResetSchema = z.object({
   }),
 });
 
-const querySchema = z.object({
-  include: includeSchema,
-});
-
 const passwordResetQueryTokenSchema = z.object({
   token: jwtSchema,
 });
@@ -242,6 +188,5 @@ export {
   updateProfileAvatarSchema,
   updateBackgroundAvatarSchema,
   passwordResetSchema,
-  querySchema,
   passwordResetQueryTokenSchema,
 };

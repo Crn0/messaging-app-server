@@ -10,10 +10,9 @@ const createMe =
   ({ userService, utils }) =>
   async (req, res, next) => {
     const userId = req.user.id;
-    const { include } = req.query;
 
     const { error, data: user } = await tryCatchAsync(async () =>
-      userService.meById(userId, include)
+      userService.meById(userId)
     );
 
     if (error) {
@@ -49,15 +48,13 @@ const createGetFriendRequest =
 const createSendFriendRequest =
   ({ friendRequestService }) =>
   async (req, res, next) => {
-    const { userId: requesterId } = req.params;
+    const { id: requesterId } = req.user;
     const { friendId: receiverId } = req.body;
-    const { requesterFriends } = req.ctx;
 
     const { error, data: friendRequest } = await tryCatchAsync(async () =>
       friendRequestService.createFriendRequest({
         requesterId,
         receiverId,
-        requesterFriends,
       })
     );
 
@@ -308,12 +305,10 @@ const createBlockUser =
   async (req, res, next) => {
     const { id: requesterId } = req.user;
     const { blockId: receiverId } = req.body;
-    const { requesterBlockList } = req.ctx;
 
     const data = {
       requesterId,
       receiverId,
-      requesterBlockList,
     };
 
     const { error: blockUserError, data: blockUserData } = await tryCatchAsync(
@@ -348,12 +343,10 @@ const createUnBlockUser =
   async (req, res, next) => {
     const requesterId = req.user.id;
     const { unBlockId: receiverId } = req.params;
-    const { requesterBlockList } = req.ctx;
 
     const data = {
       requesterId,
       receiverId,
-      requesterBlockList,
     };
 
     const { error, data: unBlockUserData } = await tryCatchAsync(async () =>
@@ -369,6 +362,20 @@ const createUnBlockUser =
     return res.status(httpStatus.OK).json({
       id: receiver.id,
     });
+  };
+
+const createDeleteAccount =
+  ({ userService }) =>
+  async (req, res, next) => {
+    const userId = req.user.id;
+
+    const { error } = await tryCatchAsync(() =>
+      userService.deleteUserById(userId)
+    );
+
+    if (error) return next(error);
+
+    return res.sendStatus(httpStatus.NO_CONTENT);
   };
 
 const createUnlinkGoogle =
@@ -420,6 +427,7 @@ export default (depenpendies) => {
 
   const unBlockUser = createUnBlockUser(depenpendies);
 
+  const deleteAccount = createDeleteAccount(depenpendies);
   const unlinkGoogle = createUnlinkGoogle(depenpendies);
 
   return Object.freeze({
@@ -437,6 +445,7 @@ export default (depenpendies) => {
     unFriend,
     blockUser,
     unBlockUser,
+    deleteAccount,
     unlinkGoogle,
     deleteProfileAvatar,
     deleteBackgroundAvatar,

@@ -257,3 +257,8 @@ export default (dependencies) => {
     deleteBackgroundAvatarByUserId,
   });
 };
+
+export {
+  createDeleteProfileAvatarByUserId,
+  createDeleteBackgroundAvatarByUserId,
+};

@@ -71,23 +71,6 @@ describe("Block user service", () => {
       expect(receiver.blockedBy).toContainEqual({ id: data.requesterId });
     });
 
-    it("should throw ConflictError when blocking an already blocked user", async () => {
-      const data = {
-        requesterId: createdUser01.data.id,
-        receiverId: createdUser02.data.id,
-        requesterBlockList: [{ id: createdUser02.data.id }],
-      };
-
-      const user = blockUserService.blockUserById(data);
-
-      await expect(user).rejects.toThrowError(
-        expect.objectContaining({
-          message: "You have already blocked this user",
-          httpCode: 409,
-        })
-      );
-    });
-
     it("should throw NotFoundError when the receiver user does not exist", async () => {
       const data = {
         requesterId: createdUser01.data.id,

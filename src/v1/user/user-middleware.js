@@ -1,5 +1,6 @@
 import { tryCatchAsync, tryCatchSync } from "../helpers/index.js";
 import ValidationError from "../../errors/validation-error.js";
+import APIError from "../../errors/api-error.js";
 
 const createUploader =
   ({ multer, MulterError }) =>
@@ -44,12 +45,10 @@ const createCanUpdateUsername =
       return next(userError);
     }
 
-    const { error } = tryCatchSync(() => {
-      userPolicy.checkUpdateUsernamePermission(user);
-    });
+    const { success, code, message } = userPolicy.checkUpdateUsername(user);
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -92,12 +91,10 @@ const createCanUpdatePassword =
       return next(userError);
     }
 
-    const { error } = tryCatchSync(() => {
-      userPolicy.checkUpdatePasswordPermission(user);
-    });
+    const { success, code, message } = userPolicy.checkUpdatePassword(user);
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -109,44 +106,59 @@ const createCanSendFriendRequest =
     const { user } = req;
     const targetUser = { id: req.body.friendId };
 
-    const { error: invalidDataError, data } = await tryCatchAsync(async () =>
-      Promise.all([
-        blockUserService.getUserBlockList(user.id),
-        blockUserService.getUserBlockList(targetUser.id),
-        friendRequestService.isFriendRequestExist(user.id, targetUser.id),
-        friendService.getUserFriendsById(user.id),
-      ])
-    );
+    const [
+      userFriendsResult,
+      userBlockListResult,
+      targetUserBLockListResult,
+      pendingFriendRequestResult,
+    ] = await Promise.all([
+      tryCatchAsync(() => friendService.getUserFriendsById(user.id)),
+      tryCatchAsync(() => blockUserService.getUserBlockList(user.id)),
+      tryCatchAsync(() => blockUserService.getUserBlockList(targetUser.id)),
+      tryCatchAsync(() =>
+        friendRequestService.isFriendRequestExist(user.id, targetUser.id)
+      ),
+    ]);
 
-    if (invalidDataError) {
-      return next(invalidDataError);
+    const { error: userFriendsError, data: userFriends } = userFriendsResult;
+
+    const { error: userBlockListError, data: userBlockList } =
+      userBlockListResult;
+
+    const { error: targetUserBLockListError, data: targetUserBlockList } =
+      targetUserBLockListResult;
+
+    const {
+      error: hasPendingFriendRequestError,
+      data: hasPendingFriendRequest,
+    } = pendingFriendRequestResult;
+
+    if (
+      userFriendsError ||
+      userBlockListError ||
+      targetUserBLockListError ||
+      hasPendingFriendRequestError
+    ) {
+      return next(
+        userFriendsError ||
+          userBlockListError ||
+          targetUserBLockListError ||
+          hasPendingFriendRequestError
+      );
     }
 
-    const [
-      userBlockList,
-      targetUserBlockList,
-      hasOngoingFriendRequest,
-      userFriends,
-    ] = data;
+    user.friends = userFriends;
+    user.blockedUsers = userBlockList;
+    targetUser.blockedUsers = targetUserBlockList;
 
-    req.ctx = {
-      ...req.ctx,
-      userFriends,
-    };
-
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkSendFriendRequestPermission({
-        user,
-        targetUser,
-        userBlockList,
-        targetUserBlockList,
-        hasOngoingFriendRequest,
-        userFriends,
-      })
+    const { success, code, message } = userPolicy.checkSendFriendRequest(
+      user,
+      targetUser,
+      hasPendingFriendRequest
     );
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -167,15 +179,13 @@ const createCanAcceptFriendRequest =
       return next(friendRequestError);
     }
 
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkAcceptFriendRequestPermission({
-        user,
-        friendRequest,
-      })
+    const { success, code, message } = userPolicy.checkAcceptFriendRequest(
+      user,
+      friendRequest
     );
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -196,15 +206,13 @@ const createCanDeleteFriendRequest =
       return next(friendRequestError);
     }
 
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkDeleteFriendRequestPermission({
-        user,
-        friendRequest,
-      })
+    const { success, code, message } = userPolicy.checkDeleteFriendRequest(
+      user,
+      friendRequest
     );
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -245,20 +253,15 @@ const createCanBlockUser =
 
     const userBlockList = await blockUserService.getUserBlockList(user.id);
 
-    req.ctx = {
-      ...req.ctx,
-      userBlockList,
-    };
+    user.blockedUsers = userBlockList;
 
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkBlockUserPermission({
-        targetUser,
-        userBlockList,
-      })
+    const { success, code, message } = userPolicy.checkBlockUser(
+      user,
+      targetUser
     );
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -272,20 +275,15 @@ const createCanUnBlockUser =
 
     const userBlockList = await blockUserService.getUserBlockList(user.id);
 
-    req.ctx = {
-      ...req.ctx,
-      userBlockList,
-    };
+    user.blockedUsers = userBlockList;
 
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkUnBlockUserPermission({
-        targetUser,
-        userBlockList,
-      })
+    const { success, code, message } = userPolicy.checkUnBlockUser(
+      user,
+      targetUser
     );
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -305,17 +303,13 @@ const createCanDeleteAccount =
 
     const ownedChats = await userService.getUserOwnedChatsById(user.id);
 
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkDeleteAccountPermission({
-        user,
-        ownedChats,
-      })
-    );
+    user.ownedChats = ownedChats;
 
-    if (error) {
-      return next(error);
+    const { success, code, message } = userPolicy.checkDeleteAccount(user);
+
+    if (!success) {
+      return next(new APIError(message, code));
     }
-
     return next();
   };
 

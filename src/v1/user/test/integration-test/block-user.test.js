@@ -106,6 +106,20 @@ describe("Block user", () => {
     );
   });
 
+  describe("Forbidden Errors", () => {
+    it("rejects the request when the user is blocking themselves", async () => {
+      const res = await userReq.block.post.blockUser(requesterAccessToken, {
+        blockId: requesterId,
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toMatchObject({
+        code: 403,
+        message: "You cannot block yourself",
+      });
+    });
+  });
+
   describe("Conflict Errors", () => {
     const payload = { blockId: unAuthorizedId };
 
@@ -137,12 +151,11 @@ describe("Block user", () => {
     });
   });
 
-  describe.skip("Success Case", () => {
+  describe("Success Case", () => {
     const payload = { blockId: receiverId };
 
     it("returns 200 (OK) with the blocked user id", async () => {
       const res = await userReq.block.post.blockUser(
-        requesterId,
         requesterAccessToken,
         payload
       );

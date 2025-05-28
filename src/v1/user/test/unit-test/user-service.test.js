@@ -87,16 +87,6 @@ describe("User service", () => {
   });
 
   describe("meById", () => {
-    it("returns the user with the included fields", async () => {
-      const { id } = createdUser01.data;
-      const include = "friends.id,chats.id";
-
-      const userMe = await userService.meById(id, include);
-
-      expect(userMe).toHaveProperty("friends");
-      expect(userMe).toHaveProperty("chats");
-    });
-
     it("should throw a NotFoundError with 'User not found' message for non-existent IDs", async () => {
       const include = "friends.id,chats.id";
 

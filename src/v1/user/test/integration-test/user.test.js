@@ -117,9 +117,6 @@ describe("User authentication", () => {
 });
 
 describe("User detail", () => {
-  const validInclude = "friends.id,chats.id";
-  const invalidInclude = "friends.password";
-
   describe("Authentication Errors", () => {
     it.each([
       {
@@ -162,28 +159,6 @@ describe("User detail", () => {
     );
   });
 
-  describe("Validation Errors", () => {
-    const validationErro = {
-      code: 422,
-      errors: [
-        {
-          code: "custom",
-          message:
-            'Invalid "include" query parameter. Allowed parameters are: friends.id,friends.username,friends.profile.displayName,friends.profile.avatar,blockedUsers.id,chats.id,chats.name,chats.avatar,chats.type,chats.members.id,chats.members.username,chats.members.profile.avatar',
-          path: ["include"],
-        },
-      ],
-      message: "Validation failed: 1 errors detected in query",
-    };
-
-    it("returns 422 (UNPROCESSABLE_ENTITY) if 'include' has invalid fields", async () => {
-      const res = await userReq.user.get.me(accessToken, invalidInclude);
-
-      expect(res.status).toBe(422);
-      expect(res.body).toMatchObject(validationErro);
-    });
-  });
-
   describe("Success case", () => {
     it("returns 200 (OK) with user data for valid token", async () => {
       const res = await userReq.user.get.me(accessToken, null);
@@ -192,16 +167,6 @@ describe("User detail", () => {
       expect(res.body).haveOwnProperty("id");
       expect(res.body).haveOwnProperty("username");
       expect(res.body).not.haveOwnProperty("password");
-    });
-
-    it("includes relationships when 'include' is valid", async () => {
-      const res = await userReq.user.get.me(accessToken, validInclude);
-
-      expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty("friends");
-      expect(res.body).toHaveProperty("chats");
-      expect(res.body.friends).instanceOf(Array);
-      expect(res.body.chats).instanceOf(Array);
     });
   });
 });
@@ -354,7 +319,7 @@ describe("User deletion", () => {
         },
         expectedError: {
           code: 403,
-          message: "You are not authorized to perform this action",
+          message: "Demo user cannot delete their account",
         },
       },
     ])(
@@ -372,11 +337,14 @@ describe("User deletion", () => {
     );
   });
 
-  describe.skip("Success Case", () => {
-    it("501 (NOT_IMPLEMENTED)", async () => {
-      const res = await userReq.user.delete.account(user.data.id, accessToken);
+  describe("Success Case", () => {
+    it("returns 204 (NO_CONTENT) when the user deleted their account", async () => {
+      const res = await userReq.user.delete.account(accessToken);
 
-      expect(res.status).toBe(501);
+      expect(res.status).toBe(204);
+      expect(
+        await client.user.findUnique({ where: { id: user.data.id } })
+      ).toBeNull();
     });
   });
 });

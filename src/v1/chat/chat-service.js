@@ -580,6 +580,14 @@ const createGetChatMessagesById =
     return { messages, nextHref, prevHref };
   };
 
+const createGetUserMessagesById =
+  ({ chatRepository }) =>
+  async (userId) => {
+    const messages = await chatRepository.findUserMessagesById(userId);
+
+    return messages;
+  };
+
 const createUpdateGroupChatNameById =
   ({ chatRepository }) =>
   async (DTO) => {
@@ -830,6 +838,7 @@ export default (dependencies) => {
   const getChatsByMemberId = createGetChatsByMemberId(dependencies);
   const getMembersById = createGetChatMembersById(dependencies);
   const getMessagesById = createGetChatMessagesById(dependencies);
+  const getUserMessagesById = createGetUserMessagesById(dependencies);
 
   const updateGroupChatNameById = createUpdateGroupChatNameById(dependencies);
   const updateGroupChatAvatarById =
@@ -857,6 +866,7 @@ export default (dependencies) => {
     getChatsByMemberId,
     getMembersById,
     getMessagesById,
+    getUserMessagesById,
     updateGroupChatNameById,
     updateGroupChatAvatarById,
     updateMemberMutedUntil,
@@ -873,4 +883,6 @@ export {
   createGetPublicGroupChats,
   createGetChatMembersById,
   createGetChatMessagesById,
+  createGetUserMessagesById,
+  createDeleteMessageById,
 };

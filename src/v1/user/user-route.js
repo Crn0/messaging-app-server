@@ -9,9 +9,17 @@ import tokenRepository from "../auth/token/token-repository.js";
 import openIdRepository from "../auth/open-id/open-id-repository.js";
 import friendRequestRepository from "./friend-request/friend-request-repository.js";
 import friendRepository from "./friend/friend-repository.js";
+import chatRepository from "../chat/chat-repository.js";
 import blockUserRepository from "./block-user/block-user-repository.js";
-import initUserService from "./user-service.js";
-import initProfileService from "./profile/profile-service.js";
+import initUserService, { createGetUserPkbyId } from "./user-service.js";
+import initProfileService, {
+  createDeleteBackgroundAvatarByUserId,
+  createDeleteProfileAvatarByUserId,
+} from "./profile/profile-service.js";
+import {
+  createGetUserMessagesById,
+  createDeleteMessageById,
+} from "../chat/chat-service.js";
 import initTokenService from "../auth/token/token-service.js";
 import initOpenIdService from "../auth/open-id/open-id-service.js";
 import initFriendRequestService from "./friend-request/friend-request-service.js";
@@ -21,7 +29,7 @@ import initUserController from "./user-controller.js";
 import initUserMiddleware from "./user-middleware.js";
 import createJwtUtils from "../auth/jwt.js";
 import * as schema from "./user-schema.js";
-import * as userPolicy from "./user-policy.js";
+import userPolicy from "./policy.js";
 import { cookieConfig } from "../auth/auth-service.js";
 import { createLogOutController } from "../auth/auth-controller.js";
 import {
@@ -30,17 +38,11 @@ import {
 } from "../auth/auth-middleware.js";
 import {
   ZodbodyValidator,
-  ZodqueryValidator,
   ZodparamValidator,
   ZodfileValidator,
 } from "../middleware/index.js";
 import { obtuseEmail, verifyPassword, hashPassword } from "../helpers/index.js";
-import {
-  idGenerator,
-  buildIncludeQuery,
-  normalizeInclude,
-  removeFields,
-} from "./utils.js";
+import { idGenerator, removeFields } from "./utils.js";
 
 const dirname = import.meta?.dirname;
 
@@ -74,13 +76,34 @@ const jwtUtils = createJwtUtils({
  * SERVICE
  */
 
+const getUserMessagesById = createGetUserMessagesById({ chatRepository });
+
+const deleteMessageById = createDeleteMessageById({ chatRepository, storage });
+
+const deleteProfileAvatarByUserId = createDeleteProfileAvatarByUserId({
+  profileRepository,
+  storage,
+  userService: {
+    getUserPkById: createGetUserPkbyId({ userRepository }),
+  },
+});
+
+const deleteBackgroundAvatar = createDeleteBackgroundAvatarByUserId({
+  profileRepository,
+  storage,
+  userService: {
+    getUserPkById: createGetUserPkbyId({ userRepository }),
+  },
+});
+
 const userService = initUserService({
   userRepository,
-  passwordManager: { verifyPassword, hashPassword },
-  includeBuilder: {
-    buildIncludeQuery,
-    normalizeInclude,
+  chatService: { getUserMessagesById, deleteMessageById },
+  profileService: {
+    deleteProfileAvatarByUserId,
+    deleteBackgroundAvatar,
   },
+  passwordManager: { verifyPassword, hashPassword },
 });
 
 const profileService = initProfileService({
@@ -155,7 +178,7 @@ const readAcessToken = createAccessTokenMiddleware({ jwtUtils });
 router.use(readAcessToken);
 router.use(protectRoute("accessToken"));
 
-router.get("/me", ZodqueryValidator(schema.querySchema), userController.me);
+router.get("/me", userController.me);
 
 router.patch(
   "/me/username",
@@ -172,8 +195,10 @@ router.patch(
   logOutController
 );
 
-router.delete("/me", userMiddleware.canDeleteAccount, (req, res) =>
-  res.sendStatus(501)
+router.delete(
+  "/me",
+  userMiddleware.canDeleteAccount,
+  userController.deleteAccount
 );
 
 router.delete(
