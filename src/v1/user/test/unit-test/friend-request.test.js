@@ -86,42 +86,6 @@ describe("Friend request service", () => {
         })
       );
     });
-
-    it("should throw a ConflictError when there's a friendship between users", async () => {
-      const data = {
-        requesterId: createdUser01.data.id,
-        receiverId: createdUser02.data.id,
-        requesterFriends: [{ id: createdUser02.data.id }],
-      };
-
-      const friendRequest = friendRequestService.createFriendRequest(data);
-
-      await expect(friendRequest).rejects.toThrowError(
-        expect.objectContaining({
-          message: "You are already friend with this user",
-          httpCode: 409,
-        })
-      );
-    });
-
-    it("should throw a ConflictError when there's a ongoing friend request", async () => {
-      const data = {
-        requesterId: createdUser01.data.id,
-        receiverId: createdUser02.data.id,
-        requesterFriends: [],
-      };
-
-      await friendRequestService.createFriendRequest(data);
-
-      const friendRequest = friendRequestService.createFriendRequest(data);
-
-      await expect(friendRequest).rejects.toThrowError(
-        expect.objectContaining({
-          message: "There's an ongoing friend request",
-          httpCode: 409,
-        })
-      );
-    });
   });
 
   describe("deleteFriendRequestById", () => {

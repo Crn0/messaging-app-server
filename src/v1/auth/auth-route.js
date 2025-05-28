@@ -111,29 +111,29 @@ router.post(
 router.post("/logout", authController.logOut);
 
 /**
- * When the client request endpoint:  POST: /auth/password-resets
- * with the email in the request body {"email": "example@gmail.com"}
- * the server will send a message to the email containing a link with token as the params
- * to reset the password
+ * TODO: Implement password reset feature
+ *
+ * POST /auth/password-resets
+ * - Validate request body with email using ZodbodyValidator and passwordResetSchema
+ * - Check if user exists with given email (do not reveal existence)
+ * - Generate secure, time-limited password reset token
+ * - Store token with user and expiration in DB/cache
+ * - Send email containing password reset link with token as query param
+ * - Respond with success status (e.g., 200 or 202)
+ *
+ * GET /password-resets/tokens/:token
+ * - Validate token param with passwordResetQueryTokenSchema
+ * - Verify token existence and validity (not expired or used)
+ * - Respond 200/201 if valid, 400/404 if invalid or expired
+ *
+ * PATCH /password-resets/tokens/:token
+ * - Validate token param with passwordResetQueryTokenSchema
+ * - Validate request body for new password
+ * - Verify token validity and associated user
+ * - Update user password securely (hashing)
+ * - Invalidate token after use
+ * - Respond with success status (200 or 201)
  */
-
-// router.get(
-//   "/password-resets/tokens/:token",
-//   ZodbodyValidator(schema.passwordResetQueryTokenSchema),
-//   (req, res) => res.sendStatus(201)
-// );
-
-// router.post(
-//   "/password-resets",
-//   ZodbodyValidator(schema.passwordResetSchema),
-//   (req, res) => res.sendStatus(501)
-// );
-
-// router.patch(
-//   "/password-resets/tokens/:token",
-//   ZodbodyValidator(schema.passwordResetQueryTokenSchema),
-//   (req, res) => res.sendStatus(201)
-// );
 
 router.use(authMiddleware.protectRoute("refreshToken"));
 

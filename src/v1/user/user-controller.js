@@ -9,11 +9,10 @@ const debug = Debug.extend("controller");
 const createMe =
   ({ userService, utils }) =>
   async (req, res, next) => {
-    const { id } = req.user;
-    const { include } = req.query;
+    const userId = req.user.id;
 
     const { error, data: user } = await tryCatchAsync(async () =>
-      userService.meById(id, include)
+      userService.meById(userId)
     );
 
     if (error) {
@@ -30,7 +29,7 @@ const createMe =
 const createGetFriendRequest =
   ({ friendRequestService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
 
     const { error, data: friendRequests } = await tryCatchAsync(async () =>
       friendRequestService.getFriendRequestsByUserId(userId)
@@ -49,15 +48,13 @@ const createGetFriendRequest =
 const createSendFriendRequest =
   ({ friendRequestService }) =>
   async (req, res, next) => {
-    const { userId: requesterId } = req.params;
+    const { id: requesterId } = req.user;
     const { friendId: receiverId } = req.body;
-    const { requesterFriends } = req.ctx;
 
     const { error, data: friendRequest } = await tryCatchAsync(async () =>
       friendRequestService.createFriendRequest({
         requesterId,
         receiverId,
-        requesterFriends,
       })
     );
 
@@ -74,7 +71,7 @@ const createSendFriendRequest =
 const createPatchUsername =
   ({ userService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
     const { username } = req.body;
 
     const { error, data: user } = await tryCatchAsync(async () =>
@@ -93,7 +90,7 @@ const createPatchUsername =
 const createPatchPassword =
   ({ userService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
     const { oldPassword, currentPassword } = req.body;
 
     const { error } = await tryCatchAsync(async () =>
@@ -112,7 +109,7 @@ const createPatchPassword =
 const createPatchDisplayName =
   ({ profileService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
     const { displayName } = req.body;
 
     const data = { userId, displayName };
@@ -133,7 +130,7 @@ const createPatchDisplayName =
 const createPatchAboutMe =
   ({ profileService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
     const { aboutMe } = req.body;
 
     const data = { userId, aboutMe };
@@ -154,7 +151,7 @@ const createPatchAboutMe =
 const createPatchProfileAvatar =
   ({ profileService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
     const file = req.file.avatar;
 
     const data = { userId, file };
@@ -174,7 +171,7 @@ const createPatchProfileAvatar =
 const createPatchBackgroundAvatar =
   ({ profileService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
     const file = req.file.backgroundAvatar;
 
     const data = { userId, file };
@@ -194,7 +191,7 @@ const createPatchBackgroundAvatar =
 const createDeleteProfileAvatar =
   ({ profileService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
 
     const { error } = await tryCatchAsync(async () =>
       profileService.deleteProfileAvatarByUserId(userId)
@@ -210,7 +207,7 @@ const createDeleteProfileAvatar =
 const createDeleteBackgroundAvatar =
   ({ profileService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
 
     const { error } = await tryCatchAsync(async () =>
       profileService.deleteBackgroundAvatarByUserId(userId)
@@ -308,12 +305,10 @@ const createBlockUser =
   async (req, res, next) => {
     const { id: requesterId } = req.user;
     const { blockId: receiverId } = req.body;
-    const { requesterBlockList } = req.ctx;
 
     const data = {
       requesterId,
       receiverId,
-      requesterBlockList,
     };
 
     const { error: blockUserError, data: blockUserData } = await tryCatchAsync(
@@ -346,13 +341,12 @@ const createBlockUser =
 const createUnBlockUser =
   ({ blockUserService }) =>
   async (req, res, next) => {
-    const { userId: requesterId, unBlockId: receiverId } = req.params;
-    const { requesterBlockList } = req.ctx;
+    const requesterId = req.user.id;
+    const { unBlockId: receiverId } = req.params;
 
     const data = {
       requesterId,
       receiverId,
-      requesterBlockList,
     };
 
     const { error, data: unBlockUserData } = await tryCatchAsync(async () =>
@@ -370,10 +364,24 @@ const createUnBlockUser =
     });
   };
 
+const createDeleteAccount =
+  ({ userService }) =>
+  async (req, res, next) => {
+    const userId = req.user.id;
+
+    const { error } = await tryCatchAsync(() =>
+      userService.deleteUserById(userId)
+    );
+
+    if (error) return next(error);
+
+    return res.sendStatus(httpStatus.NO_CONTENT);
+  };
+
 const createUnlinkGoogle =
   ({ openIdService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
+    const userId = req.user.id;
 
     const data = { userId, provider: "google" };
 
@@ -419,6 +427,7 @@ export default (depenpendies) => {
 
   const unBlockUser = createUnBlockUser(depenpendies);
 
+  const deleteAccount = createDeleteAccount(depenpendies);
   const unlinkGoogle = createUnlinkGoogle(depenpendies);
 
   return Object.freeze({
@@ -436,6 +445,7 @@ export default (depenpendies) => {
     unFriend,
     blockUser,
     unBlockUser,
+    deleteAccount,
     unlinkGoogle,
     deleteProfileAvatar,
     deleteBackgroundAvatar,

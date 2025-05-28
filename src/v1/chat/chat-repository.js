@@ -299,6 +299,15 @@ const findChatMessagesById = async (id, filter) => {
   return messages?.map?.((message) => toEntity("Message", message));
 };
 
+const findUserMessagesById = async (id) => {
+  const messages = await client.message.findMany({
+    where: { user: { id } },
+    include: field.message,
+  });
+
+  return messages?.map?.((message) => toEntity("Message", message));
+};
+
 const updateChatNameById = async ({ chatId, name, type }) => {
   const data = toData("update:name", { chatId, name, type });
 
@@ -493,6 +502,7 @@ export default {
   findChatsByMemberId,
   findChatMembersById,
   findChatMessagesById,
+  findUserMessagesById,
   updateChatNameById,
   updateChatAvatar,
   updateMessageDeletedAt,

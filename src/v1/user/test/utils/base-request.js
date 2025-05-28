@@ -67,9 +67,9 @@ const USER = ({ baseUrl, request }) => {
   const POST = () => Object.freeze({});
 
   const PATCH = () => {
-    const username = async (userId, token, payload, ops) => {
+    const username = async (token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/username`;
+      const url = `${path}/me/username`;
 
       if (!options.includeAuth) {
         return request.patch(url).send(payload).accept("json").type("json");
@@ -83,9 +83,9 @@ const USER = ({ baseUrl, request }) => {
         .type("json");
     };
 
-    const password = async (userId, token, payload, ops) => {
+    const password = async (token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/password`;
+      const url = `${path}/me/password`;
 
       if (!options.includeAuth) {
         return request.patch(url).send(payload).accept("json").type("json");
@@ -103,9 +103,9 @@ const USER = ({ baseUrl, request }) => {
   };
 
   const DELETE = () => {
-    const account = async (userId, token, ops) => {
+    const account = async (token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}`;
+      const url = `${path}/me`;
 
       const req = request.delete(url).accept("json").type("json");
 
@@ -135,9 +135,9 @@ const PROFILE = ({ baseUrl, request }) => {
   const POST = () => {};
 
   const PATCH = () => {
-    const displayName = async (userId, token, payload, ops) => {
+    const displayName = async (token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/profile/display-name`;
+      const url = `${path}/me/profile/display-name`;
 
       if (!options.includeAuth) {
         return request.patch(url).send(payload).accept("json").type("json");
@@ -151,9 +151,9 @@ const PROFILE = ({ baseUrl, request }) => {
         .type("json");
     };
 
-    const aboutMe = async (userId, token, payload, ops) => {
+    const aboutMe = async (token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/profile/about-me`;
+      const url = `${path}/me/profile/about-me`;
 
       if (!options.includeAuth) {
         return request.patch(url).send(payload).accept("json").type("json");
@@ -167,9 +167,9 @@ const PROFILE = ({ baseUrl, request }) => {
         .type("json");
     };
 
-    const avatar = async (userId, token, file, ops) => {
+    const avatar = async (token, file, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/profile/avatar`;
+      const url = `${path}/me/profile/avatar`;
 
       if (!options.includeAuth) {
         return request.patch(url).attach("avatar", file);
@@ -181,9 +181,9 @@ const PROFILE = ({ baseUrl, request }) => {
         .set("Authorization", `Bearer ${token}`);
     };
 
-    const backgroundAvatar = async (userId, token, file, ops) => {
+    const backgroundAvatar = async (token, file, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/profile/background-avatar`;
+      const url = `${path}/me/profile/background-avatar`;
 
       if (!options.includeAuth) {
         return request.patch(url).attach("backgroundAvatar", file);
@@ -199,9 +199,9 @@ const PROFILE = ({ baseUrl, request }) => {
   };
 
   const DELETE = () => {
-    const avatar = async (userId, token, ops) => {
+    const avatar = async (token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/profile/avatar`;
+      const url = `${path}/me/profile/avatar`;
 
       const req = request.delete(url).accept("json").type("json");
 
@@ -212,9 +212,9 @@ const PROFILE = ({ baseUrl, request }) => {
       return req;
     };
 
-    const backgroundAvatar = async (userId, token, ops) => {
+    const backgroundAvatar = async (token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/profile/background-avatar`;
+      const url = `${path}/me/profile/background-avatar`;
 
       const req = request.delete(url).accept("json").type("json");
 
@@ -240,9 +240,9 @@ const FRIEND = ({ baseUrl, request }) => {
   const path = `${baseUrl}/users`;
 
   const GET = () => {
-    const friendRequestList = async (id, token, ops) => {
+    const friendRequestList = async (token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${id}/friend-requests`;
+      const url = `${path}/me/friend-requests`;
 
       const req = request.get(url).accept("json").type("json");
 
@@ -257,9 +257,9 @@ const FRIEND = ({ baseUrl, request }) => {
   };
 
   const POST = () => {
-    const sendFriendRequest = async (userId, token, payload, ops) => {
+    const sendFriendRequest = async (token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/friend-requests`;
+      const url = `${path}/me/friend-requests`;
 
       if (!options.includeAuth) {
         return request.post(url).send(payload).accept("json").type("json");
@@ -278,14 +278,13 @@ const FRIEND = ({ baseUrl, request }) => {
 
   const PATCH = () => {
     const acceptFriendRequest = async (
-      userId,
       friendRequestId,
       token,
       payload,
       ops
     ) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/friend-requests/${friendRequestId}`;
+      const url = `${path}/me/friend-requests/${friendRequestId}`;
 
       if (!options.includeAuth) {
         return request.patch(url).send(payload).accept("json").type("json");
@@ -303,9 +302,9 @@ const FRIEND = ({ baseUrl, request }) => {
   };
 
   const DELETE = () => {
-    const deleteFriendRequest = async (userId, friendRequestId, token, ops) => {
+    const deleteFriendRequest = async (friendRequestId, token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/friend-requests/${friendRequestId}`;
+      const url = `${path}/me/friend-requests/${friendRequestId}`;
 
       const req = request.delete(url).accept("json").type("json");
 
@@ -316,9 +315,9 @@ const FRIEND = ({ baseUrl, request }) => {
       return req;
     };
 
-    const unFriendUser = async (userId, friendId, token, ops) => {
+    const unFriendUser = async (friendId, token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/friends/${friendId}`;
+      const url = `${path}/me/friends/${friendId}`;
 
       const req = request.delete(url).accept("json").type("json");
 
@@ -346,9 +345,9 @@ const BLOCK = ({ baseUrl, request }) => {
   const GET = () => {};
 
   const POST = () => {
-    const blockUser = async (userId, token, payload, ops) => {
+    const blockUser = async (token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/block-users`;
+      const url = `${path}/me/block-users`;
 
       if (!options.includeAuth) {
         return request.post(url).send(payload).accept("json").type("json");
@@ -368,9 +367,9 @@ const BLOCK = ({ baseUrl, request }) => {
   const PATCH = () => {};
 
   const DELETE = () => {
-    const unBlockUser = async (userId, unBlockId, token, payload, ops) => {
+    const unBlockUser = async (unBlockId, token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${userId}/block-users/${unBlockId}`;
+      const url = `${path}/me/block-users/${unBlockId}`;
 
       const req = request.delete(url).accept("json").type("json");
 

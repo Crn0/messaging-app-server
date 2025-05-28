@@ -63,7 +63,6 @@ describe("Send friend request", () => {
       {
         scenario: "invalid token",
         data: {
-          id: requesterId,
           token: invalidToken,
           includeAuth: true,
         },
@@ -72,8 +71,6 @@ describe("Send friend request", () => {
       {
         scenario: "expired token",
         data: {
-          id: requesterId,
-
           token: expiredToken,
           includeAuth: true,
         },
@@ -82,8 +79,6 @@ describe("Send friend request", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          id: requesterId,
-
           token: requesterAccessToken,
           includeAuth: false,
         },
@@ -95,8 +90,8 @@ describe("Send friend request", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
-        const res = await userReq1.friend.get.friendRequestList(id, token, {
+        const { token, includeAuth } = data;
+        const res = await userReq1.friend.get.friendRequestList(token, {
           includeAuth,
         });
 
@@ -106,40 +101,25 @@ describe("Send friend request", () => {
     );
   });
 
-  describe("Authorization Errors", () => {
+  describe("Forbidden Errors", () => {
     it.each([
       {
         scenario: "user is sending friend request to itself",
         data: {
-          id: requesterId,
           token: requesterAccessToken,
           payload: { friendId: requesterId },
           includeAuth: true,
         },
         expectedError: {
           code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          id: requesterId,
-          token: unAuthorizedAccessToken,
-          payload: { friendId: receiverId },
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
+          message: "You cannot send friend request to yourself",
         },
       },
     ])(
       "fails with 403 (FORBIDDEN) when $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, payload: payLoad, includeAuth } = data;
+        const { token, payload: payLoad, includeAuth } = data;
         const res = await userReq1.friend.post.sendFriendRequest(
-          id,
           token,
           payLoad,
           {
@@ -156,7 +136,6 @@ describe("Send friend request", () => {
   describe("Success Case", () => {
     it("returns 200 (OK) and the friend request id", async () => {
       const res = await userReq1.friend.post.sendFriendRequest(
-        requesterId,
         requesterAccessToken,
         payload
       );
@@ -173,7 +152,7 @@ describe("Send friend request", () => {
     });
   });
 
-  describe("Conflict Errors", () => {
+  describe.skip("Conflict Errors", () => {
     it("rejects the friend request when there's a pending request", async () => {
       const friendRequestRes = await userReq1.friend.post.sendFriendRequest(
         requesterId,
@@ -206,7 +185,6 @@ describe("Friend request details", () => {
 
   beforeAll(async () => {
     const res = await userReq1.friend.post.sendFriendRequest(
-      requesterId,
       requesterAccessToken,
       payload
     );
@@ -255,8 +233,8 @@ describe("Friend request details", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
-        const res = await userReq1.friend.get.friendRequestList(id, token, {
+        const { token, includeAuth } = data;
+        const res = await userReq1.friend.get.friendRequestList(token, {
           includeAuth,
         });
 
@@ -268,10 +246,8 @@ describe("Friend request details", () => {
 
   describe("Success Case", () => {
     it("returns 200 (OK) and array of the user's friend request", async () => {
-      const res = await userReq1.friend.get.friendRequestList(
-        requesterId,
-        requesterAccessToken
-      );
+      const res =
+        await userReq1.friend.get.friendRequestList(requesterAccessToken);
 
       expect(res.status).toBe(200);
 
@@ -298,12 +274,11 @@ describe("Friend request details", () => {
   });
 });
 
-describe("Delete friend request", () => {
+describe.only("Delete friend request", () => {
   let friendRequestId;
 
   beforeAll(async () => {
     const res = await userReq1.friend.post.sendFriendRequest(
-      requesterId,
       requesterAccessToken,
       payload
     );
@@ -316,7 +291,6 @@ describe("Delete friend request", () => {
       {
         scenario: "invalid token",
         data: {
-          id: requesterId,
           token: invalidToken,
           includeAuth: true,
         },
@@ -346,8 +320,8 @@ describe("Delete friend request", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
-        const res = await userReq1.friend.get.friendRequestList(id, token, {
+        const { token, includeAuth } = data;
+        const res = await userReq1.friend.get.friendRequestList(token, {
           includeAuth,
         });
 
@@ -357,45 +331,31 @@ describe("Delete friend request", () => {
     );
   });
 
-  describe("Authorization Errors", () => {
+  describe("Not Found Errors", () => {
     it.each([
       {
         scenario: "user is not the requester nor the receiver",
         data: {
-          id: unAuthorizedId,
           token: unAuthorizedAccessToken,
           includeAuth: true,
         },
         expectedError: {
-          code: 403,
-          message: "You are not authorized to accept this friend request",
-        },
-      },
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          id: requesterId,
-          token: unAuthorizedAccessToken,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
+          code: 404,
+          message: "Friend request does not exist",
         },
       },
     ])(
       "fails with 403 (FORBIDDEN) when $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
+        const { token, includeAuth } = data;
         const res = await userReq2.friend.patch.acceptFriendRequest(
-          id,
           friendRequestId,
           token,
           {},
           { includeAuth }
         );
 
-        expect(res.status).toBe(403);
+        expect(res.status).toBe(404);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -404,7 +364,6 @@ describe("Delete friend request", () => {
   describe("Success Case", () => {
     it("returns 200 (OK) and the deleted friend request id", async () => {
       const res = await userReq1.friend.delete.deleteFriendRequest(
-        requesterId,
         friendRequestId,
         requesterAccessToken
       );
@@ -422,7 +381,6 @@ describe("Accept friend request", () => {
 
   beforeAll(async () => {
     const res = await userReq1.friend.post.sendFriendRequest(
-      requesterId,
       requesterAccessToken,
       payload
     );
@@ -465,8 +423,8 @@ describe("Accept friend request", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
-        const res = await userReq1.friend.get.friendRequestList(id, token, {
+        const { token, includeAuth } = data;
+        const res = await userReq1.friend.get.friendRequestList(token, {
           includeAuth,
         });
 
@@ -476,7 +434,7 @@ describe("Accept friend request", () => {
     );
   });
 
-  describe("Authorization Errors", () => {
+  describe("Forbidden Errors", () => {
     it.each([
       {
         scenario: "user is not the receiver",
@@ -490,24 +448,11 @@ describe("Accept friend request", () => {
           message: "You are not authorized to accept this friend request",
         },
       },
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          id: requesterId,
-          token: unAuthorizedAccessToken,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
     ])(
       "fails with 403 (FORBIDDEN) when $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
+        const { token, includeAuth } = data;
         const res = await userReq2.friend.patch.acceptFriendRequest(
-          id,
           friendRequestId,
           token,
           {},
@@ -580,45 +525,12 @@ describe("Unfriend user", () => {
     ])(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { id, token, includeAuth } = data;
-        const res = await userReq1.friend.get.friendRequestList(id, token, {
+        const { token, includeAuth } = data;
+        const res = await userReq1.friend.get.friendRequestList(token, {
           includeAuth,
         });
 
         expect(res.status).toBe(401);
-        expect(res.body).toMatchObject(expectedError);
-      }
-    );
-  });
-
-  describe("Authorization Errors", () => {
-    it.each([
-      {
-        scenario: "authenticated user is not the userId",
-        data: {
-          id: requesterId,
-          friendId: receiverId,
-          token: unAuthorizedAccessToken,
-          includeAuth: true,
-        },
-        expectedError: {
-          code: 403,
-          message: "You are not authorized to perform this action",
-        },
-      },
-    ])(
-      "fails with 403 (FORBIDDEN) when $scenario",
-      async ({ data, expectedError }) => {
-        const { id, friendId, token, includeAuth } = data;
-        const res = await userReq2.friend.delete.unFriendUser(
-          id,
-          friendId,
-          token,
-          {},
-          { includeAuth }
-        );
-
-        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );

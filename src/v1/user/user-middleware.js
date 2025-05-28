@@ -1,5 +1,6 @@
 import { tryCatchAsync, tryCatchSync } from "../helpers/index.js";
 import ValidationError from "../../errors/validation-error.js";
+import APIError from "../../errors/api-error.js";
 
 const createUploader =
   ({ multer, MulterError }) =>
@@ -31,42 +32,23 @@ const createUploader =
       return next();
     });
 
-const createIsAuthorizedUser =
-  ({ userPolicy }) =>
-  (req, res, next) => {
-    const currentUser = { id: req.user.id };
-    const requester = { id: req.params.userId };
-
-    const { error } = tryCatchSync(() => {
-      userPolicy.checkIsSamePerson({ currentUser, requester });
-    });
-
-    if (error) {
-      return next(error);
-    }
-
-    return next();
-  };
-
 const createCanUpdateUsername =
   ({ userPolicy, userService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
-    const currentUser = { id: req.user.id };
-    const { error: requesterError, data: requester } = await tryCatchAsync(
-      async () => userService.getUserById(userId)
+    const userId = req.user.id;
+
+    const { error: userError, data: user } = await tryCatchAsync(async () =>
+      userService.getUserById(userId)
     );
 
-    if (requesterError) {
-      return next(requesterError);
+    if (userError) {
+      return next(userError);
     }
 
-    const { error } = tryCatchSync(() => {
-      userPolicy.checkUpdateUsernamePermission({ currentUser, requester });
-    });
+    const { success, code, message } = userPolicy.checkUpdateUsername(user);
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -75,18 +57,18 @@ const createCanUpdateUsername =
 const createCanUpdateEmail =
   ({ userPolicy, userService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
-    const currentUser = { id: req.user.id };
-    const { error: requesterError, data: requester } = await tryCatchAsync(
-      async () => userService.getUserById(userId)
+    const userId = req.user.id;
+
+    const { error: userError, data: user } = await tryCatchAsync(async () =>
+      userService.getUserById(userId)
     );
 
-    if (requesterError) {
-      return next(requesterError);
+    if (userError) {
+      return next(userError);
     }
 
     const { error } = tryCatchSync(() => {
-      userPolicy.checkUpdateEmailPermission({ currentUser, requester });
+      userPolicy.checkUpdateEmailPermission(user);
     });
 
     if (error) {
@@ -99,39 +81,20 @@ const createCanUpdateEmail =
 const createCanUpdatePassword =
   ({ userPolicy, userService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
-    const currentUser = { id: req.user.id };
-    const { error: requesterError, data: requester } = await tryCatchAsync(
-      async () => userService.getUserById(userId)
+    const userId = req.user.id;
+
+    const { error: userError, data: user } = await tryCatchAsync(async () =>
+      userService.getUserById(userId)
     );
 
-    if (requesterError) {
-      return next(requesterError);
+    if (userError) {
+      return next(userError);
     }
 
-    const { error } = tryCatchSync(() => {
-      userPolicy.checkUpdatePasswordPermission({ currentUser, requester });
-    });
+    const { success, code, message } = userPolicy.checkUpdatePassword(user);
 
-    if (error) {
-      return next(error);
-    }
-
-    return next();
-  };
-
-const createCanUpdateProfile =
-  ({ userPolicy }) =>
-  (req, res, next) => {
-    const currentUser = { id: req.user.id };
-    const requester = { id: req.params.userId };
-
-    const { error } = tryCatchSync(() => {
-      userPolicy.checkUpdateProfilePermission({ currentUser, requester });
-    });
-
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -140,49 +103,62 @@ const createCanUpdateProfile =
 const createCanSendFriendRequest =
   ({ userPolicy, blockUserService, friendRequestService, friendService }) =>
   async (req, res, next) => {
-    const currentUser = req.user;
-    const requester = { id: req.params.userId };
+    const { user } = req;
     const targetUser = { id: req.body.friendId };
 
-    const { error: invalidDataError, data } = await tryCatchAsync(async () =>
-      Promise.all([
-        blockUserService.getUserBlockList(requester.id),
-        blockUserService.getUserBlockList(targetUser.id),
-        friendRequestService.isFriendRequestExist(requester.id, targetUser.id),
-        friendService.getUserFriendsById(requester.id),
-      ])
-    );
+    const [
+      userFriendsResult,
+      userBlockListResult,
+      targetUserBLockListResult,
+      pendingFriendRequestResult,
+    ] = await Promise.all([
+      tryCatchAsync(() => friendService.getUserFriendsById(user.id)),
+      tryCatchAsync(() => blockUserService.getUserBlockList(user.id)),
+      tryCatchAsync(() => blockUserService.getUserBlockList(targetUser.id)),
+      tryCatchAsync(() =>
+        friendRequestService.isFriendRequestExist(user.id, targetUser.id)
+      ),
+    ]);
 
-    if (invalidDataError) {
-      return next(invalidDataError);
+    const { error: userFriendsError, data: userFriends } = userFriendsResult;
+
+    const { error: userBlockListError, data: userBlockList } =
+      userBlockListResult;
+
+    const { error: targetUserBLockListError, data: targetUserBlockList } =
+      targetUserBLockListResult;
+
+    const {
+      error: hasPendingFriendRequestError,
+      data: hasPendingFriendRequest,
+    } = pendingFriendRequestResult;
+
+    if (
+      userFriendsError ||
+      userBlockListError ||
+      targetUserBLockListError ||
+      hasPendingFriendRequestError
+    ) {
+      return next(
+        userFriendsError ||
+          userBlockListError ||
+          targetUserBLockListError ||
+          hasPendingFriendRequestError
+      );
     }
 
-    const [
-      requesterBlockList,
-      targetUserBlockList,
-      hasOngoingFriendRequest,
-      requesterFriends,
-    ] = data;
+    user.friends = userFriends;
+    user.blockedUsers = userBlockList;
+    targetUser.blockedUsers = targetUserBlockList;
 
-    req.ctx = {
-      ...req.ctx,
-      requesterFriends,
-    };
-
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkSendFriendRequestPermission({
-        currentUser,
-        requester,
-        targetUser,
-        requesterBlockList,
-        targetUserBlockList,
-        hasOngoingFriendRequest,
-        requesterFriends,
-      })
+    const { success, code, message } = userPolicy.checkSendFriendRequest(
+      user,
+      targetUser,
+      hasPendingFriendRequest
     );
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -191,9 +167,8 @@ const createCanSendFriendRequest =
 const createCanAcceptFriendRequest =
   ({ userPolicy, friendRequestService }) =>
   async (req, res, next) => {
+    const { user } = req;
     const { friendRequestId } = req.params;
-    const currentUser = { id: req.user.id };
-    const requester = { id: req.params.userId };
 
     const { error: friendRequestError, data: friendRequest } =
       await tryCatchAsync(async () =>
@@ -204,16 +179,13 @@ const createCanAcceptFriendRequest =
       return next(friendRequestError);
     }
 
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkAcceptFriendRequestPermission({
-        currentUser,
-        requester,
-        friendRequest,
-      })
+    const { success, code, message } = userPolicy.checkAcceptFriendRequest(
+      user,
+      friendRequest
     );
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -222,9 +194,8 @@ const createCanAcceptFriendRequest =
 const createCanDeleteFriendRequest =
   ({ userPolicy, friendRequestService }) =>
   async (req, res, next) => {
+    const { user } = req;
     const { friendRequestId } = req.params;
-    const currentUser = req.user;
-    const requester = { id: req.params.userId };
 
     const { error: friendRequestError, data: friendRequest } =
       await tryCatchAsync(async () =>
@@ -235,16 +206,13 @@ const createCanDeleteFriendRequest =
       return next(friendRequestError);
     }
 
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkDeleteFriendRequestPermission({
-        currentUser,
-        requester,
-        friendRequest,
-      })
+    const { success, code, message } = userPolicy.checkDeleteFriendRequest(
+      user,
+      friendRequest
     );
 
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -253,21 +221,18 @@ const createCanDeleteFriendRequest =
 const createCanUnFriendUser =
   ({ userPolicy, friendService }) =>
   async (req, res, next) => {
-    const currentUser = { id: req.user.id };
-    const requester = { id: req.params.userId };
+    const { user } = req;
     const targetUser = { id: req.params.friendId };
 
-    const friends = await friendService.getUserFriendsById(requester.id);
+    const friends = await friendService.getUserFriendsById(user.id);
 
     req.ctx = {
       ...req.ctx,
-      requesterFriends: friends,
+      userFriends: friends,
     };
 
     const { error } = tryCatchSync(() =>
       userPolicy.checkUnFriendPermission({
-        currentUser,
-        requester,
         targetUser,
         friends,
       })
@@ -283,30 +248,20 @@ const createCanUnFriendUser =
 const createCanBlockUser =
   ({ userPolicy, blockUserService }) =>
   async (req, res, next) => {
-    const currentUser = req.user;
-    const requester = { id: req.params.userId };
+    const { user } = req;
     const targetUser = { id: req.body.blockId };
 
-    const requesterBlockList = await blockUserService.getUserBlockList(
-      requester.id
+    const userBlockList = await blockUserService.getUserBlockList(user.id);
+
+    user.blockedUsers = userBlockList;
+
+    const { success, code, message } = userPolicy.checkBlockUser(
+      user,
+      targetUser
     );
 
-    req.ctx = {
-      ...req.ctx,
-      requesterBlockList,
-    };
-
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkBlockUserPermission({
-        currentUser,
-        requester,
-        targetUser,
-        requesterBlockList,
-      })
-    );
-
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -315,30 +270,20 @@ const createCanBlockUser =
 const createCanUnBlockUser =
   ({ userPolicy, blockUserService }) =>
   async (req, res, next) => {
-    const currentUser = req.user;
-    const requester = { id: req.params.userId };
+    const { user } = req;
     const targetUser = { id: req.params.unBlockId };
 
-    const requesterBlockList = await blockUserService.getUserBlockList(
-      requester.id
+    const userBlockList = await blockUserService.getUserBlockList(user.id);
+
+    user.blockedUsers = userBlockList;
+
+    const { success, code, message } = userPolicy.checkUnBlockUser(
+      user,
+      targetUser
     );
 
-    req.ctx = {
-      ...req.ctx,
-      requesterBlockList,
-    };
-
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkUnBlockUserPermission({
-        currentUser,
-        requester,
-        targetUser,
-        requesterBlockList,
-      })
-    );
-
-    if (error) {
-      return next(error);
+    if (!success) {
+      return next(new APIError(message, code));
     }
 
     return next();
@@ -347,50 +292,39 @@ const createCanUnBlockUser =
 const createCanDeleteAccount =
   ({ userPolicy, userService }) =>
   async (req, res, next) => {
-    const { userId } = req.params;
-    const currentUser = { id: req.user.id };
-    const { error: requesterError, data: requester } = await tryCatchAsync(
-      async () => userService.getUserById(userId)
+    const userId = req.user.id;
+    const { error: userError, data: user } = await tryCatchAsync(async () =>
+      userService.getUserById(userId)
     );
 
-    if (requesterError) {
-      return next(requesterError);
+    if (userError) {
+      return next(userError);
     }
 
-    const ownedChats = await userService.getUserOwnedChatsById(requester.id);
+    const ownedChats = await userService.getUserOwnedChatsById(user.id);
 
-    const { error } = tryCatchSync(() =>
-      userPolicy.checkDeleteAccountPermission({
-        currentUser,
-        requester,
-        ownedChats,
-      })
-    );
+    user.ownedChats = ownedChats;
 
-    if (error) {
-      return next(error);
+    const { success, code, message } = userPolicy.checkDeleteAccount(user);
+
+    if (!success) {
+      return next(new APIError(message, code));
     }
-
     return next();
   };
 
 const createCanUnlinkGoogle =
   ({ userPolicy, openIdService }) =>
   async (req, res, next) => {
-    const currentUser = { id: req.user.id };
-    const requester = { id: req.params.userId };
+    const { user } = req;
 
     const { error } = await tryCatchAsync(async () => {
       const openId = await openIdService.getOpenIdByProviderAndUserId(
         "google",
-        requester.id
+        user.id
       );
 
-      return userPolicy.checkGoogleUnlinkPermissions({
-        currentUser,
-        requester,
-        openId,
-      });
+      return userPolicy.checkGoogleUnlinkPermissions(user, openId);
     });
 
     if (error) {
@@ -402,11 +336,9 @@ const createCanUnlinkGoogle =
 
 export default (dependencies) => {
   const uploader = createUploader(dependencies);
-  const isUnauthorizedUser = createIsAuthorizedUser(dependencies);
   const canUpdateUsername = createCanUpdateUsername(dependencies);
   const canUpdateEmail = createCanUpdateEmail(dependencies);
   const canUpdatePassword = createCanUpdatePassword(dependencies);
-  const canUpdateProfile = createCanUpdateProfile(dependencies);
   const canSendFriendRequest = createCanSendFriendRequest(dependencies);
   const canDeleteFriendRequest = createCanDeleteFriendRequest(dependencies);
   const canAcceptFriendRequest = createCanAcceptFriendRequest(dependencies);
@@ -418,11 +350,9 @@ export default (dependencies) => {
 
   return Object.freeze({
     uploader,
-    isUnauthorizedUser,
     canUpdateUsername,
     canUpdateEmail,
     canUpdatePassword,
-    canUpdateProfile,
     canSendFriendRequest,
     canDeleteFriendRequest,
     canAcceptFriendRequest,

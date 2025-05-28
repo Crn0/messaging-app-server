@@ -1,6 +1,7 @@
 import Debug from "./debug.js";
 import { tryCatchSync, tryCatchAsync } from "../helpers/index.js";
 import { env, httpStatus } from "../../constants/index.js";
+import AuthError from "../../errors/auth-error.js";
 
 const debug = Debug.extend("controller");
 
@@ -61,6 +62,15 @@ const createLogInController =
       if (userError) {
         debug("Current user does not exist");
         return next(userError);
+      }
+
+      if (tokenExist) {
+        return next(
+          new AuthError(
+            "Refresh token reuse detected. Please log in again",
+            httpStatus.FORBIDDEN
+          )
+        );
       }
 
       if (userExist && !tokenExist) {

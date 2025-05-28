@@ -9,9 +9,17 @@ import tokenRepository from "../auth/token/token-repository.js";
 import openIdRepository from "../auth/open-id/open-id-repository.js";
 import friendRequestRepository from "./friend-request/friend-request-repository.js";
 import friendRepository from "./friend/friend-repository.js";
+import chatRepository from "../chat/chat-repository.js";
 import blockUserRepository from "./block-user/block-user-repository.js";
-import initUserService from "./user-service.js";
-import initProfileService from "./profile/profile-service.js";
+import initUserService, { createGetUserPkbyId } from "./user-service.js";
+import initProfileService, {
+  createDeleteBackgroundAvatarByUserId,
+  createDeleteProfileAvatarByUserId,
+} from "./profile/profile-service.js";
+import {
+  createGetUserMessagesById,
+  createDeleteMessageById,
+} from "../chat/chat-service.js";
 import initTokenService from "../auth/token/token-service.js";
 import initOpenIdService from "../auth/open-id/open-id-service.js";
 import initFriendRequestService from "./friend-request/friend-request-service.js";
@@ -21,7 +29,7 @@ import initUserController from "./user-controller.js";
 import initUserMiddleware from "./user-middleware.js";
 import createJwtUtils from "../auth/jwt.js";
 import * as schema from "./user-schema.js";
-import * as userPolicy from "./user-policy.js";
+import userPolicy from "./policy.js";
 import { cookieConfig } from "../auth/auth-service.js";
 import { createLogOutController } from "../auth/auth-controller.js";
 import {
@@ -30,17 +38,11 @@ import {
 } from "../auth/auth-middleware.js";
 import {
   ZodbodyValidator,
-  ZodqueryValidator,
   ZodparamValidator,
   ZodfileValidator,
 } from "../middleware/index.js";
 import { obtuseEmail, verifyPassword, hashPassword } from "../helpers/index.js";
-import {
-  idGenerator,
-  buildIncludeQuery,
-  normalizeInclude,
-  removeFields,
-} from "./utils.js";
+import { idGenerator, removeFields } from "./utils.js";
 
 const dirname = import.meta?.dirname;
 
@@ -74,13 +76,34 @@ const jwtUtils = createJwtUtils({
  * SERVICE
  */
 
+const getUserMessagesById = createGetUserMessagesById({ chatRepository });
+
+const deleteMessageById = createDeleteMessageById({ chatRepository, storage });
+
+const deleteProfileAvatarByUserId = createDeleteProfileAvatarByUserId({
+  profileRepository,
+  storage,
+  userService: {
+    getUserPkById: createGetUserPkbyId({ userRepository }),
+  },
+});
+
+const deleteBackgroundAvatar = createDeleteBackgroundAvatarByUserId({
+  profileRepository,
+  storage,
+  userService: {
+    getUserPkById: createGetUserPkbyId({ userRepository }),
+  },
+});
+
 const userService = initUserService({
   userRepository,
-  passwordManager: { verifyPassword, hashPassword },
-  includeBuilder: {
-    buildIncludeQuery,
-    normalizeInclude,
+  chatService: { getUserMessagesById, deleteMessageById },
+  profileService: {
+    deleteProfileAvatarByUserId,
+    deleteBackgroundAvatar,
   },
+  passwordManager: { verifyPassword, hashPassword },
 });
 
 const profileService = initProfileService({
@@ -155,19 +178,17 @@ const readAcessToken = createAccessTokenMiddleware({ jwtUtils });
 router.use(readAcessToken);
 router.use(protectRoute("accessToken"));
 
-router.get("/me", ZodqueryValidator(schema.querySchema), userController.me);
+router.get("/me", userController.me);
 
 router.patch(
-  "/:userId/username",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/username",
   ZodbodyValidator(schema.updateUsernameSchema),
   userMiddleware.canUpdateUsername,
   userController.patchUsername
 );
 
 router.patch(
-  "/:userId/password",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/password",
   ZodbodyValidator(schema.updatePasswordSchema),
   userMiddleware.canUpdatePassword,
   userController.patchPassword,
@@ -175,15 +196,13 @@ router.patch(
 );
 
 router.delete(
-  "/:userId",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me",
   userMiddleware.canDeleteAccount,
-  (req, res) => res.sendStatus(501)
+  userController.deleteAccount
 );
 
 router.delete(
-  "/:userId/providers/google",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/providers/google",
   userMiddleware.canUnlinkGoogle,
   userController.unlinkGoogle
 );
@@ -193,15 +212,14 @@ router.delete(
  */
 
 router.post(
-  "/:userId/block-users",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/block-users",
   ZodbodyValidator(schema.blockUserBodySchema),
   userMiddleware.canBlockUser,
   userController.blockUser
 );
 
 router.delete(
-  "/:userId/block-users/:unBlockId",
+  "/me/block-users/:unBlockId",
   ZodparamValidator(schema.unBlockUserParamSchema),
   userMiddleware.canUnBlockUser,
   userController.unBlockUser
@@ -211,37 +229,31 @@ router.delete(
  * FRIEND REQUESTS ROUTE
  */
 
-router.get(
-  "/:userId/friend-requests",
-  ZodparamValidator(schema.userIdParamSchema),
-  userMiddleware.isUnauthorizedUser,
-  userController.getFriendRequestList
-);
+router.get("/me/friend-requests", userController.getFriendRequestList);
 
 router.post(
-  "/:userId/friend-requests",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/friend-requests",
   ZodbodyValidator(schema.friendRequestBodySchema),
   userMiddleware.canSendFriendRequest,
   userController.sendFriendRequest
 );
 
 router.patch(
-  "/:userId/friend-requests/:friendRequestId",
+  "/me/friend-requests/:friendRequestId",
   ZodparamValidator(schema.friendRequestParamSchema),
   userMiddleware.canAcceptFriendRequest,
   userController.acceptFriendRequest
 );
 
 router.delete(
-  "/:userId/friend-requests/:friendRequestId",
+  "/me/friend-requests/:friendRequestId",
   ZodparamValidator(schema.friendRequestParamSchema),
   userMiddleware.canDeleteFriendRequest,
   userController.deleteFriendRequest
 );
 
 router.delete(
-  "/:userId/friends/:friendId",
+  "/me/friends/:friendId",
   ZodparamValidator(schema.friendParamSchema),
   userMiddleware.canUnfriendUser,
   userController.unFriend
@@ -252,50 +264,35 @@ router.delete(
  */
 
 router.patch(
-  "/:userId/profile/display-name",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/profile/display-name",
   ZodbodyValidator(schema.updateDisplayNameSchema),
-  userMiddleware.canUpdateProfile,
   userController.patchDisplayName
 );
 
 router.patch(
-  "/:userId/profile/about-me",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/profile/about-me",
   ZodbodyValidator(schema.updateAboutMeSchema),
-  userMiddleware.canUpdateProfile,
   userController.patchAboutMe
 );
 
 router.patch(
-  "/:userId/profile/avatar",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/profile/avatar",
   userMiddleware.uploader("avatar"),
   ZodfileValidator(schema.updateProfileAvatarSchema, "avatar"),
-  userMiddleware.canUpdateProfile,
   userController.patchProfileAvatar
 );
 
 router.patch(
-  "/:userId/profile/background-avatar",
-  ZodparamValidator(schema.userIdParamSchema),
+  "/me/profile/background-avatar",
   userMiddleware.uploader("backgroundAvatar"),
   ZodfileValidator(schema.updateBackgroundAvatarSchema, "backgroundAvatar"),
-  userMiddleware.canUpdateProfile,
   userController.patchBackgroundAvatar
 );
 
-router.delete(
-  "/:userId/profile/avatar",
-  ZodparamValidator(schema.userIdParamSchema),
-  userMiddleware.canUpdateProfile,
-  userController.deleteProfileAvatar
-);
+router.delete("/me/profile/avatar", userController.deleteProfileAvatar);
 
 router.delete(
-  "/:userId/profile/background-avatar",
-  ZodparamValidator(schema.userIdParamSchema),
-  userMiddleware.canUpdateProfile,
+  "/me/profile/background-avatar",
   userController.deleteBackgroundAvatar
 );
 
