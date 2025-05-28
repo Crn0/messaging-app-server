@@ -21,7 +21,7 @@ import initUserController from "./user-controller.js";
 import initUserMiddleware from "./user-middleware.js";
 import createJwtUtils from "../auth/jwt.js";
 import * as schema from "./user-schema.js";
-import * as userPolicy from "./user-policy.js";
+import userPolicy from "./policy.js";
 import { cookieConfig } from "../auth/auth-service.js";
 import { createLogOutController } from "../auth/auth-controller.js";
 import {

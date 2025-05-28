@@ -354,7 +354,7 @@ describe("User deletion", () => {
         },
         expectedError: {
           code: 403,
-          message: "You are not authorized to perform this action",
+          message: "Demo user cannot delete their account",
         },
       },
     ])(

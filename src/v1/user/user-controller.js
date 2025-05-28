@@ -49,15 +49,13 @@ const createGetFriendRequest =
 const createSendFriendRequest =
   ({ friendRequestService }) =>
   async (req, res, next) => {
-    const { userId: requesterId } = req.params;
+    const { id: requesterId } = req.user;
     const { friendId: receiverId } = req.body;
-    const { requesterFriends } = req.ctx;
 
     const { error, data: friendRequest } = await tryCatchAsync(async () =>
       friendRequestService.createFriendRequest({
         requesterId,
         receiverId,
-        requesterFriends,
       })
     );
 
@@ -308,12 +306,10 @@ const createBlockUser =
   async (req, res, next) => {
     const { id: requesterId } = req.user;
     const { blockId: receiverId } = req.body;
-    const { requesterBlockList } = req.ctx;
 
     const data = {
       requesterId,
       receiverId,
-      requesterBlockList,
     };
 
     const { error: blockUserError, data: blockUserData } = await tryCatchAsync(
@@ -348,12 +344,10 @@ const createUnBlockUser =
   async (req, res, next) => {
     const requesterId = req.user.id;
     const { unBlockId: receiverId } = req.params;
-    const { requesterBlockList } = req.ctx;
 
     const data = {
       requesterId,
       receiverId,
-      requesterBlockList,
     };
 
     const { error, data: unBlockUserData } = await tryCatchAsync(async () =>

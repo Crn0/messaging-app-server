@@ -57,7 +57,7 @@ beforeAll(async () => {
   };
 });
 
-describe.only("Send friend request", () => {
+describe("Send friend request", () => {
   describe("Authentication Errors", () => {
     it.each([
       {
@@ -112,7 +112,7 @@ describe.only("Send friend request", () => {
         },
         expectedError: {
           code: 403,
-          message: "You are not authorized to perform this action",
+          message: "You cannot send friend request to yourself",
         },
       },
     ])(
@@ -133,10 +133,9 @@ describe.only("Send friend request", () => {
     );
   });
 
-  describe.skip("Success Case", () => {
+  describe("Success Case", () => {
     it("returns 200 (OK) and the friend request id", async () => {
       const res = await userReq1.friend.post.sendFriendRequest(
-        requesterId,
         requesterAccessToken,
         payload
       );
@@ -186,7 +185,6 @@ describe("Friend request details", () => {
 
   beforeAll(async () => {
     const res = await userReq1.friend.post.sendFriendRequest(
-      requesterId,
       requesterAccessToken,
       payload
     );
@@ -248,10 +246,8 @@ describe("Friend request details", () => {
 
   describe("Success Case", () => {
     it("returns 200 (OK) and array of the user's friend request", async () => {
-      const res = await userReq1.friend.get.friendRequestList(
-        requesterId,
-        requesterAccessToken
-      );
+      const res =
+        await userReq1.friend.get.friendRequestList(requesterAccessToken);
 
       expect(res.status).toBe(200);
 
@@ -278,12 +274,11 @@ describe("Friend request details", () => {
   });
 });
 
-describe("Delete friend request", () => {
+describe.only("Delete friend request", () => {
   let friendRequestId;
 
   beforeAll(async () => {
     const res = await userReq1.friend.post.sendFriendRequest(
-      requesterId,
       requesterAccessToken,
       payload
     );
@@ -296,7 +291,6 @@ describe("Delete friend request", () => {
       {
         scenario: "invalid token",
         data: {
-          id: requesterId,
           token: invalidToken,
           includeAuth: true,
         },
@@ -337,18 +331,17 @@ describe("Delete friend request", () => {
     );
   });
 
-  describe("Forbidden Errors", () => {
+  describe("Not Found Errors", () => {
     it.each([
       {
         scenario: "user is not the requester nor the receiver",
         data: {
-          id: unAuthorizedId,
           token: unAuthorizedAccessToken,
           includeAuth: true,
         },
         expectedError: {
-          code: 403,
-          message: "You are not authorized to accept this friend request",
+          code: 404,
+          message: "Friend request does not exist",
         },
       },
     ])(
@@ -362,7 +355,7 @@ describe("Delete friend request", () => {
           { includeAuth }
         );
 
-        expect(res.status).toBe(403);
+        expect(res.status).toBe(404);
         expect(res.body).toMatchObject(expectedError);
       }
     );
@@ -371,7 +364,6 @@ describe("Delete friend request", () => {
   describe("Success Case", () => {
     it("returns 200 (OK) and the deleted friend request id", async () => {
       const res = await userReq1.friend.delete.deleteFriendRequest(
-        requesterId,
         friendRequestId,
         requesterAccessToken
       );
@@ -389,7 +381,6 @@ describe("Accept friend request", () => {
 
   beforeAll(async () => {
     const res = await userReq1.friend.post.sendFriendRequest(
-      requesterId,
       requesterAccessToken,
       payload
     );

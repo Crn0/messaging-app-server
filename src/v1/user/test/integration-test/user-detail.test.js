@@ -110,6 +110,35 @@ describe("Update user's username", () => {
     );
   });
 
+  describe("Forbidden Errors", () => {
+    it.each([
+      {
+        scenario: "when demo user is updating its' password",
+        data: {
+          token: demoUserAccessToken,
+          payload: { username: "demo_user" },
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "Demo user cannot update their username",
+        },
+      },
+    ])(
+      "fails with 403 (FORBIDDEN) when $scenario",
+      async ({ data, expectedError }) => {
+        const { token, payload, includeAuth } = data;
+
+        const res = await userReq.user.patch.username(token, payload, {
+          includeAuth,
+        });
+
+        expect(res.status).toBe(403);
+        expect(res.body).toMatchObject(expectedError);
+      }
+    );
+  });
+
   describe("Validation Errors", () => {
     it.each([
       {
@@ -210,6 +239,37 @@ describe("Update user's password", () => {
         });
 
         expect(res.status).toBe(401);
+        expect(res.body).toMatchObject(expectedError);
+      }
+    );
+  });
+
+  describe("Forbidden Errors", () => {
+    it.each([
+      {
+        scenario: "when demo user is updating its' password",
+        data: {
+          token: demoUserAccessToken,
+          payload: {
+            ...form,
+          },
+          includeAuth: true,
+        },
+        expectedError: {
+          code: 403,
+          message: "Demo user cannot update their password",
+        },
+      },
+    ])(
+      "fails with 403 (FORBIDDEN) when $scenario",
+      async ({ data, expectedError }) => {
+        const { token, payload, includeAuth } = data;
+
+        const res = await userReq.user.patch.password(token, payload, {
+          includeAuth,
+        });
+
+        expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
       }
     );

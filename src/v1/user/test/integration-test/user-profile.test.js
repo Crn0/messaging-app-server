@@ -33,7 +33,7 @@ beforeAll(async () => {
     const attachmentPath = `${process.env.CLOUDINARY_ROOT_NAME}/avatars/${id}`;
 
     if (TEST_UPLOAD) {
-      storage
+      await storage
         .destroyFolder(attachmentPath)
         .then(console.log)
         .catch(console.log);
