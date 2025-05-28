@@ -337,11 +337,14 @@ describe("User deletion", () => {
     );
   });
 
-  describe.skip("Success Case", () => {
-    it("501 (NOT_IMPLEMENTED)", async () => {
-      const res = await userReq.user.delete.account(user.data.id, accessToken);
+  describe("Success Case", () => {
+    it("returns 204 (NO_CONTENT) when the user deleted their account", async () => {
+      const res = await userReq.user.delete.account(accessToken);
 
-      expect(res.status).toBe(501);
+      expect(res.status).toBe(204);
+      expect(
+        await client.user.findUnique({ where: { id: user.data.id } })
+      ).toBeNull();
     });
   });
 });

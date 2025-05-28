@@ -1,6 +1,48 @@
-import { httpStatus } from "../../constants/index.js";
+import { env, httpStatus } from "../../constants/index.js";
 import ValidationError from "../../errors/validation-error.js";
 import APIError from "../../errors/api-error.js";
+import StorageError from "../../errors/storage-error.js";
+
+const deleteUserAvatars = async ({ profileService, user, storage }) => {
+  const { avatar, backgroundAvatar } = user.profile || {};
+
+  if (!avatar && !backgroundAvatar) return;
+
+  const avatarPath = `${env.CLOUDINARY_ROOT_NAME}/avatars/${user.id}`;
+
+  try {
+    await storage.destroyFolder(avatarPath);
+
+    await Promise.all([
+      profileService.deleteProfileAvatarByUserId(user.id),
+      profileService.deleteBackgroundAvatarByUserId(user.id),
+    ]);
+  } catch (e) {
+    if (e instanceof StorageError && e.httpCode !== 404) throw e;
+  }
+};
+
+const deleteUserAttachments = async ({ chatService, user, storage }) => {
+  const messages = await chatService.getUserMessagesById(user.id);
+
+  if (messages.length === 0) return;
+
+  const attachmentIds = messages.flatMap((message) =>
+    message.attachments.map((attachment) => attachment.id)
+  );
+
+  try {
+    await Promise.all(attachmentIds.map((id) => storage.destroyFile(id)));
+  } catch (e) {
+    if (e instanceof StorageError && e.httpCode !== 404) throw e;
+  }
+
+  await Promise.all(
+    messages.map(async (message) =>
+      chatService.deleteMessageById(message.chatId, message.id)
+    )
+  );
+};
 
 const createInsertUser =
   ({ userRepository, passwordManager }) =>
@@ -207,17 +249,18 @@ const createUpdatePasswordById =
   };
 
 const createDeleteUserById =
-  ({ userRepository }) =>
-  async (id) => {
-    const userExist = await userRepository.findUserById(id);
+  ({ userRepository, profileService, chatService, storage }) =>
+  async (userId) => {
+    const user = await userRepository.findUserById(userId);
 
-    if (!userExist) {
+    if (!user) {
       throw new APIError("User not found", httpStatus.NOT_FOUND);
     }
 
-    const user = await userRepository.deleteUserById(id);
+    await deleteUserAvatars({ profileService, user, storage });
+    await deleteUserAttachments({ chatService, user, storage });
 
-    return user;
+    return userRepository.deleteUserById(user.id);
   };
 
 const createDeleteUsers =

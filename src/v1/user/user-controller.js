@@ -364,6 +364,20 @@ const createUnBlockUser =
     });
   };
 
+const createDeleteAccount =
+  ({ userService }) =>
+  async (req, res, next) => {
+    const userId = req.user.id;
+
+    const { error } = await tryCatchAsync(() =>
+      userService.deleteUserById(userId)
+    );
+
+    if (error) return next(error);
+
+    return res.sendStatus(httpStatus.NO_CONTENT);
+  };
+
 const createUnlinkGoogle =
   ({ openIdService }) =>
   async (req, res, next) => {
@@ -413,6 +427,7 @@ export default (depenpendies) => {
 
   const unBlockUser = createUnBlockUser(depenpendies);
 
+  const deleteAccount = createDeleteAccount(depenpendies);
   const unlinkGoogle = createUnlinkGoogle(depenpendies);
 
   return Object.freeze({
@@ -430,6 +445,7 @@ export default (depenpendies) => {
     unFriend,
     blockUser,
     unBlockUser,
+    deleteAccount,
     unlinkGoogle,
     deleteProfileAvatar,
     deleteBackgroundAvatar,
