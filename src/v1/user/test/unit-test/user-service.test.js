@@ -13,6 +13,9 @@ const User = userFactory();
 
 const userService = initUserService({
   userRepository,
+  chatService: {
+    getUserMessagesById: async () => [],
+  },
   passwordManager: {
     hashPassword: async (val) => val,
     verifyPassword: (oldPass, newPass) => oldPass === newPass,
