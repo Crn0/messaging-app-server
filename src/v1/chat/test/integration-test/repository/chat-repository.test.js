@@ -19,8 +19,8 @@ const { entity: user2Entity, data: user2Data } = user2;
 const { id: user1Id } = user1Data;
 const { id: user2Id } = user2Data;
 
-const directChatId = idGenerator();
-const groupChatId = idGenerator();
+let directChatId;
+let groupChatId;
 
 beforeAll(async () => {
   await client.$transaction([
@@ -58,7 +58,7 @@ beforeAll(async () => {
 
 describe("Chat creation", () => {
   it("a create a direct-chat between the users", async () => {
-    const data = { chatId: directChatId, memberIds: [user1Id, user2Id] };
+    const data = { memberIds: [user1Id, user2Id] };
 
     const chat = await chatRepository.insertDirectChat(data);
 
@@ -71,6 +71,8 @@ describe("Chat creation", () => {
 
     expect(chat).toMatchObject(toMatchObject);
     expect(chat.isPrivate).toBeTruthy();
+
+    directChatId = chat.id;
   });
 
   it("create a group-chat", async () => {
@@ -92,7 +94,6 @@ describe("Chat creation", () => {
     }));
 
     const data = {
-      chatId: groupChatId,
       name: `${username}'s group chat`,
       ownerId: user1Id,
       attachment: { id, name, url, format, size, images },
@@ -110,6 +111,8 @@ describe("Chat creation", () => {
     };
 
     expect(chat).toMatchObject(toMatchObject);
+
+    groupChatId = chat.id;
   });
 });
 

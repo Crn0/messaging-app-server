@@ -37,10 +37,6 @@ const ACCEPTED_ATTACHMENTS_TYPES = [
 const directChatCreationCondition = (data, ctx) => {
   let memberIdsIndex;
 
-  const chatIdIsUndefined = typeof data.chatId === "undefined";
-  const chatIdInvalidFormat =
-    z.string().uuid().safeParse(data.chatId).success === false;
-
   const memberIdsIsUndefined = typeof data?.memberIds === "undefined";
   const memberIdsLengthIsNotTwo = Array.isArray(data.memberIds)
     ? data?.memberIds?.length !== 2
@@ -55,25 +51,6 @@ const directChatCreationCondition = (data, ctx) => {
 
     return true;
   });
-
-  if (chatIdIsUndefined) {
-    ctx.addIssue({
-      code: "invalid_type",
-      expected: "string",
-      received: "undefined",
-      path: ["chatId"],
-      message: "Chat ID is required",
-    });
-  }
-
-  if (chatIdInvalidFormat) {
-    ctx.addIssue({
-      validation: "uuid",
-      code: "invalid_string",
-      message: "The provided ID is not a valid UUID format",
-      path: ["chatId"],
-    });
-  }
 
   if (memberIdsIsUndefined) {
     ctx.addIssue({
@@ -197,7 +174,6 @@ const multerAvatarSchema = z.object(
 );
 
 const directChatCreationSchema = z.object({
-  chatId: z.string().optional(),
   type: chatType,
   memberIds: z.array(z.string()).optional(),
 });

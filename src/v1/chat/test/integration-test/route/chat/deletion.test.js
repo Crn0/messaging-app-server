@@ -22,7 +22,7 @@ const {
 } = await setupTestUsers(3);
 
 let groupChatId;
-const directChatId = idGenerator();
+let directChatId;
 
 beforeAll(async () => {
   const groupChatPayload = {
@@ -31,7 +31,6 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: directChatId,
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -40,12 +39,13 @@ beforeAll(async () => {
     ...entities.map((entity) => client.user.create({ data: { ...entity } })),
   ]);
 
-  const [groupChatResult] = await Promise.all([
+  const [groupChatResult, directChatResult] = await Promise.all([
     request.chat.post.chat(user1AccessToken, groupChatPayload),
     request.chat.post.chat(user1AccessToken, directChatPayload),
   ]);
 
   groupChatId = groupChatResult.body.id;
+  directChatId = directChatResult.body.id;
 
   return async () => {
     const chatIds = [directChatId, groupChatId].filter(Boolean);
@@ -71,7 +71,6 @@ describe("Chat deletion", () => {
       {
         scenario: "invalid token",
         data: {
-          chatId: directChatId,
           token: user1InvalidToken,
           includeAuth: true,
         },
@@ -80,7 +79,6 @@ describe("Chat deletion", () => {
       {
         scenario: "expired token",
         data: {
-          chatId: directChatId,
           token: user1ExpiredToken,
           includeAuth: true,
         },
@@ -89,7 +87,6 @@ describe("Chat deletion", () => {
       {
         scenario: "missing 'Authorization' header",
         data: {
-          chatId: directChatId,
           token: user1AccessToken,
           includeAuth: false,
         },
@@ -103,7 +100,8 @@ describe("Chat deletion", () => {
     it.each(scenarios)(
       "fails with 401 (UNAUTHORIZED) for $scenario",
       async ({ data, expectedError }) => {
-        const { chatId, token, includeAuth } = data;
+        const { token, includeAuth } = data;
+        const chatId = groupChatId;
 
         const res = await request.chat.delete.deleteChat(chatId, token, {
           includeAuth,
@@ -142,7 +140,7 @@ describe("Chat deletion", () => {
       {
         scenario: "a member trying to delete a direct chat",
         data: {
-          chatId: directChatId,
+          type: "DirectChat",
           token: user2AccessToken,
           includeAuth: true,
         },
@@ -156,11 +154,11 @@ describe("Chat deletion", () => {
     it.each(scenarios)(
       "fails with 403 when $scenario",
       async ({ data, expectedError }) => {
-        const { chatId, token } = data;
-        const res = await request.chat.delete.deleteChat(
-          chatId ?? groupChatId,
-          token
-        );
+        const { type, token } = data;
+
+        const chatId = type === "DirectChat" ? directChatId : groupChatId;
+
+        const res = await request.chat.delete.deleteChat(chatId, token);
 
         expect(res.status).toBe(403);
         expect(res.body).toMatchObject(expectedError);
@@ -190,12 +188,11 @@ describe("Chat deletion", () => {
     it.each(scenarios)(
       "fails with 404 for $scenario",
       async ({ data, expectedError }) => {
-        const { chatId, token } = data;
+        const { token } = data;
 
-        const res = await request.chat.delete.deleteChat(
-          chatId ?? directChatId,
-          token
-        );
+        const chatId = data?.chatId ?? directChatId;
+
+        const res = await request.chat.delete.deleteChat(chatId, token);
 
         expect(res.status).toBe(404);
         expect(res.body).toMatchObject(expectedError);

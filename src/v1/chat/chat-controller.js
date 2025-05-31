@@ -24,10 +24,19 @@ const cleanFiles = async (files) => {
 // ===============
 
 const createCreateChat =
-  ({ chatService }) =>
+  ({ chatService, utils }) =>
   async (req, res, next) => {
     const { type, chatId, memberIds, name, avatar: file } = req.body;
     const ownerId = req.user.id;
+
+    if (type === "DirectChat" && req?.ctx?.chat) {
+      const cleanChat = utils.removeFields(req?.ctx?.chat, [
+        "roles",
+        "members",
+      ]);
+
+      return res.status(httpStatus.OK).json(cleanChat);
+    }
 
     const { error, data } = await tryCatchAsync(() => {
       if (type === "DirectChat") {

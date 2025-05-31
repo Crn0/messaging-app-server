@@ -28,7 +28,7 @@ const {
 } = await setupTestUsers(5);
 
 let groupChatId;
-const directChatId = idGenerator();
+let directChatId;
 
 beforeAll(async () => {
   const groupChatPayload = {
@@ -38,7 +38,6 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: directChatId,
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -47,7 +46,7 @@ beforeAll(async () => {
     ...entities.map((entity) => client.user.create({ data: { ...entity } })),
   ]);
 
-  const [groupChatResult] = await Promise.all([
+  const [groupChatResult, directChatResult] = await Promise.all([
     request.chat.post.chat(user1AccessToken, groupChatPayload),
     request.chat.post.chat(user1AccessToken, directChatPayload),
   ]);
@@ -59,6 +58,7 @@ beforeAll(async () => {
   ]);
 
   groupChatId = groupChatResult.body.id;
+  directChatId = directChatResult.body.id;
 
   return async () => {
     const chatIds = [directChatId, groupChatId].filter(Boolean);
@@ -285,7 +285,6 @@ describe("Role creation", () => {
       {
         scenario: "non-member creating private chat's role",
         data: {
-          chatId: directChatId,
           payload: { name: "test_role_name" },
           token: user3AccessToken,
         },
@@ -296,7 +295,8 @@ describe("Role creation", () => {
     it.each(scenarios)(
       "fails with 404 for $scenario",
       async ({ data, expectedError }) => {
-        const { chatId, payload, token } = data;
+        const { payload, token } = data;
+        const chatId = data?.chatId ?? directChatId;
 
         const res = await request.role.post.createRole(chatId, payload, token);
 

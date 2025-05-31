@@ -34,17 +34,16 @@ const createInsertDirectChat =
     );
 
     const data = {
-      chatId: DTO?.chatId,
       memberIds: DTO.memberIds,
     };
 
     const chat = await chatRepository.insertDirectChat(data);
 
     const defaultRole = await roleService.createDefaultRole({
-      chatId: DTO?.chatId,
+      chatId: chat.id,
     });
 
-    await roleService.updateChatRoleMembers(defaultRole?.id, DTO.chatId, {
+    await roleService.updateChatRoleMembers(defaultRole?.id, chat.id, {
       memberIds: DTO.memberIds,
     });
 

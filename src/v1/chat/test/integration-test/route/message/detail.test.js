@@ -29,8 +29,7 @@ const {
 } = await setupTestUsers(3);
 
 let groupChatId;
-const directChatId = idGenerator();
-const blockedChatId = idGenerator();
+let directChatId;
 
 beforeAll(async () => {
   const groupChatPayload = {
@@ -40,7 +39,6 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: directChatId,
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -49,12 +47,13 @@ beforeAll(async () => {
     ...entities.map((entity) => client.user.create({ data: { ...entity } })),
   ]);
 
-  const [groupChatResult] = await Promise.all([
+  const [groupChatResult, directChatResult] = await Promise.all([
     request.chat.post.chat(user1AccessToken, groupChatPayload),
     request.chat.post.chat(user1AccessToken, directChatPayload),
   ]);
 
   groupChatId = groupChatResult.body.id;
+  directChatId = directChatResult.body.id;
 
   await request.member.post.joinMember(
     groupChatResult.body.id,
@@ -62,7 +61,7 @@ beforeAll(async () => {
   );
 
   return async () => {
-    const chatIds = [directChatId, groupChatId, blockedChatId].filter(Boolean);
+    const chatIds = [directChatId, groupChatId].filter(Boolean);
 
     await client.$transaction([
       client.chat.deleteMany({
@@ -201,7 +200,6 @@ describe("Message detail", () => {
       {
         scenario: "user requesting a private chat messages",
         data: {
-          chatId: directChatId,
           token: nonMemberAccessToken,
         },
         expectedError: { code: 404, message: "Chat not found" },
@@ -212,7 +210,7 @@ describe("Message detail", () => {
       "fails with 404 for $scenario",
       async ({ data, expectedError }) => {
         const { token } = data;
-        const { chatId } = data;
+        const chatId = data?.chatId ?? directChatId;
 
         const res = await request.message.get.messageList(chatId, token);
 

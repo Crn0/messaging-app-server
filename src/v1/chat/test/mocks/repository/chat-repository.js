@@ -1,8 +1,8 @@
 import db from "../../db/index.js";
 import { idGenerator } from "../../../utils.js";
 
-const insertDirectChat = ({ chatId, membersId }) => {
-  const id = chatId;
+const insertDirectChat = ({ membersId }) => {
+  const id = idGenerator();
   const type = "DirectChat";
   const isPrivate = true;
   const createdAt = new Date();
