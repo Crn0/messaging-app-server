@@ -61,7 +61,12 @@ const insertGroupChat = async ({
 };
 
 const insertMember = async ({ chatId, memberId, type }) => {
-  const data = toData("update:member", { memberId, type });
+  const user = await client.user.findUnique({
+    where: { id: memberId },
+    select: { pk: true },
+  });
+
+  const data = toData("update:member", { userPk: user.pk, type });
 
   const chat = await client.chat.update({
     data,

@@ -46,7 +46,7 @@ const directChatData = (action, DTO) => {
       return {
         members: {
           create: {
-            user: { connect: { id: DTO.memberId } },
+            userPk: DTO.userPk,
           },
         },
       };
@@ -105,7 +105,7 @@ const groupChatData = (action, DTO) => {
       return {
         members: {
           create: {
-            user: { connect: { id: DTO.memberId } },
+            userPk: DTO.userPk,
           },
         },
       };
