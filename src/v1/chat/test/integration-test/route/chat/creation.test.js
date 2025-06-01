@@ -28,7 +28,7 @@ const {
 } = await setupTestUsers(3);
 
 let groupChatId;
-const directChatId = idGenerator();
+let directChatId;
 
 beforeAll(async () => {
   await client.$transaction([
@@ -66,7 +66,6 @@ beforeAll(async () => {
 
 describe("Chat creation", () => {
   const diretChatForm = {
-    chatId: directChatId,
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -206,34 +205,10 @@ describe("Chat creation", () => {
           expectedError: { path: ["type"], code: "invalid_enum_value" },
         },
         {
-          scenario: "chat ID field is not in UUID format",
-          data: {
-            token: user1AccessToken,
-            payload: {
-              chatId: "",
-              type: "DirectChat",
-              memberIds: [user1Id, user2Id],
-            },
-          },
-          expectedError: { path: ["chatId"], code: "invalid_string" },
-        },
-        {
-          scenario: "chat ID field is undefined",
-          data: {
-            token: user1AccessToken,
-            payload: {
-              type: "DirectChat",
-              memberIds: [user1Id, user2Id],
-            },
-          },
-          expectedError: { path: ["chatId"], code: "invalid_type" },
-        },
-        {
           scenario: "members ID too small",
           data: {
             token: user1AccessToken,
             payload: {
-              chatId: directChatId,
               type: "DirectChat",
               memberIds: [user1Id],
             },
@@ -245,7 +220,6 @@ describe("Chat creation", () => {
           data: {
             token: user1AccessToken,
             payload: {
-              chatId: directChatId,
               type: "DirectChat",
               memberIds: [user1Id, user2Id, user1Id],
             },
@@ -257,7 +231,6 @@ describe("Chat creation", () => {
           data: {
             token: user1AccessToken,
             payload: {
-              chatId: directChatId,
               memberIds: ["", user2Id],
               type: "DirectChat",
             },
@@ -269,7 +242,6 @@ describe("Chat creation", () => {
           data: {
             token: user1AccessToken,
             payload: {
-              chatId: directChatId,
               type: "DirectChat",
             },
           },
@@ -314,6 +286,8 @@ describe("Chat creation", () => {
         expect(res.body.isPrivate).toBeTruthy();
         expect(res.body.type).toBe("DirectChat");
 
+        directChatId = res.body.id;
+
         const members = await client.userOnChat.findMany({
           where: {
             chat: { id: res.id },
@@ -343,41 +317,26 @@ describe("Chat creation", () => {
 
         expect(members).toEqual(toEqualMembers);
       });
-    });
 
-    describe("Conflit Errors", () => {
-      const scenarios = [
-        {
-          scenario: "A direct-chat exist between the specified users",
-          data: {
-            token: user1AccessToken,
-            payload: {
-              chatId: idGenerator(),
-              type: "DirectChat",
-              memberIds: [user1Id, user2Id],
-            },
-            includeAuth: true,
-          },
-          expectedError: {
-            code: 409,
-            message: "Direct chat already exists",
-          },
-        },
-      ];
+      it("returns 200 (OK) when there is existing direct chat between users", async () => {
+        const res = await request.chat.post.chat(
+          user1AccessToken,
+          diretChatForm
+        );
 
-      it.each(scenarios)(
-        "fails with 409 (CONFLICT) for $scenario",
-        async ({ data, expectedError }) => {
-          const { token, payload, includeAuth } = data;
+        const toMatchObject = {
+          id: directChatId,
+          name: null,
+          avatar: null,
+          isPrivate: expect.any(Boolean),
+          createdAt: expect.any(String),
+          updatedAt: null,
+          type: expect.any(String),
+        };
 
-          const res = await request.chat.post.chat(token, payload, {
-            includeAuth,
-          });
-
-          expect(res.status).toBe(409);
-          expect(res.body).toMatchObject(expectedError);
-        }
-      );
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject(toMatchObject);
+      });
     });
   });
 

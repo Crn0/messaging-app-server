@@ -3,15 +3,7 @@ import { executePermissionCheck } from "./utils.js";
 
 export default {
   create: {
-    direct: (user, existingChat, { targetUser }) => {
-      if (existingChat) {
-        return {
-          allow: false,
-          code: "conflict",
-          reason: "Direct chat already exists",
-        };
-      }
-
+    direct: (user, targetUser) => {
       const directCount =
         user.chats?.filter((chat) => chat.type === "DirectChat").length || 0;
 

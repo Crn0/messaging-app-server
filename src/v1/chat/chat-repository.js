@@ -2,15 +2,16 @@ import client from "../../db/client.js";
 import { toData, toEntity } from "./chat-mapper.js";
 import field from "./include.js";
 
-const insertDirectChat = async ({ chatId, memberIds }) => {
-  const insertData = toData("insert", {
-    chatId,
-    memberId: memberIds[0],
-    type: "DirectChat",
-  });
+const insertDirectChat = async ({ memberIds }) => {
+  const userPks = (
+    await client.user.findMany({
+      where: { id: { in: memberIds } },
+      select: { pk: true },
+    })
+  ).map(({ pk }) => pk);
 
-  const updateData = toData("update:member", {
-    memberId: memberIds[1],
+  const insertData = toData("insert", {
+    userPks,
     type: "DirectChat",
   });
 
@@ -22,15 +23,7 @@ const insertDirectChat = async ({ chatId, memberIds }) => {
     data: { chatPk: chat.pk, lastLevel: 0 },
   });
 
-  const insertReceiver = await client.chat.update({
-    where: {
-      id: chat.id,
-    },
-    data: updateData,
-    include: field.default,
-  });
-
-  return toEntity("Chat", insertReceiver);
+  return toEntity("Chat", chat);
 };
 
 const insertGroupChat = async ({
@@ -40,10 +33,16 @@ const insertGroupChat = async ({
   isPrivate,
   attachment,
 }) => {
+  const owner = await client.user.findUnique({
+    where: { id: ownerId },
+    select: { pk: true },
+  });
+
   const data = toData("insert", {
     chatId,
     name,
     ownerId,
+    ownerPk: owner.pk,
     attachment,
     isPrivate,
     type: "GroupChat",
@@ -62,7 +61,12 @@ const insertGroupChat = async ({
 };
 
 const insertMember = async ({ chatId, memberId, type }) => {
-  const data = toData("update:member", { memberId, type });
+  const user = await client.user.findUnique({
+    where: { id: memberId },
+    select: { pk: true },
+  });
+
+  const data = toData("update:member", { userPk: user.pk, type });
 
   const chat = await client.chat.update({
     data,

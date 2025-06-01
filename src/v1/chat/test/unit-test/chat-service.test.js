@@ -58,7 +58,6 @@ beforeAll(() => () => {
 describe("Chat creation", () => {
   it("create direct-chat", async () => {
     const data = {
-      chatId: idGenerator(),
       memberIds: [user1Id, user2Id],
     };
 
@@ -73,7 +72,7 @@ describe("Chat creation", () => {
 
     expect(chat).toMatchObject(toMatchObject);
 
-    directChatId = data.chatId;
+    directChatId = chat.id;
   });
 
   it("create group-chat", async () => {

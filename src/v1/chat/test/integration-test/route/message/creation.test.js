@@ -36,8 +36,8 @@ const {
 } = await setupTestUsers(5);
 
 let groupChatId;
-const directChatId = idGenerator();
-const blockedChatId = idGenerator();
+let directChatId;
+let blockedChatId;
 
 beforeAll(async () => {
   const groupChatPayload = {
@@ -47,13 +47,11 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: directChatId,
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
 
   const blockedChatPayload = {
-    chatId: blockedChatId,
     type: "DirectChat",
     memberIds: [user3Id, user5Id],
   };
@@ -62,13 +60,16 @@ beforeAll(async () => {
     ...entities.map((entity) => client.user.create({ data: { ...entity } })),
   ]);
 
-  const [groupChatResult] = await Promise.all([
-    request.chat.post.chat(user1AccessToken, groupChatPayload),
-    request.chat.post.chat(user1AccessToken, directChatPayload),
-    request.chat.post.chat(mutedMemberAccessToken, blockedChatPayload),
-  ]);
+  const [groupChatResult, directChatResult, blockChatResult] =
+    await Promise.all([
+      request.chat.post.chat(user1AccessToken, groupChatPayload),
+      request.chat.post.chat(user1AccessToken, directChatPayload),
+      request.chat.post.chat(mutedMemberAccessToken, blockedChatPayload),
+    ]);
 
   groupChatId = groupChatResult.body.id;
+  directChatId = directChatResult.body.id;
+  blockedChatId = blockChatResult.body.id;
 
   await Promise.all([
     request.member.post.joinMember(groupChatResult.body.id, user2AccessToken),
@@ -209,6 +210,12 @@ describe("Message creation", () => {
   });
 
   describe("Forbidden Errors", () => {
+    const getId = (type) => {
+      if (type === "DirectChat") return blockedChatId;
+
+      return groupChatId;
+    };
+
     const scenarios = [
       {
         scenario: "non-member sends a message to a public group chat",
@@ -250,7 +257,7 @@ describe("Message creation", () => {
       {
         scenario: "user sends a message to someone who blocked them",
         data: {
-          chatId: blockedChatId,
+          type: "DirectChat",
           payload: { name: "test_message" },
           token: nonMemberAccessToken,
           includeAuth: true,
@@ -263,7 +270,7 @@ describe("Message creation", () => {
       {
         scenario: "user sends a direct message to a blocked user",
         data: {
-          chatId: blockedChatId,
+          type: "DirectChat",
           payload: { name: "test_message" },
           token: mutedMemberAccessToken,
           includeAuth: true,
@@ -278,8 +285,8 @@ describe("Message creation", () => {
     it.each(scenarios)(
       "fails with 403 when $scenario",
       async ({ data, expectedError }) => {
-        const { payload, token } = data;
-        const chatId = data?.chatId ?? groupChatId;
+        const { type, payload, token } = data;
+        const chatId = getId(type);
 
         const res = await request.message.post.createMessage(
           chatId,
@@ -294,6 +301,12 @@ describe("Message creation", () => {
   });
 
   describe("Not Found Errors", () => {
+    const getId = (type) => {
+      if (type === "DirectChat") return directChatId;
+
+      return groupChatId;
+    };
+
     const scenarios = [
       {
         scenario: "chat does not exist",
@@ -307,7 +320,7 @@ describe("Message creation", () => {
       {
         scenario: "user sends a message to a private chat",
         data: {
-          chatId: directChatId,
+          type: "DirectChat",
           token: nonMemberAccessToken,
           payload: { content: "test_message" },
         },
@@ -318,8 +331,9 @@ describe("Message creation", () => {
     it.each(scenarios)(
       "fails with 404 for $scenario",
       async ({ data, expectedError }) => {
-        const { payload, token } = data;
-        const chatId = data?.chatId ?? groupChatId;
+        const { type, payload, token } = data;
+
+        const chatId = data?.chatId || getId(type);
 
         const res = await request.message.post.createMessage(
           chatId,
@@ -403,12 +417,18 @@ describe("Message creation", () => {
   });
 
   describe("Success case", () => {
+    const getId = (type) => {
+      if (type === "DirectChat") return directChatId;
+
+      return groupChatId;
+    };
+
     describe("Message with content", () => {
       const scenarios = [
         {
           scenario: "user sends a message to a direct chat",
           data: {
-            chatId: directChatId,
+            type: "DirectChat",
             userId: user2Id,
             token: user2AccessToken,
             payload: { content: "test_message" },
@@ -417,6 +437,7 @@ describe("Message creation", () => {
         {
           scenario: "user sends a message to a group chat",
           data: {
+            type: "GroupChat",
             userId: user1Id,
             token: user1AccessToken,
             payload: { content: "test_message" },
@@ -427,8 +448,9 @@ describe("Message creation", () => {
       it.each(scenarios)(
         "returns 200 (OK) with the created message when $scenario",
         async ({ data }) => {
-          const { userId, payload, token } = data;
-          const chatId = data?.chatId ?? groupChatId;
+          const { type, userId, payload, token } = data;
+
+          const chatId = getId(type);
 
           const res = await request.message.post.createMessage(
             chatId,
@@ -471,7 +493,7 @@ describe("Message creation", () => {
           {
             scenario: "user sends a message to a direct chat",
             data: {
-              chatId: directChatId,
+              type: "DirectChat",
               userId: user2Id,
               token: user2AccessToken,
               payload: {
@@ -483,6 +505,7 @@ describe("Message creation", () => {
           {
             scenario: "user sends a message to a group chat",
             data: {
+              type: "GroupChat",
               userId: user1Id,
               token: user1AccessToken,
               content: "test_message",
@@ -497,8 +520,8 @@ describe("Message creation", () => {
         it.each(scenarios)(
           "returns 200 (OK) with the created message when $scenario",
           async ({ data }) => {
-            const { userId, payload, token } = data;
-            const chatId = data?.chatId ?? groupChatId;
+            const { type, userId, payload, token } = data;
+            const chatId = getId(type);
 
             const res = await request.message.post.createMessage(
               chatId,

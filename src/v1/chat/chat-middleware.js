@@ -63,20 +63,19 @@ const createUploader = ({ multer, MulterError }) => ({
 const createCanCreateChat =
   ({ chatService, blockUserService, chatPolicy }) =>
   async (req, _, next) => {
-    const { chatId, memberIds, type } = req.body;
+    const { memberIds, type } = req.body;
     const user = { id: req.user.id };
     const targetUser = {};
 
-    const [chatsResult, chatByIdResult, chatByMembersIdResult] =
-      await Promise.all([
-        tryCatchAsync(() => chatService.getChatsByMemberId(user.id)),
-        tryCatchAsync(() => chatService.getChatById(chatId)),
-        tryCatchAsync(() => chatService.getDirectChatByMembersId(memberIds)),
-      ]);
+    const [chatsResult, chatByMembersIdResult] = await Promise.all([
+      tryCatchAsync(() => chatService.getChatsByMemberId(user.id)),
+      tryCatchAsync(() => chatService.getDirectChatByMembersId(memberIds)),
+    ]);
 
     const { error: chatsError, data: chats } = chatsResult;
-    const { data: chatById } = chatByIdResult;
     const { data: chatByMembersId } = chatByMembersIdResult;
+
+    const chat = chatByMembersId;
 
     if (chatsError) {
       return next(chatsError);
@@ -106,8 +105,6 @@ const createCanCreateChat =
       targetUser.blockedUsers = targetUserBlockList;
     }
 
-    const chat = chatById ?? chatByMembersId;
-
     user.chats = chats;
 
     const { success, code, message } = chatPolicy.chat.checkCreate(user, chat, {
@@ -117,6 +114,13 @@ const createCanCreateChat =
 
     if (!success) {
       return next(new APIError(message, code));
+    }
+
+    if (type === "DirectChat") {
+      req.ctx = {
+        chat,
+        ...req.ctx,
+      };
     }
 
     return next();
@@ -529,6 +533,7 @@ const createCanUpdateRoleMetaData =
 
     chat.roles = chatRoles;
     user.roles = userRoles;
+
     const inputKeys = Object.keys(req.body);
 
     const roleFields = ["name", "permissions"].reduce((result, key) => {

@@ -11,12 +11,16 @@ const executePolicyCheck = executePolicy(POLICIES);
 const checkChatCreation = (user, chat, context) => {
   const { type } = context;
 
-  const { allowed, code, reason } = executePolicyCheck(user, chat, {
-    context,
-    resource: "chat",
-    action: "create",
-    field: type === "DirectChat" ? "direct" : "group",
-  });
+  const { allowed, code, reason } = executePolicyCheck(
+    user,
+    type === "DirectChat" ? context?.targetUser : chat,
+    {
+      context,
+      resource: "chat",
+      action: "create",
+      field: type === "DirectChat" ? "direct" : "group",
+    }
+  );
 
   if (type === "DirectChat") {
     if (!allowed) {

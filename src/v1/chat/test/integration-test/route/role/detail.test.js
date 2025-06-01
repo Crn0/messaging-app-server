@@ -28,7 +28,7 @@ const {
 } = await setupTestUsers(5);
 
 let groupChatId;
-const directChatId = idGenerator();
+let directChatId;
 
 beforeAll(async () => {
   const groupChatPayload = {
@@ -38,7 +38,6 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: directChatId,
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -47,7 +46,7 @@ beforeAll(async () => {
     ...entities.map((entity) => client.user.create({ data: { ...entity } })),
   ]);
 
-  const [groupChatResult] = await Promise.all([
+  const [groupChatResult, directChatResult] = await Promise.all([
     request.chat.post.chat(user1AccessToken, groupChatPayload),
     request.chat.post.chat(user1AccessToken, directChatPayload),
   ]);
@@ -59,6 +58,7 @@ beforeAll(async () => {
   ]);
 
   groupChatId = groupChatResult.body.id;
+  directChatId = directChatResult.body.id;
 
   return async () => {
     const chatIds = [directChatId, groupChatId].filter(Boolean);
@@ -269,7 +269,6 @@ describe("Role detail", () => {
         {
           scenario: "user requesting a private chat's roles",
           data: {
-            chatId: directChatId,
             token: user3AccessToken,
           },
           expectedError: { code: 404, message: "Chat not found" },
@@ -279,7 +278,8 @@ describe("Role detail", () => {
       it.each(scenarios)(
         "fails with 404 for $scenario",
         async ({ data, expectedError }) => {
-          const { chatId, token } = data;
+          const { token } = data;
+          const chatId = data?.chatId ?? directChatId;
 
           const res = await request.role.get.roleList(chatId, token);
 
@@ -422,6 +422,12 @@ describe("Role detail", () => {
     });
 
     describe("Not Found Errors", () => {
+      const getId = (type) => {
+        if (type === "DirectChat") return directChatId;
+
+        return groupChatId;
+      };
+
       const scenarios = [
         {
           scenario: "chat does not exist",
@@ -435,7 +441,7 @@ describe("Role detail", () => {
         {
           scenario: "user requesting a private chat's role",
           data: {
-            chatId: directChatId,
+            type: "DirectChat",
             roleId: idGenerator(),
             token: user3AccessToken,
           },
@@ -454,13 +460,13 @@ describe("Role detail", () => {
       it.each(scenarios)(
         "fails with 404 for $scenario",
         async ({ data, expectedError }) => {
-          const { chatId, roleId, token } = data;
+          const { type, token } = data;
 
-          const res = await request.role.get.roleById(
-            chatId ?? groupChatId,
-            roleId ?? highestRoleLevelId,
-            token
-          );
+          const chatId = data?.chatId || getId(type);
+
+          const roleId = data?.roleId ?? highestRoleLevelId;
+
+          const res = await request.role.get.roleById(chatId, roleId, token);
 
           expect(res.status).toBe(404);
           expect(res.body).toMatchObject(expectedError);

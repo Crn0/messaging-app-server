@@ -31,7 +31,6 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: idGenerator(),
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -73,7 +72,6 @@ describe("Chat detail", () => {
         {
           scenario: "invalid token",
           data: {
-            chatId: directChatId,
             token: user1InvalidToken,
             includeAuth: true,
           },
@@ -82,7 +80,6 @@ describe("Chat detail", () => {
         {
           scenario: "expired token",
           data: {
-            chatId: directChatId,
             token: user1ExpiredToken,
             includeAuth: true,
           },
@@ -91,7 +88,6 @@ describe("Chat detail", () => {
         {
           scenario: "missing 'Authorization' header",
           data: {
-            chatId: directChatId,
             token: user1AccessToken,
             includeAuth: false,
           },
@@ -105,7 +101,9 @@ describe("Chat detail", () => {
       it.each(scenarios)(
         "fails with 401 (UNAUTHORIZED) for $scenario",
         async ({ data, expectedError }) => {
-          const { chatId, token, includeAuth } = data;
+          const { token, includeAuth } = data;
+
+          const chatId = groupChatId;
 
           const res = await request.chat.get.chatById(chatId, token, {
             includeAuth,
@@ -168,7 +166,6 @@ describe("Chat detail", () => {
         {
           scenario: "user is accessing a direct chat they're not member of",
           data: {
-            chatId: directChatId,
             token: user3AccessToken,
           },
           expectedError: { code: 404, message: "Chat not found" },
@@ -178,12 +175,11 @@ describe("Chat detail", () => {
       it.each(scenarios)(
         "fails with 404 for $scenario",
         async ({ data, expectedError }) => {
-          const { token, chatId } = data;
+          const { token } = data;
 
-          const res = await request.chat.get.chatById(
-            chatId ?? directChatId,
-            token
-          );
+          const chatId = data?.chatId ?? directChatId;
+
+          const res = await request.chat.get.chatById(chatId, token);
 
           expect(res.status).toBe(404);
           expect(res.body).toMatchObject(expectedError);

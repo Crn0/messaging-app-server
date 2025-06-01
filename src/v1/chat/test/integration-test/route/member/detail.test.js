@@ -32,7 +32,6 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: idGenerator(),
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -79,7 +78,6 @@ describe("Member detail", () => {
         {
           scenario: "invalid token",
           data: {
-            chatId: directChatId,
             memberId: user2Id,
             token: user1InvalidToken,
             includeAuth: true,
@@ -89,7 +87,6 @@ describe("Member detail", () => {
         {
           scenario: "expired token",
           data: {
-            chatId: directChatId,
             memberId: user2Id,
             token: user1ExpiredToken,
             includeAuth: true,
@@ -99,7 +96,6 @@ describe("Member detail", () => {
         {
           scenario: "missing 'Authorization' header",
           data: {
-            chatId: directChatId,
             memberId: user2Id,
             token: user1AccessToken,
             includeAuth: false,
@@ -114,7 +110,9 @@ describe("Member detail", () => {
       it.each(scenarios)(
         "fails with 401 (UNAUTHORIZED) for $scenario",
         async ({ data, expectedError }) => {
-          const { chatId, memberId, token, includeAuth } = data;
+          const { memberId, token, includeAuth } = data;
+
+          const chatId = directChatId;
 
           const res = await request.member.get.memberById(
             chatId,
@@ -145,7 +143,6 @@ describe("Member detail", () => {
         {
           scenario: "member not found",
           data: {
-            chatId: directChatId,
             memberId: idGenerator(),
             token: user1AccessToken,
           },
@@ -164,10 +161,12 @@ describe("Member detail", () => {
       it.each(scenarios)(
         "fails with 404 for $scenario",
         async ({ data, expectedError }) => {
-          const { chatId, memberId, token } = data;
+          const { memberId, token } = data;
+
+          const chatId = data?.chatId ?? directChatId;
 
           const res = await request.member.get.memberById(
-            chatId ?? directChatId,
+            chatId,
             memberId,
             token
           );

@@ -22,7 +22,7 @@ const {
 } = await setupTestUsers(3);
 
 let groupChatId;
-const directChatId = idGenerator();
+let directChatId;
 
 beforeAll(async () => {
   const groupChatPayload = {
@@ -32,7 +32,6 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: directChatId,
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -41,12 +40,13 @@ beforeAll(async () => {
     ...entities.map((entity) => client.user.create({ data: { ...entity } })),
   ]);
 
-  const [groupChatResult] = await Promise.all([
+  const [groupChatResult, directChatResult] = await Promise.all([
     request.chat.post.chat(user1AccessToken, groupChatPayload),
     request.chat.post.chat(user1AccessToken, directChatPayload),
   ]);
 
   groupChatId = groupChatResult.body.id;
+  directChatId = directChatResult.body.id;
 
   return async () => {
     const chatIds = [directChatId, groupChatId].filter(Boolean);
@@ -144,14 +144,15 @@ describe("Member creation", () => {
     it.each(scenarios)(
       "fails with 404 for $scenario",
       async ({ data, expectedError }) => {
-        const { chatId, payload, token } = data;
+        const { payload, token } = data;
+        const chatId = data?.chatId ?? directChatId;
 
         if (!payload.memberId) {
           payload.memberId = user2Id;
         }
 
         const res = await request.member.post.joinMember(
-          chatId ?? directChatId,
+          chatId,
           token,
           payload
         );

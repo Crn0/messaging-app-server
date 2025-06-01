@@ -28,7 +28,7 @@ const {
 } = await setupTestUsers(3);
 
 let groupChatId;
-const directChatId = idGenerator();
+let directChatId;
 
 beforeAll(async () => {
   const groupChatPayload = {
@@ -37,7 +37,6 @@ beforeAll(async () => {
   };
 
   const directChatPayload = {
-    chatId: directChatId,
     type: "DirectChat",
     memberIds: [user1Id, user2Id],
   };
@@ -46,12 +45,13 @@ beforeAll(async () => {
     ...entities.map((entity) => client.user.create({ data: { ...entity } })),
   ]);
 
-  const [groupChatResult] = await Promise.all([
+  const [groupChatResult, directChatResult] = await Promise.all([
     request.chat.post.chat(user1AccessToken, groupChatPayload),
     request.chat.post.chat(user1AccessToken, directChatPayload),
   ]);
 
   groupChatId = groupChatResult.body.id;
+  directChatId = directChatResult.body.id;
 
   return async () => {
     const chatIds = [directChatId, groupChatId].filter(Boolean);
@@ -103,7 +103,6 @@ describe("Chat update", () => {
         {
           scenario: "invalid token",
           data: {
-            chatId: directChatId,
             token: user1InvalidToken,
             includeAuth: true,
             payload: { name: "updated_group_chat_name" },
@@ -113,7 +112,6 @@ describe("Chat update", () => {
         {
           scenario: "expired token",
           data: {
-            chatId: directChatId,
             token: user1ExpiredToken,
             includeAuth: true,
             payload: { name: "updated_group_chat_name" },
@@ -123,7 +121,6 @@ describe("Chat update", () => {
         {
           scenario: "missing 'Authorization' header",
           data: {
-            chatId: directChatId,
             token: user1AccessToken,
             includeAuth: false,
             payload: { name: "updated_group_chat_name" },
@@ -138,10 +135,14 @@ describe("Chat update", () => {
       it.each(scenarios)(
         "fails with 401 (UNAUTHORIZED) for $scenario",
         async ({ data, expectedError }) => {
-          const { chatId, payload, token, includeAuth } = data;
+          const { payload, token, includeAuth } = data;
+
+          const chatId = directChatId;
+
           const res = await request.chat.patch.name(chatId, payload, token, {
             includeAuth,
           });
+
           expect(res.status).toBe(401);
           expect(res.body).toMatchObject(expectedError);
         }
@@ -177,7 +178,7 @@ describe("Chat update", () => {
         {
           scenario: "a member trying to update direct chat name",
           data: {
-            chatId: directChatId,
+            type: "DirectChat",
             token: user2AccessToken,
             includeAuth: true,
             payload: { name: "unauthorized_rename" },
@@ -192,12 +193,11 @@ describe("Chat update", () => {
       it.each(scenarios)(
         "fails with 403 when $scenario",
         async ({ data, expectedError }) => {
-          const { chatId, payload, token } = data;
-          const res = await request.chat.patch.name(
-            chatId ?? groupChatId,
-            payload,
-            token
-          );
+          const { type, payload, token } = data;
+
+          const chatId = type === "DirectChat" ? directChatId : groupChatId;
+
+          const res = await request.chat.patch.name(chatId, payload, token);
           expect(res.status).toBe(403);
           expect(res.body).toMatchObject(expectedError);
         }
@@ -348,10 +348,21 @@ describe("Chat update", () => {
     });
 
     describe("Forbidden Errors", () => {
+      const getId = (type) => {
+        if (type === "DirectChat") return directChatId;
+
+        return groupChatId;
+      };
+
       const scenarios = [
         {
           scenario: "a non-member tries to update a group chat avatar",
-          data: { token: user3AccessToken, includeAuth: true, payload: form },
+          data: {
+            type: "GroupChat",
+            token: user3AccessToken,
+            includeAuth: true,
+            payload: form,
+          },
           expectedError: {
             code: 403,
             message: "You must be a chat member to modify avatar",
@@ -359,7 +370,12 @@ describe("Chat update", () => {
         },
         {
           scenario: "a member without admin rights tries to update chat avatar",
-          data: { token: user2AccessToken, includeAuth: true, payload: form },
+          data: {
+            type: "GroupChat",
+            token: user2AccessToken,
+            includeAuth: true,
+            payload: form,
+          },
           expectedError: {
             code: 403,
             message: "Missing permission: manage_chat or admin",
@@ -368,7 +384,7 @@ describe("Chat update", () => {
         {
           scenario: "a member trying to update direct chat avatar",
           data: {
-            chatId: directChatId,
+            type: "DirectChat",
             token: user2AccessToken,
             includeAuth: true,
             payload: { ...form, type: "DirectChat" },
@@ -383,12 +399,12 @@ describe("Chat update", () => {
       it.each(scenarios)(
         "fails with 403 when $scenario",
         async ({ data, expectedError }) => {
-          const { chatId, payload, token } = data;
-          const res = await request.chat.patch.avatar(
-            chatId ?? groupChatId,
-            payload,
-            token
-          );
+          const { type, payload, token } = data;
+
+          const chatId = getId(type);
+
+          const res = await request.chat.patch.avatar(chatId, payload, token);
+
           expect(res.status).toBe(403);
           expect(res.body).toMatchObject(expectedError);
         }

@@ -35,13 +35,10 @@ const directChatData = (action, DTO) => {
   switch (action) {
     case DIRECT_CHAT_ACTIONS.INSERT: {
       return {
-        id: DTO.chatId,
         type: CHAT_TYPES.DIRECT,
         isPrivate: true,
         members: {
-          create: {
-            user: { connect: { id: DTO.memberId } },
-          },
+          create: DTO.userPks.map((userPk) => ({ userPk })),
         },
       };
     }
@@ -49,7 +46,7 @@ const directChatData = (action, DTO) => {
       return {
         members: {
           create: {
-            user: { connect: { id: DTO.memberId } },
+            userPk: DTO.userPk,
           },
         },
       };
@@ -79,10 +76,10 @@ const groupChatData = (action, DTO) => {
         name: DTO.name,
         type: CHAT_TYPES.GROUP,
         isPrivate: DTO.isPrivate,
-        owner: { connect: { id: DTO.ownerId } },
+        ownerPk: DTO.ownerPk,
         members: {
           create: {
-            user: { connect: { id: DTO.ownerId } },
+            userPk: DTO.ownerPk,
           },
         },
       };
@@ -108,7 +105,7 @@ const groupChatData = (action, DTO) => {
       return {
         members: {
           create: {
-            user: { connect: { id: DTO.memberId } },
+            userPk: DTO.userPk,
           },
         },
       };
@@ -421,11 +418,12 @@ const toChat = (entity) => {
   const data = {
     id,
     name,
-    avatar,
     isPrivate,
     createdAt,
     updatedAt,
     type,
+    avatar: avatar ?? null,
+    //  members: members?.length ? members.map(({ user }) => user.id) : [],
   };
 
   if (owner) {
