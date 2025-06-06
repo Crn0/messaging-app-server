@@ -230,21 +230,11 @@ describe("Chat detail", () => {
           updatedAt: null,
           type: expect.any(String),
           ownerId: expect.any(String),
-          roles: expect.any(Array),
         };
-
-        const toEqualRoles = expect.arrayContaining([
-          expect.objectContaining({
-            name: "everyone",
-            roleLevel: null,
-            isDefaultRole: true,
-          }),
-        ]);
 
         expect(res.status).toBe(200);
         expect(res.body).not.toHaveProperty("members");
         expect(res.body).toMatchObject(toMatchObject);
-        expect(res.body.roles).toEqual(toEqualRoles);
       });
     });
   });
@@ -303,6 +293,7 @@ describe("Chat detail", () => {
 
           const toEqual = expect.arrayContaining([
             expect.objectContaining({
+              id: expect.any(String),
               name: expect.any(String),
               avatar: null,
               isPrivate: false,

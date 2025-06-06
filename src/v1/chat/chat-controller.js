@@ -63,7 +63,7 @@ const createGetChat =
     if (!chat)
       return next(new APIError("Chat not found", httpStatus.NOT_FOUND));
 
-    const fieldsToRemove = ["members"];
+    const fieldsToRemove = ["members", "roles"];
 
     const cleanChat = utils.removeFields(chat, fieldsToRemove);
 
@@ -71,7 +71,7 @@ const createGetChat =
   };
 
 const createGetChats =
-  ({ chatService }) =>
+  ({ chatService, utils }) =>
   async (req, res, next) => {
     const memberId = req.user.id;
 
@@ -81,7 +81,13 @@ const createGetChats =
 
     if (error) return next(error);
 
-    return res.status(httpStatus.OK).json(chats);
+    const fieldsToRemove = ["roles"];
+
+    const cleanedChats = chats.map((chat) =>
+      utils.removeFields(chat, fieldsToRemove)
+    );
+
+    return res.status(httpStatus.OK).json(cleanedChats);
   };
 
 const createGetPublicChats =
