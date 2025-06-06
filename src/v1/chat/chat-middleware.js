@@ -71,6 +71,9 @@ const createCanCreateChat =
       tryCatchAsync(() => chatService.getChatsByMemberId(user.id)),
       tryCatchAsync(() => chatService.getDirectChatByMembersId(memberIds)),
     ]);
+    
+    const { error: chatsError, data: chats } = chatsResult;
+    const { data: chatByMembersId } = chatByMembersIdResult;
 
     const { error: chatsError, data: chats } = chatsResult;
     const { data: chatByMembersId } = chatByMembersIdResult;

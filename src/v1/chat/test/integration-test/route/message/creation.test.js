@@ -71,6 +71,7 @@ beforeAll(async () => {
   directChatId = directChatResult.body.id;
   blockedChatId = blockChatResult.body.id;
 
+
   await Promise.all([
     request.member.post.joinMember(groupChatResult.body.id, user2AccessToken),
     request.member.post.joinMember(
@@ -287,6 +288,7 @@ describe("Message creation", () => {
       async ({ data, expectedError }) => {
         const { type, payload, token } = data;
         const chatId = getId(type);
+
 
         const res = await request.message.post.createMessage(
           chatId,

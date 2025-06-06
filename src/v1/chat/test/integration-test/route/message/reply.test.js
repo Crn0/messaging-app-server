@@ -72,6 +72,7 @@ beforeAll(async () => {
   directChatId = directChatResult.body.id;
   blockedChatId = blockChatResult.body.id;
 
+
   await Promise.all([
     request.member.post.joinMember(groupChatResult.body.id, user2AccessToken),
     request.member.post.joinMember(
@@ -224,6 +225,7 @@ describe("Message reply", () => {
       return groupChatId;
     };
 
+
     const scenarios = [
       {
         scenario: "non-member sends a message to a public group chat",
@@ -269,6 +271,7 @@ describe("Message reply", () => {
         scenario: "user sends a message to someone who blocked them",
         data: {
           type: "DirectChat",
+
           messageId: idGenerator(),
           payload: { name: "test_message" },
           token: nonMemberAccessToken,
@@ -471,7 +474,6 @@ describe("Message reply", () => {
           scenario: "user sends a reply to a message in a direct chat",
           data: {
             type: "DirectChat",
-
             userId: user2Id,
             token: user2AccessToken,
             replyToToken: user1AccessToken,
@@ -482,7 +484,6 @@ describe("Message reply", () => {
           scenario: "user sends a reply to a message in a group chat",
           data: {
             type: "GroupChat",
-
             userId: user1Id,
             token: user1AccessToken,
             replyToToken: user2AccessToken,

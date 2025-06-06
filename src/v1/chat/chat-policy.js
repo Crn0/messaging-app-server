@@ -4,6 +4,7 @@ import { executePermissionCheck } from "./utils.js";
 export default {
   create: {
     direct: (user, targetUser) => {
+
       const directCount =
         user.chats?.filter((chat) => chat.type === "DirectChat").length || 0;
 
