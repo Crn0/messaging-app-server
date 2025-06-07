@@ -90,10 +90,18 @@ describe("User service", () => {
   });
 
   describe("meById", () => {
+    it("should return a user object when the user exists", async () => {
+      const { id } = createdUser01.data;
+
+      const userById = await userService.meById(id);
+
+      expect(userById.id).toBe(id);
+    });
+
     it("should throw a NotFoundError with 'User not found' message for non-existent IDs", async () => {
       const include = "friends.id,chats.id";
 
-      const userById = userService.getUserById("testid", include);
+      const userById = userService.meById("testid", include);
 
       await expect(userById).rejects.toThrowError(
         expect.objectContaining({
