@@ -277,14 +277,14 @@ router.patch(
 
 router.patch(
   "/me/profile/avatar",
-  userMiddleware.uploader("avatar"),
+  userMiddleware.uploader.single("avatar"),
   ZodfileValidator(schema.updateProfileAvatarSchema, "avatar"),
   userController.patchProfileAvatar
 );
 
 router.patch(
   "/me/profile/background-avatar",
-  userMiddleware.uploader("backgroundAvatar"),
+  userMiddleware.uploader.single("backgroundAvatar"),
   ZodfileValidator(schema.updateBackgroundAvatarSchema, "backgroundAvatar"),
   userController.patchBackgroundAvatar
 );
