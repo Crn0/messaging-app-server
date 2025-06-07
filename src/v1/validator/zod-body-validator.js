@@ -6,7 +6,14 @@ const ZodbodyValidator = (schema) => (req, res, next) => {
     req.body.avatar = req.file;
   }
 
-  if (req.files) {
+  if (req.files && typeof req.files === "object" && !Array.isArray(req.files)) {
+    req.body = {
+      ...req.body,
+      ...req.files,
+    };
+  }
+
+  if (Array.isArray(req.files)) {
     req.body.attachments = req.files;
   }
 
