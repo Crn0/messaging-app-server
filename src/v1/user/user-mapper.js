@@ -94,6 +94,7 @@ const toEntity = (entity) => {
     friends,
     blockedUsers,
     chats,
+    openIds,
   } = entity;
 
   const user = {
@@ -108,6 +109,7 @@ const toEntity = (entity) => {
     lastSeenAt,
     updatedAt,
     joinedAt: createdAt,
+    openIds: openIds ?? [],
   };
 
   if (friends) {

@@ -163,7 +163,25 @@ describe("User detail", () => {
     it("returns 200 (OK) with user data for valid token", async () => {
       const res = await userReq.user.get.me(accessToken, null);
 
+      const expectedUser = {
+        id: expect.any(String),
+        username: expect.any(String),
+        email: expect.any(String),
+        profile: {
+          avatar: null,
+          backgroundAvatar: null,
+          displayName: expect.any(String),
+        },
+        accountLevel: expect.any(Number),
+        status: expect.any(String),
+        lastSeenAt: null,
+        updatedAt: null,
+        joinedAt: expect.any(String),
+        openIds: [],
+      };
+
       expect(res.status).toBe(200);
+      expect(res.body).toMatchObject(expectedUser);
       expect(res.body).haveOwnProperty("id");
       expect(res.body).haveOwnProperty("username");
       expect(res.body).not.haveOwnProperty("password");

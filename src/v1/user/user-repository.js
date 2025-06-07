@@ -24,7 +24,7 @@ const createUser = async ({
 };
 
 const findMeById = async (id) => {
-  const include = { ...field.default };
+  const include = { ...field.me };
 
   const user = await client.user.findUnique({
     include,
