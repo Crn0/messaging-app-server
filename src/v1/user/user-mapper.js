@@ -91,9 +91,6 @@ const toEntity = (entity) => {
     createdAt,
     updatedAt,
     lastSeenAt,
-    friends,
-    blockedUsers,
-    chats,
     openIds,
   } = entity;
 
@@ -111,18 +108,6 @@ const toEntity = (entity) => {
     joinedAt: createdAt,
     openIds: openIds ?? [],
   };
-
-  if (friends) {
-    user.friends = friends.map(toEntity);
-  }
-
-  if (blockedUsers) {
-    user.blockedUsers = blockedUsers;
-  }
-
-  if (chats) {
-    user.chats = entity?.chats.map(chatMapper);
-  }
 
   return user;
 };
