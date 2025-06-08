@@ -122,88 +122,6 @@ const createPatchProfile =
     return res.status(httpStatus.OK).json({ id: userId });
   };
 
-const createPatchDisplayName =
-  ({ profileService }) =>
-  async (req, res, next) => {
-    const userId = req.user.id;
-    const { displayName } = req.body;
-
-    const data = { userId, displayName };
-
-    const { error, data: profile } = await tryCatchAsync(async () =>
-      profileService.updateDisplayNameByUserId(data)
-    );
-
-    if (error) {
-      return next(error);
-    }
-
-    return res
-      .status(httpStatus.OK)
-      .json({ id: userId, displayName: profile.displayName });
-  };
-
-const createPatchAboutMe =
-  ({ profileService }) =>
-  async (req, res, next) => {
-    const userId = req.user.id;
-    const { aboutMe } = req.body;
-
-    const data = { userId, aboutMe };
-
-    const { error, data: profile } = await tryCatchAsync(async () =>
-      profileService.updateAboutMeByUserId(data)
-    );
-
-    if (error) {
-      return next(error);
-    }
-
-    return res
-      .status(httpStatus.OK)
-      .json({ id: userId, aboutMe: profile.aboutMe });
-  };
-
-const createPatchProfileAvatar =
-  ({ profileService }) =>
-  async (req, res, next) => {
-    const userId = req.user.id;
-    const file = req.file.avatar;
-
-    const data = { userId, file };
-
-    const { error } = await tryCatchAsync(
-      async () => profileService.updateProfileAvatarByUserId(data),
-      () => unlink(file.path)
-    );
-
-    if (error) {
-      return next(error);
-    }
-
-    return res.sendStatus(httpStatus.NO_CONTENT);
-  };
-
-const createPatchBackgroundAvatar =
-  ({ profileService }) =>
-  async (req, res, next) => {
-    const userId = req.user.id;
-    const file = req.file.backgroundAvatar;
-
-    const data = { userId, file };
-
-    const { error } = await tryCatchAsync(
-      async () => profileService.updateBackgroundAvatarByUserId(data),
-      () => unlink(file.path)
-    );
-
-    if (error) {
-      return next(error);
-    }
-
-    return res.sendStatus(httpStatus.NO_CONTENT);
-  };
-
 const createDeleteProfileAvatar =
   ({ profileService }) =>
   async (req, res, next) => {
@@ -426,10 +344,6 @@ export default (depenpendies) => {
   const patchPassword = createPatchPassword(depenpendies);
 
   const patchProfile = createPatchProfile(depenpendies);
-  const patchDisplayName = createPatchDisplayName(depenpendies);
-  const patchAboutMe = createPatchAboutMe(depenpendies);
-  const patchProfileAvatar = createPatchProfileAvatar(depenpendies);
-  const patchBackgroundAvatar = createPatchBackgroundAvatar(depenpendies);
 
   const acceptFriendRequest = createAcceptFriendRequest(depenpendies);
 
@@ -455,10 +369,6 @@ export default (depenpendies) => {
     patchUsername,
     patchPassword,
     patchProfile,
-    patchDisplayName,
-    patchAboutMe,
-    patchProfileAvatar,
-    patchBackgroundAvatar,
     acceptFriendRequest,
     deleteFriendRequest,
     unFriend,

@@ -273,32 +273,6 @@ router.patch(
   userController.patchProfile
 );
 
-router.patch(
-  "/me/profile/display-name",
-  ZodbodyValidator(schema.updateDisplayNameSchema),
-  userController.patchDisplayName
-);
-
-router.patch(
-  "/me/profile/about-me",
-  ZodbodyValidator(schema.updateAboutMeSchema),
-  userController.patchAboutMe
-);
-
-router.patch(
-  "/me/profile/avatar",
-  userMiddleware.uploader.single("avatar"),
-  ZodfileValidator(schema.updateProfileAvatarSchema, "avatar"),
-  userController.patchProfileAvatar
-);
-
-router.patch(
-  "/me/profile/background-avatar",
-  userMiddleware.uploader.single("backgroundAvatar"),
-  ZodfileValidator(schema.updateBackgroundAvatarSchema, "backgroundAvatar"),
-  userController.patchBackgroundAvatar
-);
-
 router.delete("/me/profile/avatar", userController.deleteProfileAvatar);
 
 router.delete(

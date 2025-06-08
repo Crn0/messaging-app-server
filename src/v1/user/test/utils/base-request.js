@@ -135,66 +135,6 @@ const PROFILE = ({ baseUrl, request }) => {
   const POST = () => {};
 
   const PATCH = () => {
-    const displayName = async (token, payload, ops) => {
-      const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/me/profile/display-name`;
-
-      if (!options.includeAuth) {
-        return request.patch(url).send(payload).accept("json").type("json");
-      }
-
-      return request
-        .patch(url)
-        .send(payload)
-        .set("Authorization", `Bearer ${token}`)
-        .accept("json")
-        .type("json");
-    };
-
-    const aboutMe = async (token, payload, ops) => {
-      const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/me/profile/about-me`;
-
-      if (!options.includeAuth) {
-        return request.patch(url).send(payload).accept("json").type("json");
-      }
-
-      return request
-        .patch(url)
-        .send(payload)
-        .set("Authorization", `Bearer ${token}`)
-        .accept("json")
-        .type("json");
-    };
-
-    const avatar = async (token, file, ops) => {
-      const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/me/profile/avatar`;
-
-      if (!options.includeAuth) {
-        return request.patch(url).attach("avatar", file);
-      }
-
-      return request
-        .patch(url)
-        .attach("avatar", file)
-        .set("Authorization", `Bearer ${token}`);
-    };
-
-    const backgroundAvatar = async (token, file, ops) => {
-      const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/me/profile/background-avatar`;
-
-      if (!options.includeAuth) {
-        return request.patch(url).attach("backgroundAvatar", file);
-      }
-
-      return request
-        .patch(url)
-        .attach("backgroundAvatar", file)
-        .set("Authorization", `Bearer ${token}`);
-    };
-
     const profile = async (token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
       const url = `${path}/me/profile`;
@@ -221,10 +161,6 @@ const PROFILE = ({ baseUrl, request }) => {
     };
 
     return Object.freeze({
-      displayName,
-      aboutMe,
-      avatar,
-      backgroundAvatar,
       profile,
     });
   };
