@@ -1,6 +1,8 @@
 import client from "../../../db/client.js";
 import { toData } from "./profile-mapper.js";
 
+const transaction = async (cb, ops) => client.$transaction(cb, ops);
+
 const findProfileByUserPk = async (userPk) => {
   const profile = await client.profile.findUnique({
     where: { userPk },
@@ -148,6 +150,7 @@ const deleteBackgroundAvatarByUserPk = async (userPk) => {
 };
 
 export default {
+  transaction,
   findProfileByUserPk,
   updateDisplayNameByUserPk,
   updateAboutMeByUserPk,
