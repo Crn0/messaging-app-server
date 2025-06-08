@@ -106,6 +106,22 @@ const createPatchPassword =
     return next();
   };
 
+const createPatchProfile =
+  ({ profileService }) =>
+  async (req, res, next) => {
+    const userId = req.user.id;
+
+    const { error } = await tryCatchAsync(async () =>
+      profileService.updateProfileByUserId(userId, req.body)
+    );
+
+    if (error) {
+      return next(error);
+    }
+
+    return res.status(httpStatus.OK).json({ id: userId });
+  };
+
 const createPatchDisplayName =
   ({ profileService }) =>
   async (req, res, next) => {
@@ -408,6 +424,8 @@ export default (depenpendies) => {
 
   const patchUsername = createPatchUsername(depenpendies);
   const patchPassword = createPatchPassword(depenpendies);
+
+  const patchProfile = createPatchProfile(depenpendies);
   const patchDisplayName = createPatchDisplayName(depenpendies);
   const patchAboutMe = createPatchAboutMe(depenpendies);
   const patchProfileAvatar = createPatchProfileAvatar(depenpendies);
@@ -436,6 +454,7 @@ export default (depenpendies) => {
     sendFriendRequest,
     patchUsername,
     patchPassword,
+    patchProfile,
     patchDisplayName,
     patchAboutMe,
     patchProfileAvatar,

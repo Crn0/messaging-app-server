@@ -264,6 +264,16 @@ router.delete(
  */
 
 router.patch(
+  "/me/profile",
+  userMiddleware.uploader.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "backgroundAvatar", maxCount: 1 },
+  ]),
+  ZodbodyValidator(schema.updateProfileSchema),
+  userController.patchProfile
+);
+
+router.patch(
   "/me/profile/display-name",
   ZodbodyValidator(schema.updateDisplayNameSchema),
   userController.patchDisplayName

@@ -195,7 +195,38 @@ const PROFILE = ({ baseUrl, request }) => {
         .set("Authorization", `Bearer ${token}`);
     };
 
-    return Object.freeze({ displayName, aboutMe, avatar, backgroundAvatar });
+    const profile = async (token, payload, ops) => {
+      const options = { includeAuth: ops?.includeAuth ?? true };
+      const url = `${path}/me/profile`;
+
+      if (!options.includeAuth) {
+        return request.patch(url).send(payload);
+      }
+
+      const res = request
+        .patch(url)
+        .set("Authorization", `Bearer ${token}`)
+        .field({ displayName: payload.displayName })
+        .field({ aboutMe: payload.aboutMe });
+
+      if (payload.avatar) {
+        res.attach("avatar", payload.avatar);
+      }
+
+      if (payload.backgroundAvatar) {
+        res.attach("backgroundAvatar", payload.backgroundAvatar);
+      }
+
+      return res;
+    };
+
+    return Object.freeze({
+      displayName,
+      aboutMe,
+      avatar,
+      backgroundAvatar,
+      profile,
+    });
   };
 
   const DELETE = () => {
