@@ -7,9 +7,17 @@ const ZodbodyValidator = (schema) => (req, res, next) => {
   }
 
   if (req.files && typeof req.files === "object" && !Array.isArray(req.files)) {
+    const files = Object.entries(req.files);
+
     req.body = {
       ...req.body,
-      ...req.files,
+      ...files.reduce(
+        (result, [key, values]) => ({
+          ...result,
+          [key]: values[0],
+        }),
+        {}
+      ),
     };
   }
 
