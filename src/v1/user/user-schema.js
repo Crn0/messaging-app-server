@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+const isUndefined = (val) => typeof val === "undefined";
+
+const isString = (val) => typeof val === "string";
+
 const MAX_FILE_SIZE = 10_000_000; // 10mb
 const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
@@ -13,9 +17,70 @@ const usernameRegex = /^[a-zA-Z0-9{_,.}]+$/;
 // https://regexr.com/8dm04
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
 
+const profileUpdateCondition = (data, ctx) => {
+  const DISPLAY_NAME_MAX_LENGTH = 36;
+  const ABOUT_ME_MAX_LENGTH = 200;
+
+  const displayName = data?.displayName;
+  const aboutMe = data?.aboutMe;
+
+  if (!isUndefined(displayName) && !isString(displayName)) {
+    ctx.addIssue({
+      ...z.string().safeParse(displayName).error.issues,
+      path: ["displayName"],
+    });
+  }
+
+  if (!isUndefined(aboutMe) && !isString(aboutMe)) {
+    ctx.addIssue({
+      ...z.string().safeParse(aboutMe).error.issues,
+      path: ["aboutMe"],
+    });
+  }
+
+  if (isString(displayName) && displayName?.length > DISPLAY_NAME_MAX_LENGTH) {
+    ctx.addIssue({
+      ...z
+        .string()
+        .max(36, {
+          message: "Use no more than 36 characters for the 'display name'",
+        })
+        .safeParse(displayName).error.issues[0],
+      path: ["displayName"],
+    });
+  }
+
+  if (isString(aboutMe) && aboutMe?.length > ABOUT_ME_MAX_LENGTH) {
+    ctx.addIssue({
+      ...z
+        .string()
+        .max(200, {
+          message: "Use no more than 200 characters for the 'About Me' section",
+        })
+        .safeParse(aboutMe).error.issues[0],
+      path: ["aboutMe"],
+    });
+  }
+};
+
 const idSchema = z
   .string()
   .uuid({ message: "The provided ID is not a valid UUID format" });
+const s =
+  "strstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstr";
+
+const test = z
+  .object({
+    // id: idSchema,
+    displayName: z.string().optional(),
+  })
+  .superRefine(profileUpdateCondition);
+
+// console.log(
+//   test.safeParse({
+//     displayName: s,
+//   }).error?.issues
+// );
 
 const usernameSchema = z
   .string()
@@ -137,6 +202,19 @@ const updatePasswordSchema = z
     path: ["confirmPassword"],
   });
 
+const updateProfileSchema = z
+  .object({
+    displayName: z
+      .string()
+      .trim()
+
+      .optional(),
+    aboutMe: z.string().trim().optional(),
+    avatar: multerFileSchema.optional(),
+    backgroundAvatar: multerFileSchema.optional(),
+  })
+  .superRefine(profileUpdateCondition);
+
 const updateAboutMeSchema = z.object({
   aboutMe: z.string().trim().max(200, {
     message: "Use no more than 200 characters for the 'About Me' section",
@@ -183,6 +261,7 @@ export {
   updateUsernameSchema,
   updateEmailSchema,
   updatePasswordSchema,
+  updateProfileSchema,
   updateAboutMeSchema,
   updateDisplayNameSchema,
   updateProfileAvatarSchema,

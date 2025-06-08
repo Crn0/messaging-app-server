@@ -135,67 +135,34 @@ const PROFILE = ({ baseUrl, request }) => {
   const POST = () => {};
 
   const PATCH = () => {
-    const displayName = async (token, payload, ops) => {
+    const profile = async (token, payload, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/me/profile/display-name`;
+      const url = `${path}/me/profile`;
 
       if (!options.includeAuth) {
-        return request.patch(url).send(payload).accept("json").type("json");
+        return request.patch(url).send(payload);
       }
 
-      return request
+      const res = request
         .patch(url)
-        .send(payload)
         .set("Authorization", `Bearer ${token}`)
-        .accept("json")
-        .type("json");
-    };
+        .field({ displayName: payload.displayName })
+        .field({ aboutMe: payload.aboutMe });
 
-    const aboutMe = async (token, payload, ops) => {
-      const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/me/profile/about-me`;
-
-      if (!options.includeAuth) {
-        return request.patch(url).send(payload).accept("json").type("json");
+      if (payload.avatar) {
+        res.attach("avatar", payload.avatar);
       }
 
-      return request
-        .patch(url)
-        .send(payload)
-        .set("Authorization", `Bearer ${token}`)
-        .accept("json")
-        .type("json");
-    };
-
-    const avatar = async (token, file, ops) => {
-      const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/me/profile/avatar`;
-
-      if (!options.includeAuth) {
-        return request.patch(url).attach("avatar", file);
+      if (payload.backgroundAvatar) {
+        res.attach("backgroundAvatar", payload.backgroundAvatar);
       }
 
-      return request
-        .patch(url)
-        .attach("avatar", file)
-        .set("Authorization", `Bearer ${token}`);
+      return res;
     };
 
-    const backgroundAvatar = async (token, file, ops) => {
-      const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/me/profile/background-avatar`;
-
-      if (!options.includeAuth) {
-        return request.patch(url).attach("backgroundAvatar", file);
-      }
-
-      return request
-        .patch(url)
-        .attach("backgroundAvatar", file)
-        .set("Authorization", `Bearer ${token}`);
-    };
-
-    return Object.freeze({ displayName, aboutMe, avatar, backgroundAvatar });
+    return Object.freeze({
+      profile,
+    });
   };
 
   const DELETE = () => {

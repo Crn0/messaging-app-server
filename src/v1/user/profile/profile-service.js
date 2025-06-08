@@ -1,5 +1,211 @@
 import { env, httpStatus } from "../../../constants/index.js";
+import eager from "./eager.js";
 import APIError from "../../../errors/api-error.js";
+
+const TRANSACTION_MAX_TIMEOUT = 10_000;
+
+const createUpdateProfileByUserId =
+  ({ profileRepository, storage }) =>
+  async (userId, DTO) => {
+    let avatarAsset;
+    let backgroundAvatarAsset;
+
+    const data = {
+      displayName: DTO?.displayName,
+      aboutMe: DTO?.aboutMe,
+      updatedAt: new Date(),
+    };
+
+    const folder = `${env.CLOUDINARY_ROOT_NAME}/avatars/${userId}`;
+
+    return profileRepository.transaction(
+      async (tx) => {
+        try {
+          const user = await tx.user.findUnique({
+            where: { id: userId },
+            select: { pk: true },
+          });
+
+          if (!user) throw new APIError("User not found", httpStatus.NOT_FOUND);
+
+          const profile = await tx.profile.findUnique({
+            where: { userPk: user.pk },
+            include: {
+              avatar: {
+                select: {
+                  id: true,
+                  images: { select: { url: true, format: true, size: true } },
+                },
+              },
+              backgroundAvatar: {
+                select: {
+                  id: true,
+                  images: { select: { url: true, format: true, size: true } },
+                },
+              },
+            },
+          });
+
+          const avatarId = profile.avatar?.id;
+          const backgroundAvatarId = profile.backgroundAvatar?.id;
+
+          if (DTO?.avatar) {
+            if (avatarId) {
+              avatarAsset = await storage.update(
+                DTO?.path,
+                avatarId,
+                eager.avatar
+              );
+            } else {
+              avatarAsset = await storage.upload(
+                folder,
+                DTO?.avatar.path,
+                DTO?.avatar.mimetype,
+                eager.avatar
+              );
+            }
+          }
+
+          if (DTO?.backgroundAvatar) {
+            if (backgroundAvatarId) {
+              backgroundAvatarAsset = await storage.update(
+                DTO?.backgroundAvatar.path,
+                backgroundAvatarId,
+                eager.backgroundAvatar
+              );
+            } else {
+              backgroundAvatarAsset = await storage.upload(
+                folder,
+                DTO?.backgroundAvatar.path,
+                DTO?.backgroundAvatar.mimetype,
+                eager.backgroundAvatar
+              );
+            }
+          }
+
+          if (avatarAsset) {
+            const {
+              public_id: id,
+              secure_url: url,
+              eager: images,
+              bytes: size,
+              original_filename: fileName,
+            } = avatarAsset;
+
+            avatarAsset = {
+              id,
+              url,
+              size,
+              fileName,
+              images: images.map((image) => ({
+                url: image.secure_url,
+                format: image.format,
+                size: image.bytes,
+              })),
+            };
+
+            data.avatar = {
+              upsert: {
+                where: {
+                  id: avatarAsset.id,
+                },
+                update: {
+                  id: avatarAsset.id,
+                  name: avatarAsset.fileName,
+                  url: avatarAsset.url,
+                  images: {
+                    deleteMany: {},
+                    create: avatarAsset.images,
+                  },
+                  size: avatarAsset.size,
+                  updatedAt: new Date(),
+                },
+                create: {
+                  id: avatarAsset.id,
+                  name: avatarAsset.fileName,
+                  url: avatarAsset.url,
+                  images: {
+                    create: avatarAsset.images,
+                  },
+                  size: avatarAsset.size,
+                  type: "Image",
+                },
+              },
+            };
+          }
+
+          if (backgroundAvatarAsset) {
+            const {
+              public_id: id,
+              secure_url: url,
+              eager: images,
+              bytes: size,
+              original_filename: fileName,
+            } = backgroundAvatarAsset;
+
+            backgroundAvatarAsset = {
+              id,
+              url,
+              size,
+              fileName,
+              images: images.map((image) => ({
+                url: image.secure_url,
+                format: image.format,
+                size: image.bytes,
+              })),
+            };
+
+            data.backgroundAvatar = {
+              upsert: {
+                where: {
+                  id: backgroundAvatarAsset.id,
+                },
+                update: {
+                  id: backgroundAvatarAsset.id,
+                  name: backgroundAvatarAsset.fileName,
+                  url: backgroundAvatarAsset.url,
+                  images: {
+                    deleteMany: {},
+                    create: backgroundAvatarAsset.images,
+                  },
+                  size: backgroundAvatarAsset.size,
+                  updatedAt: new Date(),
+                },
+                create: {
+                  id: backgroundAvatarAsset.id,
+                  name: backgroundAvatarAsset.fileName,
+                  url: backgroundAvatarAsset.url,
+                  images: {
+                    create: backgroundAvatarAsset.images,
+                  },
+                  size: backgroundAvatarAsset.size,
+                  type: "Image",
+                },
+              },
+            };
+          }
+
+          return await tx.profile.update({
+            data,
+            where: {
+              id: profile.id,
+            },
+          });
+        } catch (e) {
+          const assetIds = [avatarAsset?.id, backgroundAvatarAsset?.id].filter(
+            Boolean
+          );
+
+          await Promise.allSettled(
+            assetIds.map(async (id) => storage.destroyFile(id, "image"))
+          );
+
+          throw e;
+        }
+      },
+      { timeout: TRANSACTION_MAX_TIMEOUT }
+    );
+  };
 
 const createUpdateDisplayNameByUserId =
   ({ profileRepository, userService }) =>
@@ -232,6 +438,8 @@ const createDeleteBackgroundAvatarByUserId =
   };
 
 export default (dependencies) => {
+  const updateProfileByUserId = createUpdateProfileByUserId(dependencies);
+
   const updateDisplayNameByUserId =
     createUpdateDisplayNameByUserId(dependencies);
   const updateAboutMeByUserId = createUpdateAboutMeByUserId(dependencies);
@@ -249,6 +457,7 @@ export default (dependencies) => {
     createDeleteBackgroundAvatarByUserId(dependencies);
 
   return Object.freeze({
+    updateProfileByUserId,
     updateDisplayNameByUserId,
     updateAboutMeByUserId,
     updateProfileAvatarByUserId,

@@ -2,15 +2,13 @@ import { tryCatchAsync, tryCatchSync } from "../helpers/index.js";
 import ValidationError from "../../errors/validation-error.js";
 import APIError from "../../errors/api-error.js";
 
-const createUploader =
-  ({ multer, MulterError }) =>
-  (field) =>
-  (req, res, next) =>
+const createUploader = ({ multer, MulterError }) => ({
+  single: (field) => (req, res, next) =>
     multer.single(field)(req, res, (err) => {
       if (err instanceof MulterError) {
         const { code } = err;
 
-        if (code === "LIMIT_UNEXPECTED_FILE") {
+        if (code === "LIMIT_UNEXPECTED_FILE" || code === "LIMIT_FILE_COUNT") {
           return next(
             new ValidationError("Validation Error", [
               {
@@ -30,7 +28,61 @@ const createUploader =
       }
 
       return next();
-    });
+    }),
+  array: (field, maxCount) => (req, res, next) =>
+    multer.array(field, maxCount)(req, res, (err) => {
+      if (err instanceof MulterError) {
+        const { code } = err;
+
+        if (code === "LIMIT_UNEXPECTED_FILE" || code === "LIMIT_FILE_COUNT") {
+          return next(
+            new ValidationError("Validation Error", [
+              {
+                code: "custom",
+                message: `No more than ${maxCount} attachments are allowed`,
+                path: [field],
+              },
+            ])
+          );
+        }
+
+        return next(err);
+      }
+
+      if (err) {
+        return next(err);
+      }
+
+      return next();
+    }),
+  fields: (fields) => (req, res, next) =>
+    multer.fields(fields)(req, res, (err) => {
+      if (err instanceof MulterError) {
+        const { code, field } = err;
+        if (code === "LIMIT_UNEXPECTED_FILE" || code === "LIMIT_FILE_COUNT") {
+          const { maxCount } = fields.find((f) => f.name === field);
+
+          return next(
+            new ValidationError("Validation Error", [
+              {
+                code: "custom",
+                message: `No more than ${maxCount} attachments are allowed`,
+                path: [field],
+              },
+            ])
+          );
+        }
+
+        return next(err);
+      }
+
+      if (err) {
+        return next(err);
+      }
+
+      return next();
+    }),
+});
 
 const createCanUpdateUsername =
   ({ userPolicy, userService }) =>
