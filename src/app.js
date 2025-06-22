@@ -8,6 +8,7 @@ import logger from "morgan";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { httpStatus } from "./constants/index.js";
+import { removeTempImages } from "./lib/index.js";
 import configs from "./configs/index.js";
 import routes from "./routes/index.js";
 import ErrorHandler from "./errors/error-handler.js";
@@ -29,6 +30,29 @@ app.use(express.static(join(__dirname, "..", "public")));
 
 // ROUTES
 app.use(routes.V1);
+
+process.stdin.resume();
+/**
+ *  remove the uploaded image when the server closed
+ */
+[
+  "exit",
+  "SIGINT",
+  "SIGUSR1",
+  "SIGUSR2",
+  "uncaughtException",
+  "SIGTERM",
+].forEach((eventType) => {
+  process.on(eventType, async () => {
+    try {
+      await removeTempImages(join(__dirname, "temp", "upload"));
+      process.exit(0);
+    } catch (error) {
+      console.error(error);
+      process.exit(1);
+    }
+  });
+});
 
 // error handler
 app.use((err, req, res, _) => {
