@@ -1,22 +1,8 @@
 import { z } from "zod";
 
+import { FLAT_PERMISSIONS as PERMISSIONS } from "./permissions.js";
+
 const CHAT_TYPE = ["DirectChat", "GroupChat"];
-const PERMISSIONS = [
-  // GENERAL SERVER PERMISSIONS
-  "manage_role",
-  "manage_chat",
-  "view_chat",
-  // MEMBERSHIP PERMISSIONS
-  "create_invite",
-  "manage_member",
-  "kick_member",
-  "mute_member",
-  // TEXT PERMISSIONS
-  "send_message",
-  "manage_message",
-  // ADVANCED PERMISSIONS
-  "admin",
-];
 const MAX_FILE_SIZE = 10_000_000; // 10mb
 const ACCEPTED_AVATAR_TYPES = [
   "image/jpeg",
