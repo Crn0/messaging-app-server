@@ -52,7 +52,7 @@ const createCreateChat =
       unlink(file.path);
     }
 
-    return res.status(httpStatus.OK).json(data);
+    return res.status(httpStatus.OK).json({ id: data.id });
   };
 
 const createGetChat =
@@ -120,7 +120,7 @@ const createUpdateChatName =
 
     if (error) return next(error);
 
-    return res.status(httpStatus.OK).json(data);
+    return res.status(httpStatus.OK).json({ id: data.id });
   };
 
 const createUpdateChatAvatar =
@@ -139,7 +139,7 @@ const createUpdateChatAvatar =
       unlink(file.path);
     }
 
-    return res.status(httpStatus.OK).json(data);
+    return res.status(httpStatus.OK).json({ id: data.id });
   };
 
 const createDeleteChat =

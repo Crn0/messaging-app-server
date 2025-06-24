@@ -271,26 +271,13 @@ describe("Chat creation", () => {
           diretChatForm
         );
 
-        const toMatchObject = {
-          id: expect.any(String),
-          name: null,
-          avatar: null,
-          isPrivate: expect.any(Boolean),
-          createdAt: expect.any(String),
-          updatedAt: null,
-          type: expect.any(String),
-        };
-
         expect(res.status).toBe(200);
-        expect(res.body).toMatchObject(toMatchObject);
-        expect(res.body.isPrivate).toBeTruthy();
-        expect(res.body.type).toBe("DirectChat");
 
         directChatId = res.body.id;
 
         const members = await client.userOnChat.findMany({
           where: {
-            chat: { id: res.id },
+            chat: { id: res.body.id },
           },
           select: {
             roles: {
@@ -324,18 +311,8 @@ describe("Chat creation", () => {
           diretChatForm
         );
 
-        const toMatchObject = {
-          id: directChatId,
-          name: null,
-          avatar: null,
-          isPrivate: expect.any(Boolean),
-          createdAt: expect.any(String),
-          updatedAt: null,
-          type: expect.any(String),
-        };
-
         expect(res.status).toBe(200);
-        expect(res.body).toMatchObject(toMatchObject);
+        expect(res.body.id).toBe(directChatId);
       });
     });
   });
@@ -389,23 +366,17 @@ describe("Chat creation", () => {
           groupChatForm
         );
 
-        const toMatchObject = {
-          id: expect.any(String),
-          ownerId: expect.any(String),
-          name: expect.any(String),
-          avatar: null,
-          type: expect.any(String),
-          createdAt: expect.any(String),
-          updatedAt: null,
-        };
-
         expect(res.status).toBe(200);
-        expect(res.body).toMatchObject(toMatchObject);
-        expect(res.body.name).toBe(groupChatForm.name);
-        expect(res.body.ownerId).toBe(user1Id);
-        expect(res.body.type).toBe("GroupChat");
 
         groupChatId = res.body.id;
+
+        const chat = await client.chat.findUnique({
+          where: { id: res.body.id },
+          include: { owner: true },
+        });
+
+        expect(chat.name).toBe(groupChatForm.name);
+        expect(chat.owner.id).toBe(user1Id);
 
         const members = await client.userOnChat.findMany({
           where: {
@@ -442,9 +413,19 @@ describe("Chat creation", () => {
             groupChatWithAvatarForm
           );
 
+          expect(res.status).toBe(200);
+
+          const chat = await client.chat.findUnique({
+            where: { id: res.body.id },
+            include: { owner: true },
+          });
+
+          expect(chat.name).toBe(groupChatWithAvatarForm.name);
+          expect(chat.owner.id).toBe(user1Id);
+
           const members = await client.userOnChat.findMany({
             where: {
-              chat: { id: res.id },
+              chat: { id: res.body.id },
             },
             select: {
               roles: {
@@ -468,23 +449,8 @@ describe("Chat creation", () => {
 
           const avatarPath = `${process.env.CLOUDINARY_ROOT_NAME}/avatars/${res.body.id}`;
 
-          const toMatchObject = {
-            id: expect.any(String),
-            name: expect.any(String),
-            avatar: expect.any(Object),
-            isPrivate: expect.any(Boolean),
-            createdAt: expect.any(String),
-            updatedAt: null,
-            type: expect.any(String),
-            ownerId: expect.any(String),
-          };
-
           expect(res.status).toBe(200);
           expect(res.body).not.toHaveProperty("pk");
-          expect(res.body).toMatchObject(toMatchObject);
-          expect(res.body.name).toBe(groupChatWithAvatarForm.name);
-          expect(res.body.ownerId).toBe(user1Id);
-          expect(res.body.type).toBe("GroupChat");
           expect(members).toEqual(toEqualMembers);
 
           await client.chat.delete({ where: { id: res.body.id } });
