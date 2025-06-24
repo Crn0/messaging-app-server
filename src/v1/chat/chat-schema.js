@@ -21,53 +21,14 @@ const ACCEPTED_ATTACHMENTS_TYPES = [
 ];
 
 const directChatCreationCondition = (data, ctx) => {
-  let memberIdsIndex;
-
-  const memberIdsIsUndefined = typeof data?.memberIds === "undefined";
-  const memberIdsLengthIsNotTwo = Array.isArray(data.memberIds)
-    ? data?.memberIds?.length !== 2
-    : false;
-
-  const memberIdsInvalidFormat = data?.memberIds?.some?.((id, index) => {
-    if (z.string().uuid().safeParse(id).success) {
-      return false;
-    }
-
-    memberIdsIndex = index;
-
-    return true;
+  const dataSchema = z.object({
+    memberIds: z.array(z.string().uuid()).min(2).max(2),
   });
 
-  if (memberIdsIsUndefined) {
-    ctx.addIssue({
-      code: "invalid_type",
-      expected: "array",
-      received: "undefined",
-      path: ["memberIds"],
-      message: "Members ID is required",
-    });
-  }
+  const issues = dataSchema.safeParse(data)?.error?.issues;
 
-  if (memberIdsLengthIsNotTwo) {
-    ctx.addIssue({
-      code: data?.memberIds?.length < 2 ? "too_small" : "too_big",
-      minimun: undefined,
-      maximum: 2,
-      type: "array",
-      inclusive: true,
-      exact: true,
-      message: "Members ID must contain exactly 2 IDs",
-      path: ["memberIds"],
-    });
-  }
-
-  if (memberIdsInvalidFormat) {
-    ctx.addIssue({
-      validation: "uuid",
-      code: "invalid_string",
-      message: "The provided ID is not a valid UUID format",
-      path: ["memberIds", memberIdsIndex],
-    });
+  if (issues?.length) {
+    issues.forEach((issue) => ctx.addIssue({ ...issue }));
   }
 };
 
