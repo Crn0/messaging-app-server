@@ -30,4 +30,14 @@ const PERMISSIONS = {
   },
 };
 
-export { PERMISSIONS, CHAT_LIMITS };
+const FLAT_PERMISSIONS = [
+  "admin",
+  "manage_chat",
+  "manage_role",
+  "manage_message",
+  "kick_member",
+  "mute_member",
+  "send_message",
+];
+
+export { PERMISSIONS, FLAT_PERMISSIONS, CHAT_LIMITS };
