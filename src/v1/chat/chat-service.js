@@ -341,14 +341,22 @@ const createInsertReply =
 
 const createGetChatById =
   ({ chatRepository }) =>
-  async (id) => {
+  async (id, user) => {
     const chat = await chatRepository.findChatById(id);
 
     if (!chat) {
       throw new APIError("Chat not found", httpStatus.NOT_FOUND);
     }
 
-    return chat;
+    if (chat.type === "GroupChat") {
+      return chat;
+    }
+
+    return {
+      ...chat,
+      avatar:
+        chat?.tempAvatars?.filter?.((u) => u.id !== user?.id)?.avatar ?? null,
+    };
   };
 
 const createGetDirectChatByMembersId =
@@ -480,7 +488,16 @@ const createGetChatsByMemberId =
 
     const chats = await chatRepository.findChatsByMemberId(memberId);
 
-    return chats;
+    return chats.map((chat) => {
+      if (chat.type !== "DirectChat") return chat;
+
+      const tempAvatars = chat?.tempAvatars;
+
+      return {
+        ...chat,
+        avatar: tempAvatars?.filter?.((u) => u.id !== memberId)?.avatar ?? null,
+      };
+    });
   };
 
 const createGetChatMembersById =

@@ -28,6 +28,27 @@ export default {
         },
       },
     },
+    members: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            profile: {
+              select: {
+                avatar: {
+                  select: {
+                    url: true,
+                    images: {
+                      select: { url: true, format: true, size: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
 
   avatar: {
