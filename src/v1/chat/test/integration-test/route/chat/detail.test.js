@@ -215,7 +215,7 @@ describe("Chat detail", () => {
     });
 
     describe("Success case", () => {
-      it("returns 200 (OK) with the chat object", async () => {
+      it("returns 200 (OK) with the group chat object", async () => {
         const res = await request.chat.get.chatById(
           groupChatId,
           user1AccessToken
@@ -230,6 +230,27 @@ describe("Chat detail", () => {
           updatedAt: null,
           type: expect.any(String),
           ownerId: expect.any(String),
+        };
+
+        expect(res.status).toBe(200);
+        expect(res.body).not.toHaveProperty("members");
+        expect(res.body).toMatchObject(toMatchObject);
+      });
+
+      it("returns 200 (OK) with the direct chat object", async () => {
+        const res = await request.chat.get.chatById(
+          directChatId,
+          user1AccessToken
+        );
+
+        const toMatchObject = {
+          id: expect.any(String),
+          name: null,
+          avatar: null,
+          isPrivate: expect.any(Boolean),
+          createdAt: expect.any(String),
+          updatedAt: null,
+          type: expect.any(String),
         };
 
         expect(res.status).toBe(200);

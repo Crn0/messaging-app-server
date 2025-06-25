@@ -390,7 +390,7 @@ const toMember = (entity) => {
   };
 };
 
-const toChat = (entity) => {
+const toChat = (entity, context) => {
   if (entity === null) return null;
 
   const {
@@ -438,13 +438,22 @@ const toChat = (entity) => {
     data.roles = roles;
   }
 
+  if (type === "DirectChat") {
+    if (members?.length) {
+      data.tempAvatars = members.map(({ user }) => ({
+        id: user.id,
+        avatar: user?.profile?.avatar ?? null,
+      }));
+    }
+  }
+
   return data;
 };
 
-const toEntity = (entityType, entity) => {
+const toEntity = (entityType, entity, context) => {
   switch (entityType) {
     case ENTITY_TYPES.CHAT: {
-      return toChat(entity);
+      return toChat(entity, context);
     }
     case ENTITY_TYPES.MEMBER: {
       return toMember(entity);

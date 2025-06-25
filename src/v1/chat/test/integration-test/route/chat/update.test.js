@@ -278,20 +278,14 @@ describe("Chat update", () => {
         );
 
         expect(res.status).toBe(200);
-        expect(res.body).toMatchObject({
-          id: expect.any(String),
-          name: expect.any(String),
-          avatar: null,
-          isPrivate: expect.any(Boolean),
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
-          type: expect.any(String),
-          ownerId: expect.any(String),
-          roles: expect.any(Array),
+
+        const chat = await client.chat.findUnique({
+          where: { id: res.body.id },
         });
-        expect(res.body.name).toBe(payload.name);
-        expect(res.body.type).toBe("GroupChat");
-        expect(new Date(res.body.updatedAt)).toBeInstanceOf(Date);
+
+        expect(chat.name).toBe(payload.name);
+        expect(chat.type).toBe("GroupChat");
+        expect(new Date(chat.updatedAt)).toBeInstanceOf(Date);
       });
     });
   });
@@ -482,22 +476,20 @@ describe("Chat update", () => {
         );
 
         expect(res.status).toBe(200);
-        expect(res.body).toMatchObject({
-          id: expect.any(String),
-          name: expect.any(String),
-          avatar: expect.any(Object),
-          isPrivate: expect.any(Boolean),
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
-          type: expect.any(String),
-          ownerId: expect.any(String),
-          roles: expect.any(Array),
+
+        const chat = await client.chat.findUnique({
+          where: { id: res.body.id },
+          include: {
+            avatar: {
+              include: {
+                images: true,
+              },
+            },
+          },
         });
 
-        expect(res.body.avatar).toMatchObject({
-          url: expect.any(String),
-          images: expect.any(Array),
-        });
+        expect(chat.avatar).not.toBeNull();
+        expect(chat.avatar.images).toBeInstanceOf(Array);
       });
     });
   });

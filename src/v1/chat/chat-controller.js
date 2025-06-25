@@ -52,7 +52,7 @@ const createCreateChat =
       unlink(file.path);
     }
 
-    return res.status(httpStatus.OK).json(data);
+    return res.status(httpStatus.OK).json({ id: data.id });
   };
 
 const createGetChat =
@@ -63,7 +63,7 @@ const createGetChat =
     if (!chat)
       return next(new APIError("Chat not found", httpStatus.NOT_FOUND));
 
-    const fieldsToRemove = ["members", "roles"];
+    const fieldsToRemove = ["members", "tempAvatars", "roles"];
 
     const cleanChat = utils.removeFields(chat, fieldsToRemove);
 
@@ -81,7 +81,7 @@ const createGetChats =
 
     if (error) return next(error);
 
-    const fieldsToRemove = ["roles"];
+    const fieldsToRemove = ["roles", "tempAvatars", "members"];
 
     const cleanedChats = chats.map((chat) =>
       utils.removeFields(chat, fieldsToRemove)
@@ -120,7 +120,7 @@ const createUpdateChatName =
 
     if (error) return next(error);
 
-    return res.status(httpStatus.OK).json(data);
+    return res.status(httpStatus.OK).json({ id: data.id });
   };
 
 const createUpdateChatAvatar =
@@ -139,7 +139,7 @@ const createUpdateChatAvatar =
       unlink(file.path);
     }
 
-    return res.status(httpStatus.OK).json(data);
+    return res.status(httpStatus.OK).json({ id: data.id });
   };
 
 const createDeleteChat =

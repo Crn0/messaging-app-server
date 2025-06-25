@@ -133,7 +133,7 @@ const createCanViewChat =
     const user = { id: req.user.id };
 
     const [chatResult, chatRolesResult, userRolesResult] = await Promise.all([
-      tryCatchAsync(() => chatService.getChatById(chatId)),
+      tryCatchAsync(() => chatService.getChatById(chatId, user)),
       tryCatchAsync(() => roleService.getChatRolesById(chatId)),
       tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
     ]);
