@@ -566,6 +566,45 @@ describe("Member detail", () => {
         expect(typeof nextHref).toBe("string");
         expect(nextHref).not.toContain("undefined");
       });
+
+      it("returns 200 (ok) with all of the members, previous and next href as null when the chat is type of 'DirectChat'", async () => {Add commentMore actions
+        const res = await request.member.get.memberList(
+          directChatId,
+          user1AccessToken
+        );
+
+        const {
+          members,
+          pagination: { prevHref, nextHref },
+        } = res.body;
+
+        const toEqualMembers = expect.arrayContaining([
+          expect.objectContaining({
+            id: user1Id,
+            username: expect.any(String),
+            accountLevel: expect.any(Number),
+            status: expect.any(String),
+            createdAt: expect.any(String),
+            lastSeenAt: null,
+            profile: { displayName: expect.any(String), avatar: null },
+          }),
+          expect.objectContaining({
+            id: user2Id,
+            username: expect.any(String),
+            accountLevel: expect.any(Number),
+            status: expect.any(String),
+            createdAt: expect.any(String),
+            lastSeenAt: null,
+            profile: { displayName: expect.any(String), avatar: null },
+          }),
+        ]);
+
+        expect(res.status).toBe(200);
+        expect(members).toHaveLength(2);
+        expect(members).toEqual(toEqualMembers);
+        expect(prevHref).toBeNull();
+        expect(nextHref).toBeNull();
+      });
     });
   });
 });

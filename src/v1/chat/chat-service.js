@@ -505,6 +505,14 @@ const createGetChatMembersById =
   async (chatId, { before, after }) => {
     const pageSize = MEMBERS_PAGE_SIZE;
 
+    const chat = await chatRepository.findChatById(chatId);
+
+    if (chat?.type === "DirectChat") {
+      const members = await chatRepository.findChatMembersById(chatId);
+
+      return { members, nextHref: null, prevHref: null };
+    }
+
     const { cursor, take, skip, direction } = pagination({
       before,
       after,
