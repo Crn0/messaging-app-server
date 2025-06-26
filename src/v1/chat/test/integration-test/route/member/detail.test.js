@@ -567,7 +567,7 @@ describe("Member detail", () => {
         expect(nextHref).not.toContain("undefined");
       });
 
-      it("returns 200 (ok) with all of the members, previous and next href as null when the chat is type of 'DirectChat'", async () => {Add commentMore actions
+      it("returns 200 (ok) with all of the members, previous and next href as null when the chat is type of 'DirectChat'", async () => {
         const res = await request.member.get.memberList(
           directChatId,
           user1AccessToken
