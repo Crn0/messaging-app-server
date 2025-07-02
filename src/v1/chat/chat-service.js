@@ -53,7 +53,7 @@ const createInsertDirectChat =
 const createInsertGroupChat =
   ({ chatRepository, userService, roleService, utils, storage }) =>
   async (DTO) => {
-    await userService.getUserById(DTO.ownerId);
+    const user = await userService.getUserById(DTO.ownerId);
 
     let asset;
 
@@ -112,7 +112,9 @@ const createInsertGroupChat =
       chatId,
       attachment,
       ownerId: DTO.ownerId,
-      name: DTO.name,
+      name:
+        DTO.name ||
+        `${user.profile?.displayName ?? user.username}'s group chat`,
       isPrivate: false,
     };
 
