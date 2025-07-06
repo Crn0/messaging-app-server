@@ -568,16 +568,6 @@ describe("Message reply", () => {
 
           const expectedReplyTo = {
             id: parent.id,
-            chatId: parent.chat.id,
-            content: parent.content,
-            createdAt: new Date(parent.createdAt).toISOString(),
-            updatedAt: parent.updatedAt,
-            user: {
-              id: parent.user.id,
-              profile: { avatar: parent.user.profile.avatar },
-            },
-            deletedAt: parent.deletedAt,
-            attachments: [],
           };
 
           expect(res.body.replyTo).toMatchObject(expectedReplyTo);
@@ -721,16 +711,6 @@ describe("Message reply", () => {
 
             const expectedReplyTo = {
               id: parent.id,
-              chatId: parent.chat.id,
-              content: parent.content,
-              createdAt: new Date(parent.createdAt).toISOString(),
-              updatedAt: parent.updatedAt,
-              user: {
-                id: parent.user.id,
-                profile: { avatar: parent.user.profile.avatar },
-              },
-              deletedAt: parent.deletedAt,
-              attachments: [],
             };
 
             expect(res.body.replyTo).toMatchObject(expectedReplyTo);

@@ -89,6 +89,7 @@ export default {
     user: {
       select: {
         id: true,
+        username: true,
         profile: {
           select: {
             avatar: {
@@ -108,40 +109,13 @@ export default {
     attachments: { include: { images: { orderBy: { size: "asc" } } } },
 
     replies: {
-      include: {
-        user: {
-          select: {
-            id: true,
-          },
-        },
-        chat: {
-          select: {
-            id: true,
-          },
-        },
+      select: {
+        id: true,
       },
     },
     replyTo: {
-      include: {
-        user: {
-          select: {
-            id: true,
-            profile: {
-              select: {
-                avatar: {
-                  include: {
-                    images: { select: { url: true, format: true, size: true } },
-                  },
-                },
-              },
-            },
-          },
-        },
-        chat: {
-          select: {
-            id: true,
-          },
-        },
+      select: {
+        id: true,
       },
     },
   },

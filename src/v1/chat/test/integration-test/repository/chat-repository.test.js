@@ -626,7 +626,7 @@ describe("Message creation", () => {
     const toMatchObject = {
       chatId: directChatId,
       content: "this is a reply",
-      replyTo: { id: messageId, content: "hello world" },
+      replyTo: { id: messageId },
     };
 
     expect(message).toMatchObject(toMatchObject);

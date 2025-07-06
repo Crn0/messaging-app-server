@@ -359,8 +359,6 @@ const toMessage = (entity, depth = 0) => {
     };
   }
 
-  const parentMessage = toMessage(replyTo, depth + 1);
-
   return {
     id,
     content,
@@ -368,8 +366,8 @@ const toMessage = (entity, depth = 0) => {
     updatedAt,
     user,
     deletedAt,
-    replies: replies?.map?.(toMessage) ?? [],
-    replyTo: parentMessage,
+    replyTo,
+    replies: replies?.map?.((r) => r.id) ?? [],
     chatId: chat?.id,
     attachments: attachments?.map?.(toAttachment) ?? [],
   };
