@@ -584,6 +584,9 @@ const createGetChatMessagesById =
       take,
       skip,
       cursor,
+      orderBy: {
+        createdAt: "desc",
+      },
     };
 
     const res = await chatRepository.findChatMessagesById(chatId, filter);
