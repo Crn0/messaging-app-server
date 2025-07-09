@@ -317,10 +317,11 @@ const toImage = (entity) => {
 const toAttachment = (entity) => {
   if (!entity) return null;
 
-  const { id, name, url, size, createdAt, updatedAt, images } = entity;
+  const { id, name, type, url, size, createdAt, updatedAt, images } = entity;
 
   return {
     id,
+    type,
     name,
     url,
     size,
