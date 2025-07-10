@@ -92,6 +92,7 @@ export default {
         username: true,
         profile: {
           select: {
+            displayName: true,
             avatar: {
               include: {
                 images: { select: { url: true, format: true, size: true } },
