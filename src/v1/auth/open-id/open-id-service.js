@@ -31,6 +31,14 @@ const createInsertOpenId =
     return openId;
   };
 
+const createUpsertOpenId =
+  ({ openIdRepository }) =>
+  async (data) => {
+    const openId = await openIdRepository.upsert(data);
+
+    return openId;
+  };
+
 const createGetOpenIdByProviderAndSub =
   ({ openIdRepository }) =>
   async (provider, sub) => {
@@ -81,6 +89,7 @@ const createDeleteOpenId =
 
 export default (dependencies) => {
   const createOpenId = createInsertOpenId(dependencies);
+  const upsertOpenId = createUpsertOpenId(dependencies);
 
   const getOpenIdByProviderAndSub =
     createGetOpenIdByProviderAndSub(dependencies);
@@ -91,6 +100,7 @@ export default (dependencies) => {
 
   return Object.freeze({
     createOpenId,
+    upsertOpenId,
     getOpenIdByProviderAndSub,
     getOpenIdByProviderAndUserId,
     deleteOpenId,

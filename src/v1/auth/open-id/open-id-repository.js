@@ -13,6 +13,29 @@ const insert = async ({ provider, token, sub, email, username }) => {
   return toEntity(openId);
 };
 
+const upsert = async ({ provider, token, sub, email, username }) => {
+  const data = toData({ provider, token, sub, email, username });
+  const include = { user: true };
+
+  const openId = await client.openID.upsert({
+    include,
+    where: {
+      provider_sub: {
+        provider,
+        sub,
+      },
+    },
+    create: {
+      ...data,
+    },
+    update: {
+      token,
+    },
+  });
+
+  return toEntity(openId);
+};
+
 const findOpenIdByProviderAndSub = async (provider, sub) => {
   const include = { user: true };
 
@@ -60,6 +83,7 @@ const deleteOpenId = async ({ provider, userPk }) => {
 
 export default {
   insert,
+  upsert,
   findOpenIdByProviderAndSub,
   findOpenIdByProviderAndUserPk,
   deleteOpenId,

@@ -15,13 +15,6 @@ const debug = Debug.extend("service");
 const createAuthenticateOpenId =
   ({ userService, openIdService, randomUsername }) =>
   async ({ token, provider, sub, email, firstName, lastName }) => {
-    let user = await openIdService.getOpenIdByProviderAndSub(provider, sub);
-
-    if (user) {
-      debug("OpendId already exist; user logging in");
-      return user;
-    }
-
     let username = randomUsername({ firstName, lastName });
 
     let userExist = await userService.getUserByUsername(username);
@@ -33,8 +26,6 @@ const createAuthenticateOpenId =
       userExist = await userService.getUserByUsername(username);
     }
 
-    debug("OpendId did not exist; creating user", user);
-
     const data = {
       provider,
       token,
@@ -43,7 +34,9 @@ const createAuthenticateOpenId =
       email,
     };
 
-    user = await openIdService.createOpenId(data);
+    const user = await openIdService.upsertOpenId(data);
+
+    debug("logging in:", user);
 
     return user;
   };
