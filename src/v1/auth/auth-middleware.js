@@ -29,8 +29,10 @@ const createAuthenticateLocal =
 const createGoogleAuthFlow =
   ({ passport }) =>
   (req, res, next) =>
-    passport.authenticate("google", { session: false }, (err, user, _) => {
+    passport.authenticate("google", { session: false }, (err, openId, _) => {
       if (err) return next(err);
+
+      const user = openId?.user;
 
       if (!user) return res.redirect("/api/v1/auth/google");
 
