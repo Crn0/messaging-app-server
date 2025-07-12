@@ -3,7 +3,7 @@ import { Router } from "express";
 import passport from "passport";
 import initPassportStrategy from "./passport-strategy.js";
 import userRepository from "../user/user-repository.js";
-import openIDRepository from "./open-id/open-id-repository.js";
+import openIdRepository from "./open-id/open-id-repository.js";
 import tokenRepository from "./token/token-repository.js";
 import initAuthService from "./auth-service.js";
 import initUserService from "../user/user-service.js";
@@ -36,7 +36,7 @@ const userService = initUserService({
   userRepository,
   passwordManager: { hashPassword },
 });
-const openIdService = initOpenIdService({ openIDRepository });
+const openIdService = initOpenIdService({ openIdRepository });
 const tokenService = initTokenService({ tokenRepository, jwtUtils });
 
 const authService = initAuthService({
