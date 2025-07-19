@@ -592,7 +592,9 @@ const createGetChatMessagesById =
     const res = await chatRepository.findChatMessagesById(chatId, filter);
 
     const messages =
-      direction === "backward" ? res.slice(-pageSize) : res.slice(0, pageSize);
+      direction === "backward"
+        ? res.slice(-pageSize).reverse()
+        : res.slice(0, pageSize).reverse();
 
     const hasMore = res.length > pageSize;
 
