@@ -52,7 +52,7 @@ const createUpdateProfileByUserId =
           if (DTO?.avatar) {
             if (avatarId) {
               avatarAsset = await storage.update(
-                DTO?.path,
+                DTO?.avatar.path,
                 avatarId,
                 eager.avatar
               );
