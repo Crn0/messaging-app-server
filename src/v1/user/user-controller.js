@@ -111,8 +111,13 @@ const createPatchProfile =
   async (req, res, next) => {
     const userId = req.user.id;
 
-    const { error } = await tryCatchAsync(async () =>
-      profileService.updateProfileByUserId(userId, req.body)
+    const { error } = await tryCatchAsync(
+      async () => profileService.updateProfileByUserId(userId, req.body),
+      () => {
+        if (req.body.avatar || req.body.backgroundAvatar) {
+          unlink(req.body?.avatar?.path || req.body?.backgroundAvatar?.path);
+        }
+      }
     );
 
     if (error) {
