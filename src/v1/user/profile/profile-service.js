@@ -2,8 +2,6 @@ import { env, httpStatus } from "../../../constants/index.js";
 import eager from "./eager.js";
 import APIError from "../../../errors/api-error.js";
 
-const TRANSACTION_MAX_TIMEOUT = 10_000;
-
 const createUpdateProfileByUserId =
   ({ profileRepository, storage }) =>
   async (userId, DTO) => {
@@ -203,7 +201,7 @@ const createUpdateProfileByUserId =
           throw e;
         }
       },
-      { timeout: TRANSACTION_MAX_TIMEOUT }
+      { timeout: env.TRANSACTION_MAX_TIMEOUT }
     );
   };
 

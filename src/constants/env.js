@@ -26,6 +26,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "secret";
 
 const TEST_UPLOAD = process.env.TEST_UPLOAD === "true";
 
+const TRANSACTION_MAX_TIMEOUT = process.env.TEST_UPLOAD || 20_000;
+
 export default {
   NODE_ENV,
   GOOGLE_CLIENT_ID,
@@ -44,4 +46,5 @@ export default {
   CLIENT_URL,
   JWT_SECRET,
   TEST_UPLOAD,
+  TRANSACTION_MAX_TIMEOUT,
 };
