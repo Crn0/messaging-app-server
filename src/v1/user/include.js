@@ -3,6 +3,7 @@ export default {
     profile: {
       select: {
         displayName: true,
+        aboutMe: true,
         avatar: {
           select: {
             url: true,

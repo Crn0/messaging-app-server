@@ -100,13 +100,16 @@ const toEntity = (entity) => {
     email,
     displayName,
     password,
-    profile,
     accountLevel,
     status,
     lastSeenAt,
     updatedAt,
     joinedAt: createdAt,
     openIds: openIds ?? [],
+    profile: {
+      ...profile,
+      aboutMe: profile.aboutMe ?? "",
+    },
   };
 
   return user;
