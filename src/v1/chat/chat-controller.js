@@ -193,6 +193,21 @@ const createGetMember =
     return res.status(httpStatus.OK).json(data);
   };
 
+const createGetMyMembership =
+  ({ chatService }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+    const memberId = req.user.id;
+
+    const { error, data } = await tryCatchAsync(
+      chatService.getMemberById(chatId, memberId)
+    );
+
+    if (error) return next(error);
+
+    return res.status(httpStatus.OK).json(data);
+  };
+
 const createGetMembers =
   ({ chatService }) =>
   async (req, res, next) => {
@@ -492,6 +507,7 @@ export default (dependencies) => {
   const memberJoin = createMemberJoin(dependencies);
 
   const getMember = createGetMember(dependencies);
+  const getMyMembership = createGetMyMembership(dependencies);
   const getMemmbers = createGetMembers(dependencies);
 
   const muteMember = createMuteMember(dependencies);
@@ -529,6 +545,7 @@ export default (dependencies) => {
     deleteChat,
     memberJoin,
     getMember,
+    getMyMembership,
     getMemmbers,
     muteMember,
     unMuteMember,

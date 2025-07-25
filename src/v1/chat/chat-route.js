@@ -197,7 +197,7 @@ router.get(
   "/:chatId/members/me",
   ZodparamValidator(schema.chatParamSchema),
   chatMiddleware.canViewMember,
-  chatController.getMember
+  chatController.getMyMembership
 );
 
 router.get(
