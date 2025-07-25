@@ -51,7 +51,7 @@ export default {
       reason: "Create permission granted",
     };
   },
-  view: (user, chat) => {
+  view: (user, chat, { targetUser } = {}) => {
     const isUserOwner = chat.ownerId === user.id;
 
     if (isUserOwner) {
@@ -74,7 +74,16 @@ export default {
       };
     }
 
+    if (user.id === targetUser?.id) {
+      return {
+        allowed: true,
+        code: "ok",
+        reason: "View permission granted",
+      };
+    }
+
     const requiredPermissions = PERMISSIONS.role.view;
+
     const hasPermission = executePermissionCheck(
       user,
       chat,

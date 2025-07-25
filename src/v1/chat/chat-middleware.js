@@ -497,7 +497,34 @@ const createCanViewRole =
     chat.roles = chatRoles;
     user.roles = userRoles;
 
-    const { success, code, message } = chatPolicy.role.checkView(user, chat);
+    const { success, code, message } = chatPolicy.role.checkView(user, chat, {
+      targetUser: null,
+    });
+
+    if (!success) {
+      return next(new APIError(message, code));
+    }
+
+    return next();
+  };
+
+const createCanViewUserRole =
+  ({ chatService, chatPolicy }) =>
+  async (req, res, next) => {
+    const { chatId } = req.params;
+    const user = { id: req.user.id };
+
+    const { error, data: chat } = await tryCatchAsync(() =>
+      chatService.getChatById(chatId)
+    );
+
+    if (error) {
+      return next(error);
+    }
+
+    const { success, code, message } = chatPolicy.role.checkView(user, chat, {
+      targetUser: user,
+    });
 
     if (!success) {
       return next(new APIError(message, code));
@@ -857,6 +884,7 @@ export default (dependencies) => {
   const canCreateRole = createCanCreateRole(dependencies);
 
   const canViewRole = createCanViewRole(dependencies);
+  const canViewUserRole = createCanViewUserRole(dependencies);
 
   const canUpdateRoleMetaData = createCanUpdateRoleMetaData(dependencies);
   const canUpdateRoleMembers = createCanUpdateRoleMembers(dependencies);
@@ -884,6 +912,7 @@ export default (dependencies) => {
     canKickMember,
     canCreateRole,
     canViewRole,
+    canViewUserRole,
     canUpdateRoleMetaData,
     canUpdateRoleMembers,
     canUpdateRoleLevels,

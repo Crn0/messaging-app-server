@@ -170,10 +170,13 @@ const checkRoleCreatePermission = (user, chat) => {
   return success(reason);
 };
 
-const checkRoleViewPermission = (user, chat) => {
+const checkRoleViewPermission = (user, chat, { targetUser }) => {
   const { allowed, code, reason } = executePolicyCheck(user, chat, {
     resource: "role",
     action: "view",
+    context: {
+      targetUser,
+    },
   });
 
   if (!allowed)
