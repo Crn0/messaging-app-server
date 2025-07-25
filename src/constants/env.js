@@ -26,7 +26,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "secret";
 
 const TEST_UPLOAD = process.env.TEST_UPLOAD === "true";
 
-const TRANSACTION_MAX_TIMEOUT = process.env.TEST_UPLOAD || 20_000;
+const TRANSACTION_MAX_TIMEOUT = process.env.TRANSACTION_MAX_TIMEOUT || 20_000;
 
 export default {
   NODE_ENV,
