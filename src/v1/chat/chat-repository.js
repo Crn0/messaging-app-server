@@ -213,8 +213,25 @@ const findChatMessageById = async (chatId, messageId) => {
 };
 
 const findChatMemberById = async (chatId, userId) => {
-  const member = await client.userOnChat.findFirst({
-    where: { chat: { id: chatId }, user: { id: userId } },
+  const user = await client.user.findUnique({
+    where: { id: userId },
+    select: { pk: true },
+  });
+
+  if (!user) return null;
+
+  const chat = await client.chat.findUnique({
+    where: { id: chatId },
+    select: { pk: true },
+  });
+
+  const member = await client.userOnChat.findUnique({
+    where: {
+      userPk_chatPk: {
+        userPk: user.pk,
+        chatPk: chat.pk,
+      },
+    },
     include: field.userOnChat,
   });
 
