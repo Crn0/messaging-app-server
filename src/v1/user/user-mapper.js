@@ -108,7 +108,7 @@ const toEntity = (entity) => {
     openIds: openIds ?? [],
     profile: {
       ...profile,
-      aboutMe: profile.aboutMe ?? "",
+      aboutMe: profile?.aboutMe ?? "",
     },
   };
 
