@@ -9,4 +9,11 @@ export default {
       permissions: { select: { id: true, name: true } },
     },
   },
+  myRoles: {
+    select: {
+      name: true,
+      roleLevel: true,
+      permissions: { select: { name: true } },
+    },
+  },
 };

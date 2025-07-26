@@ -81,8 +81,15 @@ const toData = (action, DTO) => {
   }
 };
 
-const toEntity = (entity) => {
+const toEntity = (entity, type) => {
   if (!entity) return null;
+
+  if (type === "me")
+    return {
+      ...entity,
+      permissions:
+        entity.permissions.map(({ id, name }) => ({ id, name })) ?? [],
+    };
 
   return {
     id: entity.id,

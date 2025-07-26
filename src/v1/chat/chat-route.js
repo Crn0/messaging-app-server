@@ -251,7 +251,7 @@ router.get(
   "/:chatId/roles/me",
   ZodparamValidator(schema.chatParamSchema),
   chatMiddleware.canViewUserRole,
-  chatController.getUserRoles
+  chatController.getMyRoles
 );
 
 router.get(

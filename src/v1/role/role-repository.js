@@ -110,6 +110,24 @@ const findUserRolesById = async (chatId, userId) => {
   return user?.roles?.map?.(toEntity) ?? [];
 };
 
+const findMyRolesById = async (chatId, userId) => {
+  const user = await client.userOnChat.findFirst({
+    where: {
+      chat: {
+        id: chatId,
+      },
+      user: {
+        id: userId,
+      },
+    },
+    select: {
+      roles: field.myRoles,
+    },
+  });
+
+  return user?.roles?.map?.((role) => toEntity(role, "me")) ?? [];
+};
+
 const updateChatRoleMetaData = async (roleId, { name, permissions }) => {
   const data = toData("update:metaData", { name, permissions });
 
@@ -376,6 +394,7 @@ export default {
   findChatDefaultRolesById,
   findChatRolesById,
   findUserRolesById,
+  findMyRolesById,
   updateChatRoleMetaData,
   updateChatRoleMember,
   updateChatRoleMembers,
