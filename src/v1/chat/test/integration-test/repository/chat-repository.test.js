@@ -411,6 +411,13 @@ describe("Member detail", () => {
     expect(members).toEqual(toEqual);
   });
 
+  it("returns the max count of the chat members", async () => {
+    const memberCount =
+      await chatRepository.findChatMemberCountById(groupChatId);
+
+    expect(memberCount).toBeGreaterThan(0);
+  });
+
   it("paginate the list based on the cursor", async () => {
     const filter = {
       take: 10,

@@ -495,13 +495,13 @@ describe("Member detail", () => {
     });
 
     describe("Success case", () => {
-      it("returns 200 (ok) with the members, previous and next href", async () => {
+      it("returns 200 (ok) with the members, memberCount, previous and next href", async () => {
         const res = await request.member.get.memberList(
           groupChatId,
           user1AccessToken
         );
 
-        const { members, pagination } = res.body;
+        const { members, memberCount, pagination } = res.body;
         const { prevHref, nextHref } = pagination;
 
         const toEqualMembers = expect.arrayContaining([
@@ -512,6 +512,7 @@ describe("Member detail", () => {
 
         expect(res.status).toBe(200);
         expect(members).toEqual(toEqualMembers);
+        expect(memberCount).toBeGreaterThan(0);
         expect(prevHref).toBeNull();
         expect(typeof nextHref).toBe("string");
         expect(nextHref).not.toContain("undefined");

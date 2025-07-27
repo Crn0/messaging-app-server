@@ -264,6 +264,12 @@ const deleteMessageById = async (chatId, messageId) => {
   return message;
 };
 
+const findChatMemberCountById = async (id) => {
+  const chat = db.get(id);
+
+  return chat.members.length ?? 0;
+};
+
 export default {
   insertDirectChat,
   insertGroupChat,
@@ -281,4 +287,5 @@ export default {
   revokeMembership,
   deleteChatById,
   deleteMessageById,
+  findChatMemberCountById,
 };

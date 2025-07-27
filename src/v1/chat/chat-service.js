@@ -538,7 +538,10 @@ const createGetChatMembersById =
       cursor,
     };
 
-    const res = await chatRepository.findChatMembersById(chatId, filter);
+    const [res, memberCount] = await Promise.all([
+      chatRepository.findChatMembersById(chatId, filter),
+      chatRepository.findChatMemberCountById(chatId),
+    ]);
 
     const members =
       direction === "backward" ? res.slice(-pageSize) : res.slice(0, pageSize);
@@ -555,7 +558,7 @@ const createGetChatMembersById =
         ? `/members?before=${members.at?.(0)?.id}`
         : null;
 
-    return { members, nextHref, prevHref };
+    return { members, memberCount, nextHref, prevHref };
   };
 
 const createGetChatMessagesById =

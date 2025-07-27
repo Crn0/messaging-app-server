@@ -220,11 +220,11 @@ const createGetMembers =
 
     if (error) return next(error);
 
-    const { members, prevHref, nextHref } = data;
+    const { members, prevHref, nextHref, memberCount } = data;
 
     return res
       .status(httpStatus.OK)
-      .json({ members, pagination: { prevHref, nextHref } });
+      .json({ members, memberCount, pagination: { prevHref, nextHref } });
   };
 
 const createMuteMember =

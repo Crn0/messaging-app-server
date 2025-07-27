@@ -270,6 +270,13 @@ const findChatsByMemberId = async (memberId) => {
   return userOnChats?.map?.(({ chat }) => toEntity("Chat", chat));
 };
 
+const findChatMemberCountById = async (id) =>
+  client.userOnChat.count({
+    where: {
+      chat: { id },
+    },
+  });
+
 const findChatMembersById = async (id, filter) => {
   const filterRef = filter;
 
@@ -521,6 +528,7 @@ export default {
   findChatMemberById,
   findChats,
   findChatsByMemberId,
+  findChatMemberCountById,
   findChatMembersById,
   findChatMessagesById,
   findUserMessagesById,
