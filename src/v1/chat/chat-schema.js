@@ -2,7 +2,13 @@ import { z } from "zod";
 
 import { FLAT_PERMISSIONS as PERMISSIONS } from "./permissions.js";
 
+const isUndefined = (val) => typeof val === "undefined";
+
+const isString = (val) => typeof val === "string";
+
+const NAME_MAX_LEN = 100;
 const CHAT_TYPE = ["DirectChat", "GroupChat"];
+const CONTENT_MAX_LEN = 2000;
 const MAX_FILE_SIZE = 10_000_000; // 10mb
 const ACCEPTED_AVATAR_TYPES = [
   "image/jpeg",
@@ -52,6 +58,29 @@ const groupChatCreationCondition = (data, ctx) => {
   }
 };
 
+const profileUpdateCondition = (data, ctx) => {
+  const name = data?.name;
+
+  if (!isUndefined(name) && !isString(name)) {
+    ctx.addIssue({
+      ...z.string().safeParse(name).error.issues,
+      path: ["name"],
+    });
+  }
+
+  if (isString(name) && name?.length > NAME_MAX_LEN) {
+    ctx.addIssue({
+      ...z
+        .string()
+        .max(36, {
+          message: `Name must contain at most ${NAME_MAX_LEN} character(s)`,
+        })
+        .safeParse(name).error.issues[0],
+      path: ["name"],
+    });
+  }
+};
+
 const chatType = z.enum(CHAT_TYPE);
 
 const rolePermissions = z.enum(PERMISSIONS);
@@ -60,12 +89,12 @@ const idSchema = z
   .string()
   .uuid({ message: "The provided ID is not a valid UUID format" });
 
-const nameSchema = z.string().max(100, {
+const nameSchema = z.string().max(NAME_MAX_LEN, {
   message: "Name must contain at most 100 character(s)",
 });
 
-const contentSchema = z.string().max(2000, {
-  message: "Content must contain at most 2000 character(s)",
+const contentSchema = z.string().max(CONTENT_MAX_LEN, {
+  message: `Content must contain at most ${CONTENT_MAX_LEN} character(s)`,
 });
 
 const multerAttachmentSchema = z.object(
@@ -189,14 +218,12 @@ const messageFormSchema = z.object({
     .optional(),
 });
 
-const patchChatNameSchema = z.object({
-  name: nameSchema,
-});
-
-const patchChatAvatarSchema = z.object({
-  avatar: multerAvatarSchema,
-  type: chatType,
-});
+const patchChatProfileSchema = z
+  .object({
+    name: nameSchema.optional(),
+    avatar: multerAvatarSchema.optional(),
+  })
+  .superRefine(profileUpdateCondition);
 
 const patchMemberMuteSchema = z.object({
   mutedUntil: z.nullable(
@@ -264,8 +291,7 @@ export {
   chatFormSchema,
   roleFormSchema,
   messageFormSchema,
-  patchChatNameSchema,
-  patchChatAvatarSchema,
+  patchChatProfileSchema,
   patchMemberMuteSchema,
   patchRoleMetaDataSchema,
   patchRoleMembersSchema,

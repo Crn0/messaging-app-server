@@ -1,5 +1,6 @@
 import Debug from "./debug.js";
 import { env, httpStatus } from "../../constants/index.js";
+import eager from "../user/profile/eager.js";
 import APIError from "../../errors/api-error.js";
 import StorageError from "../../errors/storage-error.js";
 
@@ -734,6 +735,141 @@ const createUpdateGroupChatAvatarById =
     return chatRepository.updateChatAvatar(data);
   };
 
+const createUpdateChatProfileById =
+  ({ chatRepository, storage }) =>
+  async (chatId, DTO) => {
+    let asset;
+    const chat = await chatRepository.findChatById(chatId);
+
+    const prevAvatarId = chat?.avatar?.id;
+
+    const folder = `${env.CLOUDINARY_ROOT_NAME}/avatars/${chat.id}`;
+    const data = {
+      name: DTO.name,
+    };
+
+    return chatRepository.transaction(
+      async (tx) => {
+        try {
+          if (DTO.avatar) {
+            if (prevAvatarId) {
+              asset = await storage.update(
+                DTO.file.path,
+                prevAvatarId,
+                eager.avatar
+              );
+            } else {
+              asset = await storage.upload(
+                folder,
+                DTO.file.path,
+                DTO.file.mimetype,
+                eager.avatar
+              );
+            }
+          }
+
+          if (asset) {
+            const {
+              public_id: id,
+              secure_url: url,
+              eager: images,
+              bytes: size,
+              original_filename: fileName,
+            } = asset;
+
+            asset = {
+              id,
+              url,
+              size,
+              fileName,
+              images: images.map((image) => ({
+                url: image.secure_url,
+                format: image.format,
+                size: image.bytes,
+              })),
+            };
+
+            data.avatar = {
+              upsert: {
+                where: {
+                  id: asset.id,
+                },
+                update: {
+                  id: asset.id,
+                  name: asset.fileName,
+                  url: asset.url,
+                  images: {
+                    deleteMany: {},
+                    create: asset.images,
+                  },
+                  size: asset.size,
+                  updatedAt: new Date(),
+                },
+                create: {
+                  id: asset.id,
+                  name: asset.fileName,
+                  url: asset.url,
+                  images: {
+                    create: asset.images,
+                  },
+                  size: asset.size,
+                  type: "Image",
+                },
+              },
+            };
+          }
+
+          return await tx.chat.update({
+            data,
+            where: {
+              id: chat.id,
+            },
+          });
+        } catch (e) {
+          if (asset?.id) {
+            storage.destroyFile(asset.id, "image");
+          }
+
+          throw e;
+        }
+      },
+      {
+        timeout: env.TRANSACTION_MAX_TIMEOUT,
+      }
+    );
+
+    // if (prevAvatarId) {
+    //   asset = await storage.update(DTO.file.path, prevAvatarId, eager.avatar);
+    // } else {
+    //   asset = await storage.upload(
+    //     folder,
+    //     DTO.file.path,
+    //     DTO.file.mimetype,
+    //     eager.avatar
+    //   );
+    // }
+
+    // const attachment = {
+    //   id: asset?.public_id,
+    //   name: asset?.original_filename,
+    //   url: asset?.secure_url,
+    //   size: asset?.bytes,
+    //   images: asset?.eager?.map?.(({ url: imageUrl, format, bytes }) => ({
+    //     format,
+    //     url: imageUrl,
+    //     size: bytes,
+    //   })),
+    // };
+
+    // const data = {
+    //   attachment,
+    //   chatId: DTO.chatId,
+    //   type: "GroupChat",
+    // };
+
+    // return chatRepository.updateChatAvatar(data);
+  };
+
 const createUpdateMemberMutedUntil =
   ({ chatRepository }) =>
   async (chatId, DTO) => {
@@ -877,6 +1013,7 @@ export default (dependencies) => {
   const updateGroupChatNameById = createUpdateGroupChatNameById(dependencies);
   const updateGroupChatAvatarById =
     createUpdateGroupChatAvatarById(dependencies);
+  const updateChatProfileById = createUpdateChatProfileById(dependencies);
 
   const updateMemberMutedUntil = createUpdateMemberMutedUntil(dependencies);
 
@@ -903,6 +1040,7 @@ export default (dependencies) => {
     getUserMessagesById,
     updateGroupChatNameById,
     updateGroupChatAvatarById,
+    updateChatProfileById,
     updateMemberMutedUntil,
     revokeGroupChatMembership,
     deleteGroupChatById,

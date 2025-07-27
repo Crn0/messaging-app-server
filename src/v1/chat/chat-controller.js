@@ -108,36 +108,21 @@ const createGetPublicChats =
       .json({ chats, pagination: { prevHref, nextHref } });
   };
 
-const createUpdateChatName =
+const createUpdateChatProfile =
   ({ chatService }) =>
   async (req, res, next) => {
     const { chatId } = req.params;
-    const { name } = req.body;
 
-    const { error, data } = await tryCatchAsync(() =>
-      chatService.updateGroupChatNameById({ chatId, name })
+    const { error, data } = await tryCatchAsync(
+      () => chatService.updateChatProfileById(chatId, req.body),
+      () => {
+        if (req.body.avatar || req.body.backgroundAvatar) {
+          unlink(req.body?.avatar?.path || req.body?.backgroundAvatar?.path);
+        }
+      }
     );
 
     if (error) return next(error);
-
-    return res.status(httpStatus.OK).json({ id: data.id });
-  };
-
-const createUpdateChatAvatar =
-  ({ chatService }) =>
-  async (req, res, next) => {
-    const { chatId } = req.params;
-    const { type, avatar: file } = req.body;
-
-    const { error, data } = await tryCatchAsync(() =>
-      chatService.updateGroupChatAvatarById({ chatId, file, type })
-    );
-
-    if (error) return next(error);
-
-    if (file?.path && process.env.NODE_ENV !== "test") {
-      unlink(file.path);
-    }
 
     return res.status(httpStatus.OK).json({ id: data.id });
   };
@@ -513,15 +498,15 @@ export default (dependencies) => {
   const getChats = createGetChats(dependencies);
   const getPublicChats = createGetPublicChats(dependencies);
 
-  const updateChatName = createUpdateChatName(dependencies);
-  const updateChatAvatar = createUpdateChatAvatar(dependencies);
+  const updateChatProfile = createUpdateChatProfile(dependencies);
+
   const deleteChat = createDeleteChat(dependencies);
 
   const memberJoin = createMemberJoin(dependencies);
 
   const getMember = createGetMember(dependencies);
   const getMyMembership = createGetMyMembership(dependencies);
-  const getMemmbers = createGetMembers(dependencies);
+  const getMembers = createGetMembers(dependencies);
 
   const muteMember = createMuteMember(dependencies);
   const unMuteMember = createUnMuteMember(dependencies);
@@ -554,13 +539,12 @@ export default (dependencies) => {
     getChat,
     getChats,
     getPublicChats,
-    updateChatName,
-    updateChatAvatar,
+    updateChatProfile,
     deleteChat,
     memberJoin,
     getMember,
     getMyMembership,
-    getMemmbers,
+    getMembers,
     muteMember,
     unMuteMember,
     deleteMember,

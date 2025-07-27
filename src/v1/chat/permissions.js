@@ -7,8 +7,7 @@ const CHAT_LIMITS = {
 const PERMISSIONS = {
   chat: {
     update: {
-      name: ["manage_chat", "admin"],
-      avatar: ["manage_chat", "admin"],
+      profile: ["manage_chat", "admin"],
       settings: ["admin"],
     },
   },

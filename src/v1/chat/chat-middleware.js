@@ -163,7 +163,7 @@ const createCanViewChat =
     return next();
   };
 
-const createCanUpdateChatName =
+const createCanUpdateChatProfile =
   ({ chatService, roleService, chatPolicy }) =>
   async (req, _, next) => {
     const { chatId } = req.params;
@@ -187,41 +187,7 @@ const createCanUpdateChatName =
     user.roles = userRoles;
 
     const { success, code, message } = chatPolicy.chat.checkUpdate(user, chat, {
-      field: "name",
-    });
-
-    if (!success) {
-      return next(new APIError(message, code));
-    }
-
-    return next();
-  };
-
-const createCanUpdateChatAvatar =
-  ({ chatService, roleService, chatPolicy }) =>
-  async (req, _, next) => {
-    const { chatId } = req.params;
-    const user = { id: req.user.id };
-
-    const [chatResult, chatRolesResult, userRolesResult] = await Promise.all([
-      tryCatchAsync(() => chatService.getChatById(chatId)),
-      tryCatchAsync(() => roleService.getChatRolesById(chatId)),
-      tryCatchAsync(() => roleService.getUserRolesById(chatId, user.id)),
-    ]);
-
-    const { error: chatError, data: chat } = chatResult;
-    const { error: chatRolesError, data: chatRoles } = chatRolesResult;
-    const { error: userRolesError, data: userRoles } = userRolesResult;
-
-    if (chatError || chatRolesError || userRolesError) {
-      return next(chatError || chatRolesError || userRolesError);
-    }
-
-    chat.roles = chatRoles;
-    user.roles = userRoles;
-
-    const { success, code, message } = chatPolicy.chat.checkUpdate(user, chat, {
-      field: "avatar",
+      field: "profile",
     });
 
     if (!success) {
@@ -867,8 +833,7 @@ export default (dependencies) => {
 
   const canCreateChat = createCanCreateChat(dependencies);
 
-  const canUpdateChatName = createCanUpdateChatName(dependencies);
-  const canUpdateChatAvatar = createCanUpdateChatAvatar(dependencies);
+  const canUpdateChatProfile = createCanUpdateChatProfile(dependencies);
 
   const canDeleteChat = createCanDeleteChat(dependencies);
 
@@ -902,8 +867,7 @@ export default (dependencies) => {
     uploader,
     canCreateChat,
     canViewChat,
-    canUpdateChatName,
-    canUpdateChatAvatar,
+    canUpdateChatProfile,
     canDeleteChat,
     canMemberJoin,
     canViewMember,

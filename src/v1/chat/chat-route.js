@@ -159,20 +159,12 @@ router.post(
 );
 
 router.patch(
-  "/:chatId/name",
-  ZodparamValidator(schema.chatParamSchema),
-  ZodbodyValidator(schema.patchChatNameSchema),
-  chatMiddleware.canUpdateChatName,
-  chatController.updateChatName
-);
-
-router.patch(
-  "/:chatId/avatar",
+  "/:chatId/profile",
   chatMiddleware.uploader.single("avatar"),
   ZodparamValidator(schema.chatParamSchema),
-  ZodbodyValidator(schema.patchChatAvatarSchema),
-  chatMiddleware.canUpdateChatAvatar,
-  chatController.updateChatAvatar
+  ZodbodyValidator(schema.patchChatProfileSchema),
+  chatMiddleware.canUpdateChatProfile,
+  chatController.updateChatProfile
 );
 
 router.delete(
@@ -190,7 +182,7 @@ router.get(
   "/:chatId/members",
   ZodparamValidator(schema.memberListParamSchema),
   chatMiddleware.canViewMember,
-  chatController.getMemmbers
+  chatController.getMembers
 );
 
 router.get(

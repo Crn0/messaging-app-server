@@ -104,63 +104,65 @@ export default {
     },
   },
 
-  update: (user, chat, { field }) => {
-    if (user.id === chat?.ownerId)
+  update: {
+    profile: (user, chat, { field }) => {
+      if (user.id === chat?.ownerId)
+        return {
+          allowed: true,
+          code: "ok",
+          reason: "Update permission granted",
+        };
+
+      const { isPrivate } = chat;
+      const isMember = chat.members.includes(user.id);
+      const isGroupChat = chat.type === "GroupChat";
+
+      if (isMember && !isGroupChat) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: "Direct chat cannot be modified",
+        };
+      }
+
+      if (isPrivate && isGroupChat && !isMember) {
+        return {
+          allowed: false,
+          code: "not_found",
+          reason: "Chat not found",
+        };
+      }
+
+      if (!isMember) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: `You must be a chat member to modify ${field}`,
+        };
+      }
+
+      const requiredPermissions = PERMISSIONS.chat.update.profile;
+
+      const hasPermission = executePermissionCheck(
+        user,
+        chat,
+        requiredPermissions
+      );
+
+      if (!hasPermission) {
+        return {
+          allowed: false,
+          code: "forbidden",
+          reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
+        };
+      }
+
       return {
         allowed: true,
         code: "ok",
         reason: "Update permission granted",
       };
-
-    const { isPrivate } = chat;
-    const isMember = chat.members.includes(user.id);
-    const isGroupChat = chat.type === "GroupChat";
-
-    if (isMember && !isGroupChat) {
-      return {
-        allowed: false,
-        code: "forbidden",
-        reason: "Direct chat cannot be modified",
-      };
-    }
-
-    if (isPrivate && isGroupChat && !isMember) {
-      return {
-        allowed: false,
-        code: "not_found",
-        reason: "Chat not found",
-      };
-    }
-
-    if (!isMember) {
-      return {
-        allowed: false,
-        code: "forbidden",
-        reason: `You must be a chat member to modify ${field}`,
-      };
-    }
-
-    const requiredPermissions = PERMISSIONS.chat.update.name;
-
-    const hasPermission = executePermissionCheck(
-      user,
-      chat,
-      requiredPermissions
-    );
-
-    if (!hasPermission) {
-      return {
-        allowed: false,
-        code: "forbidden",
-        reason: `Missing permission: ${requiredPermissions.join(" or ")}`,
-      };
-    }
-
-    return {
-      allowed: true,
-      code: "ok",
-      reason: "Update permission granted",
-    };
+    },
   },
   delete: (user, chat) => {
     const isOwner = user.id === chat.ownerId;

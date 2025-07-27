@@ -88,7 +88,7 @@ const CHAT = ({ request, baseUrl }) => {
   const PATCH = () => {
     const name = async (chatId, payload, token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${chatId}/name`;
+      const url = `${path}/${chatId}/profile`;
 
       if (!options.includeAuth) {
         return request.patch(url).send(payload).accept("json").type("json");
@@ -104,19 +104,15 @@ const CHAT = ({ request, baseUrl }) => {
 
     const avatar = async (chatId, payload, token, ops) => {
       const options = { includeAuth: ops?.includeAuth ?? true };
-      const url = `${path}/${chatId}/avatar`;
+      const url = `${path}/${chatId}/profile`;
 
       if (!options.includeAuth) {
-        return request
-          .patch(url)
-          .field({ type: payload.type })
-          .attach("avatar", payload.avatar);
+        return request.patch(url).attach("avatar", payload.avatar);
       }
 
       return request
         .patch(url)
         .set("Authorization", `Bearer ${token}`)
-        .field({ type: payload.type })
         .attach("avatar", payload.avatar);
     };
 

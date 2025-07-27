@@ -2,6 +2,8 @@ import client from "../../db/client.js";
 import { toData, toEntity } from "./chat-mapper.js";
 import field from "./include.js";
 
+const transaction = async (cb, ops) => client.$transaction(cb, ops);
+
 const insertDirectChat = async ({ memberIds }) => {
   const userPks = (
     await client.user.findMany({
@@ -517,6 +519,7 @@ const deleteMessageById = async (chatId, messageId) => {
 };
 
 export default {
+  transaction,
   insertDirectChat,
   insertGroupChat,
   insertMember,
