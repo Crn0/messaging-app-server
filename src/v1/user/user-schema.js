@@ -66,21 +66,6 @@ const profileUpdateCondition = (data, ctx) => {
 const idSchema = z
   .string()
   .uuid({ message: "The provided ID is not a valid UUID format" });
-const s =
-  "strstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstrstr";
-
-const test = z
-  .object({
-    // id: idSchema,
-    displayName: z.string().optional(),
-  })
-  .superRefine(profileUpdateCondition);
-
-// console.log(
-//   test.safeParse({
-//     displayName: s,
-//   }).error?.issues
-// );
 
 const usernameSchema = z
   .string()
