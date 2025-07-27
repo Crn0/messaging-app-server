@@ -207,6 +207,13 @@ router.get(
   chatController.getMember
 );
 
+router.get(
+  "/:chatId/members/:memberId/roles",
+  ZodparamValidator(schema.memberParamSchema),
+  chatMiddleware.canViewRole,
+  chatController.getMemberRoles
+);
+
 router.post(
   "/:chatId/members",
   ZodparamValidator(schema.chatParamSchema),

@@ -321,6 +321,19 @@ const createGetMyRoles =
     return res.status(httpStatus.OK).json(roles);
   };
 
+const createGetMemberRoles =
+  ({ roleService }) =>
+  async (req, res, next) => {
+    const { chatId, memberId } = req.params;
+
+    const { error, data: roles } = await tryCatchAsync(() =>
+      roleService.getUserRolesById(chatId, memberId)
+    );
+
+    if (error) return next(error);
+
+    return res.status(httpStatus.OK).json(roles);
+  };
 const createGetRole =
   ({ roleService }) =>
   async (req, res, next) => {
@@ -519,6 +532,7 @@ export default (dependencies) => {
 
   const getRoles = createGetRoles(dependencies);
   const getMyRoles = createGetMyRoles(dependencies);
+  const getMemberRoles = createGetMemberRoles(dependencies);
   const getRole = createGetRole(dependencies);
 
   const updateRoleMetaData = createUpdateRoleMetaData(dependencies);
@@ -553,6 +567,7 @@ export default (dependencies) => {
     createRole,
     getRoles,
     getMyRoles,
+    getMemberRoles,
     getRole,
     updateRoleMetaData,
     updateRoleMembers,
