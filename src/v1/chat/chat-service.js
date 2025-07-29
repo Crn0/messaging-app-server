@@ -754,15 +754,15 @@ const createUpdateChatProfileById =
           if (DTO.avatar) {
             if (prevAvatarId) {
               asset = await storage.update(
-                DTO.file.path,
+                DTO.avatar.path,
                 prevAvatarId,
                 eager.avatar
               );
             } else {
               asset = await storage.upload(
                 folder,
-                DTO.file.path,
-                DTO.file.mimetype,
+                DTO.avatar.path,
+                DTO.avatar.mimetype,
                 eager.avatar
               );
             }
