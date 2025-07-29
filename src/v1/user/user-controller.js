@@ -304,7 +304,7 @@ const createUnBlockUser =
   };
 
 const createDeleteAccount =
-  ({ userService }) =>
+  ({ userService, cookieConfig }) =>
   async (req, res, next) => {
     const userId = req.user.id;
 
@@ -313,6 +313,8 @@ const createDeleteAccount =
     );
 
     if (error) return next(error);
+
+    res.clearCookie("refreshToken", cookieConfig);
 
     return res.sendStatus(httpStatus.NO_CONTENT);
   };

@@ -147,6 +147,7 @@ const userController = initUserController({
   friendRequestService,
   friendService,
   blockUserService,
+  cookieConfig,
   utils: {
     removeFields,
     obtuseEmail,
