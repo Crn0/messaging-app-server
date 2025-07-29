@@ -67,6 +67,14 @@ const createGetOpenIdByProviderAndUserId =
     return openId;
   };
 
+const createGetOpenIdsByUserId =
+  ({ openIdRepository }) =>
+  async (userId) => {
+    const openId = await openIdRepository.findOpenIdsByUserId(userId);
+
+    return openId;
+  };
+
 const createDeleteOpenId =
   ({ openIdRepository, userService }) =>
   async ({ provider, userId }) => {
@@ -96,6 +104,8 @@ export default (dependencies) => {
   const getOpenIdByProviderAndUserId =
     createGetOpenIdByProviderAndUserId(dependencies);
 
+  const getOpenIdsByUserId = createGetOpenIdsByUserId(dependencies);
+
   const deleteOpenId = createDeleteOpenId(dependencies);
 
   return Object.freeze({
@@ -103,8 +113,9 @@ export default (dependencies) => {
     upsertOpenId,
     getOpenIdByProviderAndSub,
     getOpenIdByProviderAndUserId,
+    getOpenIdsByUserId,
     deleteOpenId,
   });
 };
 
-export { createDeleteOpenId };
+export { createDeleteOpenId, createGetOpenIdsByUserId };

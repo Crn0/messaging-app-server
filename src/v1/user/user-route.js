@@ -21,7 +21,9 @@ import {
   createDeleteMessageById,
 } from "../chat/chat-service.js";
 import initTokenService from "../auth/token/token-service.js";
-import initOpenIdService from "../auth/open-id/open-id-service.js";
+import initOpenIdService, {
+  createGetOpenIdsByUserId,
+} from "../auth/open-id/open-id-service.js";
 import initFriendRequestService from "./friend-request/friend-request-service.js";
 import initFriendService from "./friend/friend-service.js";
 import initBlockUserService from "./block-user/block-user-service.js";
@@ -104,6 +106,9 @@ const userService = initUserService({
     deleteBackgroundAvatar,
   },
   passwordManager: { verifyPassword, hashPassword },
+  openIdService: {
+    getOpenIdsByUserId: createGetOpenIdsByUserId({ openIdRepository }),
+  },
 });
 
 const profileService = initProfileService({

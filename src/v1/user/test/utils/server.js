@@ -25,6 +25,7 @@ app.use("/api/v1/auth", authRoute);
 
 app.use((err, req, res, _) => {
   if (!ErrorHandler.isTrustedError(err)) {
+    console.log(err);
     res.sendStatus(httpStatus.INTERNAL_SERVER);
   } else {
     ErrorHandler.handleError(err, res);

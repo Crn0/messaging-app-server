@@ -68,6 +68,21 @@ const findOpenIdByProviderAndUserPk = async (provider, userPk) => {
   return toEntity(openId);
 };
 
+const findOpenIdsByUserId = async (userId) => {
+  const include = { user: true };
+
+  const openIds = await client.openID.findMany({
+    include,
+    where: {
+      user: {
+        id: userId,
+      },
+    },
+  });
+
+  return openIds.map(toEntity) ?? [];
+};
+
 const deleteOpenId = async ({ provider, userPk }) => {
   const openId = await client.openID.delete({
     where: {
@@ -86,5 +101,6 @@ export default {
   upsert,
   findOpenIdByProviderAndSub,
   findOpenIdByProviderAndUserPk,
+  findOpenIdsByUserId,
   deleteOpenId,
 };

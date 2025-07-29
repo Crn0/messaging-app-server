@@ -24,6 +24,9 @@ const userService = initUserService({
     normalizeInclude: (val) => val.split(","),
     buildIncludeQuery: (val) => val.map((str) => str.split(".")[0]),
   },
+  openIdService: {
+    getOpenIdsByUserId: () => [],
+  },
 });
 
 describe("User service", () => {

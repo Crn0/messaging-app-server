@@ -249,12 +249,22 @@ const createUpdatePasswordById =
   };
 
 const createDeleteUserById =
-  ({ userRepository, profileService, chatService, storage }) =>
+  ({ userRepository, openIdService, profileService, chatService, storage }) =>
   async (userId) => {
     const user = await userRepository.findUserById(userId);
 
     if (!user) {
       throw new APIError("User not found", httpStatus.NOT_FOUND);
+    }
+
+    const openIds = openIdService.getOpenIdsByUserId(userId);
+
+    if (openIds.length) {
+      await Promise.all(
+        openIds.map(async ({ provider }) =>
+          openIdService.deleteOpenId({ provider, userId })
+        )
+      );
     }
 
     await deleteUserAvatars({ profileService, user, storage });
