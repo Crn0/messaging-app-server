@@ -596,9 +596,10 @@ const createGetChatMessagesById =
     const res = await chatRepository.findChatMessagesById(chatId, filter);
 
     const messages =
-      direction === "backward"
-        ? res.slice(-pageSize).reverse()
-        : res.slice(0, pageSize).reverse();
+      direction === "backward" ? res.slice(-pageSize) : res.slice(0, pageSize);
+
+    const reversedMessages =
+      messages?.toReversed?.() ?? [...messages].reverse() ?? [];
 
     const hasMore = res.length > pageSize;
 
@@ -612,7 +613,11 @@ const createGetChatMessagesById =
         ? `/messages?before=${messages.at?.(0)?.id}`
         : null;
 
-    return { messages, nextHref, prevHref };
+    return {
+      messages: reversedMessages,
+      nextHref,
+      prevHref,
+    };
   };
 
 const createGetUserMessagesById =
