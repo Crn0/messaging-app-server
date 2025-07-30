@@ -257,7 +257,7 @@ const createDeleteUserById =
       throw new APIError("User not found", httpStatus.NOT_FOUND);
     }
 
-    const openIds = openIdService.getOpenIdsByUserId(userId);
+    const openIds = await openIdService.getOpenIdsByUserId(userId);
 
     if (openIds.length) {
       await Promise.all(
