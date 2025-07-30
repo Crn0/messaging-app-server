@@ -22,6 +22,7 @@ import {
 } from "../chat/chat-service.js";
 import initTokenService from "../auth/token/token-service.js";
 import initOpenIdService, {
+  createDeleteOpenId,
   createGetOpenIdsByUserId,
 } from "../auth/open-id/open-id-service.js";
 import initFriendRequestService from "./friend-request/friend-request-service.js";
@@ -108,6 +109,12 @@ const userService = initUserService({
   passwordManager: { verifyPassword, hashPassword },
   openIdService: {
     getOpenIdsByUserId: createGetOpenIdsByUserId({ openIdRepository }),
+    deleteOpenId: createDeleteOpenId({
+      openIdRepository,
+      userService: {
+        getUserPkById: createGetUserPkbyId({ userRepository }),
+      },
+    }),
   },
 });
 
