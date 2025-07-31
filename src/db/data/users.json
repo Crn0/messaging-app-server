@@ -1,0 +1,17 @@
+[
+  {
+    "username": "DELETED USER",
+    "accountLevel": 0,
+    "password": null,
+    "profile": {}
+  },
+  {
+    "username": "thor.odinson",
+    "profile": {
+      "displayName": "strongest_avenger",
+      "aboutMe": "God of Thunder ⚡ | Defender of Asgard 🔨 | Former prince, current Avenger | Worthy wielder of Mjölnir and Stormbreaker | Still the strongest Avenger (don’t ask Banner) "
+    },
+    "accountLevel": 0,
+    "password": "mjolnir"
+  }
+]

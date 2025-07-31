@@ -1,0 +1,9 @@
+[
+  "admin",
+  "manage_chat",
+  "manage_role",
+  "manage_message",
+  "kick_member",
+  "mute_member",
+  "send_message"
+]
