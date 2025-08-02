@@ -14,8 +14,9 @@ const deleteUserAvatars = async ({ profileService, user, storage }) => {
     await storage.destroyFolder(avatarPath);
 
     await Promise.all([
-      profileService.deleteProfileAvatarByUserId(user.id),
-      profileService.deleteBackgroundAvatarByUserId(user.id),
+      avatar && profileService.deleteProfileAvatarByUserId(user.id),
+      backgroundAvatar &&
+        profileService.deleteBackgroundAvatarByUserId(user.id),
     ]);
   } catch (e) {
     if (e instanceof StorageError && e.httpCode !== 404) throw e;

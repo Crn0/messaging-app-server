@@ -91,7 +91,7 @@ const deleteProfileAvatarByUserId = createDeleteProfileAvatarByUserId({
   },
 });
 
-const deleteBackgroundAvatar = createDeleteBackgroundAvatarByUserId({
+const deleteBackgroundAvatarByUserId = createDeleteBackgroundAvatarByUserId({
   profileRepository,
   storage,
   userService: {
@@ -101,10 +101,11 @@ const deleteBackgroundAvatar = createDeleteBackgroundAvatarByUserId({
 
 const userService = initUserService({
   userRepository,
+  storage,
   chatService: { getUserMessagesById, deleteMessageById },
   profileService: {
     deleteProfileAvatarByUserId,
-    deleteBackgroundAvatar,
+    deleteBackgroundAvatarByUserId,
   },
   passwordManager: { verifyPassword, hashPassword },
   openIdService: {
