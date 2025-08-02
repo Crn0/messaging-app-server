@@ -3,6 +3,7 @@ import { unlink } from "fs/promises";
 import Debug from "./debug.js";
 import { tryCatchAsync } from "../helpers/index.js";
 import { httpStatus } from "../../constants/index.js";
+import { CHAT_MESSAGES, CHAT_ROOM, getChatNamespace } from "./socket/events.js";
 import APIError from "../../errors/api-error.js";
 
 const debug = Debug.extend("controller");
@@ -448,6 +449,13 @@ const createSendMessage =
 
     if (error) return next(error);
 
+    const namespace = req.app.get(getChatNamespace());
+
+    namespace?.to?.(CHAT_ROOM(chatId))?.emit?.(CHAT_MESSAGES(chatId), {
+      entity: ["chats", chatId, "messages"],
+      id: message.id,
+    });
+
     return res.status(httpStatus.OK).json(message);
   };
 
@@ -474,6 +482,13 @@ const createSendReply =
 
     if (error) return next(error);
 
+    const namespace = req.app.get(getChatNamespace());
+
+    namespace?.to?.(CHAT_ROOM(chatId))?.emit?.(CHAT_MESSAGES(chatId), {
+      entity: ["chats", chatId, "messages"],
+      id: message.id,
+    });
+
     return res.status(httpStatus.OK).json(message);
   };
 
@@ -487,6 +502,13 @@ const createDeleteMessage =
     );
 
     if (error) return next(error);
+
+    const namespace = req.app.get(getChatNamespace());
+
+    namespace?.to?.(CHAT_ROOM(chatId))?.emit?.(CHAT_MESSAGES(chatId), {
+      entity: ["chats", chatId, "messages"],
+      id: message.id,
+    });
 
     return res.sendStatus(httpStatus.NO_CONTENT);
   };

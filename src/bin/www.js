@@ -1,8 +1,10 @@
 import "dotenv/config";
 import http from "http";
 import Debug from "debug";
-import app from "../app.js";
+import { Server } from "socket.io";
 import { env } from "../constants/index.js";
+import initSocket from "../sockets/index.js";
+import app from "../app.js";
 
 const port = env.PORT;
 const debug = env.NODE_ENV === "dev" ? Debug("app:server") : () => {};
@@ -38,6 +40,15 @@ const onListening = (server) => () => {
 app.set("port", port);
 
 const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: env.CORS_ORIGINS,
+  },
+});
+
+initSocket(io, app);
+
+app.set("io", io);
 
 server.listen(port);
 server.on("error", onError);
