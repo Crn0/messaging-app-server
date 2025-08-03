@@ -1,9 +1,15 @@
 import { Router } from "express";
+import { rateLimit } from "express-rate-limit";
+
+import * as configs from "../configs/index.js";
 import authRoute from "../auth/auth-route.js";
 import userRoute from "../user/user-route.js";
 import chatRoute from "../chat/chat-route.js";
 
 const app = Router();
+const limiter = rateLimit(configs.rateLimit);
+
+app.use(limiter);
 
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/users", userRoute);
