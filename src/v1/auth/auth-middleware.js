@@ -103,6 +103,28 @@ const createAccessTokenMiddleware =
     return next();
   };
 
+const createSocketAccessTokenMiddleware =
+  ({ jwtUtils }) =>
+  (socket, next) => {
+    const socketRef = socket;
+
+    const accessToken = socketRef?.handshake.auth.accessToken;
+
+    const { error, data: verifiedToken } = tryCatchSync(() =>
+      jwtUtils.verifyToken(accessToken)
+    );
+
+    if (error) {
+      return next(error);
+    }
+
+    const user = verifiedToken !== null ? { id: verifiedToken.sub } : null;
+
+    socketRef.data.user = user;
+
+    return next();
+  };
+
 const protectRoute = (tokenType) => (req, _, next) => {
   if (tokenType === "accessToken") {
     if (!req.user) {
@@ -129,6 +151,7 @@ export default (dependencies) => {
   const googleAuthFlow = createGoogleAuthFlow(dependencies);
   const readRefreshToken = createRefreshTokenMiddleware(dependencies);
   const readAcessToken = createAccessTokenMiddleware(dependencies);
+  const readSocketAccessToken = createSocketAccessTokenMiddleware(dependencies);
 
   return Object.freeze({
     canRegister,
@@ -138,6 +161,7 @@ export default (dependencies) => {
     googleAuthFlow,
     readRefreshToken,
     readAcessToken,
+    readSocketAccessToken,
   });
 };
 
@@ -146,4 +170,5 @@ export {
   protectRoute,
   createRefreshTokenMiddleware,
   createAccessTokenMiddleware,
+  createSocketAccessTokenMiddleware,
 };
