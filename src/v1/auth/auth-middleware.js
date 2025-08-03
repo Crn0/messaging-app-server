@@ -108,7 +108,7 @@ const createSocketAccessTokenMiddleware =
   (socket, next) => {
     const socketRef = socket;
 
-    const accessToken = socketRef?.handshake.auth.accessToken;
+    const accessToken = socketRef?.handshake?.auth?.accessToken;
 
     const { error, data: verifiedToken } = tryCatchSync(() =>
       jwtUtils.verifyToken(accessToken)
